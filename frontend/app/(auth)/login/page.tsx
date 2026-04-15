@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, Mail, Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
@@ -17,16 +17,16 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect if already authenticated
-  if (!loading && user) {
-    if (orgLoading) return null;
-    if (org) {
-      router.replace('/dashboard');
-    } else {
-      router.replace('/onboarding');
+  // Redirect if already authenticated - use useEffect to avoid setState during render
+  useEffect(() => {
+    if (!loading && user && !orgLoading) {
+      if (org) {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/onboarding');
+      }
     }
-    return null;
-  }
+  }, [loading, user, org, orgLoading, router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
