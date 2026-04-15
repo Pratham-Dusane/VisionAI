@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   PlusCircle,
@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Eye,
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -23,9 +24,28 @@ const NAV_ITEMS = [
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
+function getInitials(name?: string | null, email?: string | null): string {
+  if (name) {
+    return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+  }
+  if (email) return email[0].toUpperCase();
+  return '?';
+}
+
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, org, signOutUser } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOutUser();
+    router.push('/login');
+  };
+
+  const initials = getInitials(user?.displayName, user?.email);
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
+  const orgName = org?.name || 'No Organization';
 
   return (
     <aside
@@ -84,19 +104,41 @@ export default function Sidebar() {
       <div className="px-2 pb-3" style={{ borderTop: '1px solid #2A3040' }}>
         {/* User */}
         <div className={`flex items-center gap-2.5 py-3 ${collapsed ? 'justify-center' : 'px-2'}`}>
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-            style={{ background: 'linear-gradient(135deg, #FF165D, #FF9A00)', color: '#0B0E14' }}
-          >
-            PD
-          </div>
+          {user?.photoURL ? (
+            <img
+              src={user.photoURL}
+              alt="Avatar"
+              className="w-8 h-8 rounded-full shrink-0 object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+              style={{ background: 'linear-gradient(135deg, #FF165D, #FF9A00)', color: '#0B0E14' }}
+            >
+              {initials}
+            </div>
+          )}
           {!collapsed && (
-            <div className="min-w-0">
-              <div className="text-xs font-semibold text-foreground truncate">Pratham D.</div>
-              <div className="text-[10px]" style={{ color: '#8892A5' }}>VisionAI Org</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold text-foreground truncate">{displayName}</div>
+              <div className="text-[10px] truncate" style={{ color: '#8892A5' }}>{orgName}</div>
             </div>
           )}
         </div>
+
+        {/* Sign out */}
+        <button
+          onClick={handleSignOut}
+          className={`w-full flex items-center gap-2 mb-1 py-1.5 rounded-lg transition-colors cursor-pointer ${
+            collapsed ? 'justify-center' : 'px-3'
+          }`}
+          style={{ color: '#8892A5' }}
+          id="sign-out-btn"
+        >
+          <LogOut size={14} />
+          {!collapsed && <span className="text-[11px]">Sign Out</span>}
+        </button>
 
         {/* Collapse toggle */}
         <button
