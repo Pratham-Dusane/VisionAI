@@ -48,6 +48,10 @@ export default function DashboardPage() {
   const completedAudits = audits.filter((a) => a.status === 'COMPLETE');
   const alertCount = audits.filter((a) => (a.proxies?.length || 0) > 0).length;
   const lastAudit = audits.length > 0 ? audits[0]?.createdAt : null;
+  const avgScore = completedAudits.length > 0
+    ? Math.round(completedAudits.reduce((s: number, a: any) => s + (a.fairnessScore || 0), 0) / completedAudits.length)
+    : 0;
+  const sc = (s: number) => s >= 80 ? '#06D6A0' : s >= 65 ? '#3EC1D3' : s >= 50 ? '#FF9A00' : s >= 35 ? '#FF6B35' : '#FF165D';
 
   const stats = [
     {
@@ -58,11 +62,12 @@ export default function DashboardPage() {
       bg: 'rgba(62, 193, 211, 0.08)',
     },
     {
-      label: 'Completed',
-      value: completedAudits.length,
+      label: 'Avg Fairness',
+      value: avgScore,
       icon: TrendingUp,
-      color: '#06D6A0',
-      bg: 'rgba(6, 214, 160, 0.08)',
+      color: sc(avgScore),
+      bg: `${sc(avgScore)}15`,
+      suffix: '/100',
     },
     {
       label: 'Proxy Alerts',
@@ -105,6 +110,9 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-xl font-bold" style={{ color: s.color }}>
                     {s.value}
+                    {'suffix' in s && s.suffix && (
+                      <span className="text-xs font-normal" style={{ color: '#5A6478' }}>{s.suffix}</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -157,6 +165,7 @@ export default function DashboardPage() {
                     <th>Audit Name</th>
                     <th>Domain</th>
                     <th>Date</th>
+                    <th>Score</th>
                     <th>Rows</th>
                     <th>Proxies</th>
                     <th>Status</th>
@@ -182,6 +191,13 @@ export default function DashboardPage() {
                       </td>
                       <td style={{ color: '#8892A5' }}>
                         {new Date(audit.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </td>
+                      <td>
+                        {audit.fairnessScore != null ? (
+                          <span style={{ color: sc(audit.fairnessScore), fontWeight: 600 }}>
+                            {audit.fairnessScore}<span className="text-[10px] font-normal" style={{ color: '#5A6478' }}>/{audit.letterGrade}</span>
+                          </span>
+                        ) : '—'}
                       </td>
                       <td>{audit.rowCount?.toLocaleString() || '—'}</td>
                       <td>

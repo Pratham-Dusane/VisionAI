@@ -4,46 +4,36 @@ import TopNav from '@/components/layout/TopNav';
 import { getAudit } from '@/lib/api';
 import { useState, useEffect, use } from 'react';
 import {
-  Download,
-  Share2,
-  AlertTriangle,
-  Shield,
-  BarChart3,
-  Brain,
-  Grid3x3,
-  Wrench,
-  Scale,
-  CheckCircle2,
-  Loader2,
-  XCircle,
-  Clock,
-  Zap,
-  Users,
-  TrendingDown,
-  ArrowRight,
-  Info,
-  Eye,
+  Download, Share2, AlertTriangle, Shield, BarChart3,
+  Brain, Wrench, Scale, CheckCircle2, Loader2, XCircle,
+  Zap, Users, Eye, FileText, Layers, Info,
 } from 'lucide-react';
-
-const PIPELINE_STEPS = [
-  { key: 'schema_parsing', label: 'Schema Parsing' },
-  { key: 'proxy_detection', label: 'Proxy Detection' },
-  { key: 'data_profiling', label: 'Data Profiling' },
-  { key: 'data_bias_scan', label: 'Bias Scanning' },
-  { key: 'model_evaluation', label: 'Model Evaluation' },
-  { key: 'explainability', label: 'Explainability' },
-  { key: 'intersectional_audit', label: 'Intersectional Audit' },
-  { key: 'counterfactual_analysis', label: 'Counterfactual Analysis' },
-  { key: 'regulation_mapping', label: 'Regulation Mapping' },
-  { key: 'narrative_generation', label: 'Narrative Generation' },
-];
 
 const TABS = [
   { key: 'overview', label: 'Overview', icon: Eye },
   { key: 'data', label: 'Data Analysis', icon: BarChart3 },
-  { key: 'proxies', label: 'Proxy Detection', icon: AlertTriangle },
-  { key: 'profiles', label: 'Data Profiles', icon: Users },
+  { key: 'model', label: 'Model Analysis', icon: Brain },
+  { key: 'intersectional', label: 'Intersectional', icon: Layers },
+  { key: 'explainability', label: 'Explainability', icon: Zap },
+  { key: 'fixes', label: 'Fixes', icon: Wrench },
+  { key: 'legal', label: 'Legal', icon: Scale },
 ];
+
+function gradeColor(g: string) {
+  const m: Record<string, string> = { A: '#06D6A0', B: '#3EC1D3', C: '#FF9A00', D: '#FF6B35', F: '#FF165D' };
+  return m[g] || '#8892A5';
+}
+function scoreColor(s: number) {
+  if (s >= 80) return '#06D6A0';
+  if (s >= 65) return '#3EC1D3';
+  if (s >= 50) return '#FF9A00';
+  if (s >= 35) return '#FF6B35';
+  return '#FF165D';
+}
+function sevBadge(s: string) {
+  const m: Record<string, string> = { PASS: 'badge-pass', HIGH: 'badge-high', CRITICAL: 'badge-critical', MEDIUM: 'badge-medium', FAIL: 'badge-critical', LOW_CONFIDENCE: 'badge-neutral' };
+  return m[s] || '';
+}
 
 export default function AuditResultsPage({ params }: { params: Promise<{ auditId: string }> }) {
   const { auditId } = use(params);
@@ -53,408 +43,903 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   const [error, setError] = useState('');
 
   useEffect(() => {
-    async function load() {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    async function poll() {
       try {
         const data = await getAudit(auditId);
+        if (cancelled) return;
         setAudit(data);
-      } catch (err: any) {
-        setError(err?.message || 'Failed to load audit');
-      } finally {
         setLoading(false);
+        // Keep polling while PROCESSING
+        if (data.status === 'PROCESSING') {
+          timer = setTimeout(poll, 3000);
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setError(e?.message || 'Failed');
+          setLoading(false);
+        }
       }
     }
-    load();
+    poll();
+
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [auditId]);
 
-  if (loading) {
+  // Show processing state
+  if (loading || (audit && audit.status === 'PROCESSING')) {
+    const pipeline = audit?.pipeline || {};
+    const steps = Object.entries(pipeline);
     return (
       <>
-        <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Loading...' }]} />
+        <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: audit?.name || 'Analyzing...' }]} />
         <div className="flex-1 flex flex-col items-center justify-center p-8 animate-fade-in">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6"
-            style={{ background: 'linear-gradient(135deg, #3EC1D3, #FF9A00)' }}>
-            <Eye size={28} color="#0B0E14" className="animate-pulse" />
-          </div>
-          <h2 className="text-lg font-semibold mb-1">Loading audit results</h2>
-          <p className="text-sm mb-6" style={{ color: '#8892A5' }}>Fetching data from Firestore...</p>
-          <Loader2 size={24} className="animate-spin" style={{ color: '#3EC1D3' }} />
+          <Loader2 size={32} className="animate-spin mb-4" style={{ color: '#3EC1D3' }} />
+          <h2 className="text-lg font-semibold mb-1">Running analysis pipeline</h2>
+          <p className="text-sm mb-4" style={{ color: '#8892A5' }}>This may take a moment for large datasets…</p>
+          {steps.length > 0 && (
+            <div className="space-y-1 w-64">
+              {steps.map(([step, status]) => (
+                <div key={step} className="flex items-center gap-2 text-xs">
+                  {status === 'complete' ? <CheckCircle2 size={12} style={{ color: '#06D6A0' }} /> :
+                    status === 'running' ? <Loader2 size={12} className="animate-spin" style={{ color: '#3EC1D3' }} /> :
+                      status === 'skipped' ? <span className="w-3 h-3 rounded-full" style={{ background: '#353D4F' }} /> :
+                        <span className="w-3 h-3 rounded-full" style={{ background: '#2A3040' }} />}
+                  <span style={{ color: status === 'running' ? '#3EC1D3' : status === 'complete' ? '#06D6A0' : '#5A6478' }}>
+                    {step.replace(/_/g, ' ')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </>
     );
   }
 
-  if (error || !audit) {
-    return (
-      <>
-        <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Error' }]} />
-        <div className="flex-1 flex flex-col items-center justify-center p-8">
-          <XCircle size={40} style={{ color: '#FF165D', marginBottom: 12 }} />
-          <h2 className="text-lg font-semibold mb-1">Audit not found</h2>
-          <p className="text-sm" style={{ color: '#8892A5' }}>{error || 'This audit does not exist.'}</p>
-        </div>
-      </>
-    );
-  }
+  if (error || !audit) return (
+    <>
+      <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Error' }]} />
+      <div className="flex-1 flex flex-col items-center justify-center p-8">
+        <XCircle size={40} style={{ color: '#FF165D', marginBottom: 12 }} />
+        <h2 className="text-lg font-semibold mb-1">{audit?.status === 'FAILED' ? 'Audit Failed' : 'Audit not found'}</h2>
+        <p className="text-sm" style={{ color: '#8892A5' }}>{audit?.error || error}</p>
+      </div>
+    </>
+  );
 
-  const schema = audit.schema;
-  const proxies = audit.proxies || [];
-  const profiles = audit.profiles || [];
+  const sev = audit.severity || {};
+  const score = sev.fairness_score ?? audit.fairnessScore ?? 0;
+  const grade = sev.letter_grade ?? audit.letterGrade ?? '?';
 
   return (
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: audit.name }]} />
-
       <div className="flex-1 p-4 space-y-3 animate-fade-in">
         {/* Header */}
         <div className="flex items-start gap-4">
+          {/* Score ring */}
           <div className="relative shrink-0">
-            <svg width="88" height="88" viewBox="0 0 88 88" className="score-ring">
+            <svg width="88" height="88" viewBox="0 0 88 88">
               <circle cx="44" cy="44" r="38" fill="none" stroke="#1A1F2B" strokeWidth="6" />
-              <circle
-                cx="44" cy="44" r="38"
-                fill="none" stroke="#3EC1D3" strokeWidth="6"
-                strokeDasharray="239 239"
-                strokeLinecap="round"
-                transform="rotate(-90 44 44)"
-              />
+              <circle cx="44" cy="44" r="38" fill="none" stroke={scoreColor(score)} strokeWidth="6"
+                strokeDasharray={`${score * 2.39} 239`} strokeLinecap="round" transform="rotate(-90 44 44)" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-bold" style={{ color: '#3EC1D3' }}>P3</span>
-              <span className="text-[9px]" style={{ color: '#5A6478' }}>Phase 3</span>
+              <span className="text-2xl font-black" style={{ color: gradeColor(grade) }}>{grade}</span>
+              <span className="text-[10px] font-bold" style={{ color: scoreColor(score) }}>{score}/100</span>
             </div>
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-lg font-bold">{audit.name}</h1>
-              <span className="badge badge-pass">COMPLETE</span>
+              <span className={`badge ${audit.status === 'COMPLETE' ? 'badge-pass' : 'badge-medium'}`}>{audit.status}</span>
             </div>
             <div className="flex items-center gap-3 text-xs" style={{ color: '#8892A5' }}>
-              <span>{audit.domain}</span>
-              <span>•</span>
+              <span>{audit.domain}</span><span>•</span>
               <span>{new Date(audit.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-              <span>•</span>
-              <span>{audit.rowCount?.toLocaleString()} rows</span>
-              <span>•</span>
-              <span>{audit.columnCount} columns</span>
+              <span>•</span><span>{audit.rowCount?.toLocaleString()} rows</span>
+              <span>•</span><span>{audit.columnCount} cols</span>
             </div>
+            {sev.penalties?.length > 0 && (
+              <div className="text-[10px] mt-1" style={{ color: '#5A6478' }}>
+                {sev.penalties.length} penalty deductions applied
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button className="btn btn-secondary btn-sm">
-              <Share2 size={13} /> Share
-            </button>
-            <button className="btn btn-primary btn-sm">
-              <Download size={13} /> PDF
-            </button>
+            <button className="btn btn-secondary btn-sm"><Share2 size={13} /> Share</button>
+            <button className="btn btn-primary btn-sm"><Download size={13} /> PDF</button>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="tab-bar">
+        <div className="tab-bar" style={{ overflowX: 'auto' }}>
           {TABS.map((t) => {
             const Icon = t.icon;
             return (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`tab-item flex items-center gap-1.5 ${tab === t.key ? 'active' : ''}`}
-              >
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`tab-item flex items-center gap-1.5 ${tab === t.key ? 'active' : ''}`}>
                 <Icon size={13} /> {t.label}
               </button>
             );
           })}
         </div>
 
-        {/* Tab Content */}
-        {tab === 'overview' && <OverviewTab audit={audit} proxies={proxies} profiles={profiles} />}
-        {tab === 'data' && <DataTab schema={schema} />}
-        {tab === 'proxies' && <ProxiesTab proxies={proxies} />}
-        {tab === 'profiles' && <ProfilesTab profiles={profiles} />}
+        {/* Tab content */}
+        {tab === 'overview' && <OverviewTab audit={audit} />}
+        {tab === 'data' && <DataTab audit={audit} />}
+        {tab === 'model' && <ModelTab audit={audit} />}
+        {tab === 'intersectional' && <IntersectionalTab audit={audit} />}
+        {tab === 'explainability' && <ExplainabilityTab audit={audit} />}
+        {tab === 'fixes' && <FixesTab audit={audit} />}
+        {tab === 'legal' && <LegalTab audit={audit} />}
       </div>
     </>
   );
 }
 
-/* ============ OVERVIEW ============ */
-function OverviewTab({ audit, proxies, profiles }: { audit: any; proxies: any[]; profiles: any[] }) {
-  const imbalancedCount = profiles.filter((p: any) => p.imbalance_warning).length;
+/* ==================== OVERVIEW ==================== */
+function OverviewTab({ audit }: { audit: any }) {
+  const sev = audit.severity || {};
+  const dataBias = audit.dataBias || {};
+  const proxies = audit.proxies || [];
+  const laundering = audit.featureLaundering || [];
+  const harm = audit.historicalHarm || [];
+  const profiles = audit.profiles || [];
+  const imbalanced = profiles.filter((p: any) => p.imbalance_warning).length;
+
+  // Find worst DI
+  let worstDI: any = null;
+  Object.values(dataBias).forEach((v: any) => {
+    const di = v?.metrics?.disparate_impact;
+    if (di && (!worstDI || di < worstDI.di)) worstDI = { attr: v.attribute, di, sev: v.severity };
+  });
 
   return (
     <div className="space-y-3">
-      {/* Summary Cards */}
+      {/* Metric cards */}
       <div className="grid grid-cols-4 gap-3">
-        <MetricMini label="Rows Analyzed" value={audit.rowCount?.toLocaleString()} sub={`${audit.columnCount} columns`} color="#3EC1D3" />
-        <MetricMini label="Protected Attributes" value={String(audit.protectedCols?.length || 0)} sub={audit.protectedCols?.join(', ') || '—'} color="#FF9A00" />
-        <MetricMini label="Proxy Variables" value={String(proxies.length)} sub={`${proxies.filter((p: any) => p.risk_level === 'HIGH').length} HIGH risk`} color={proxies.length > 0 ? '#FF165D' : '#06D6A0'} />
-        <MetricMini label="Imbalance Warnings" value={String(imbalancedCount)} sub={`of ${profiles.length} attributes`} color={imbalancedCount > 0 ? '#FF9A00' : '#06D6A0'} />
+        <Mini label="Fairness Score" value={`${sev.fairness_score ?? 0}`} sub={`Grade: ${sev.letter_grade ?? '?'}`}
+          color={scoreColor(sev.fairness_score ?? 0)} />
+        <Mini label="Disparate Impact (worst)" value={worstDI ? worstDI.di.toFixed(2) : '—'}
+          sub={worstDI ? `${worstDI.attr} — ${worstDI.sev}` : 'No violations'} color={worstDI && worstDI.di < 0.8 ? '#FF165D' : '#06D6A0'} />
+        <Mini label="Proxy Variables" value={String(proxies.length)}
+          sub={`${proxies.filter((p: any) => p.risk_level === 'HIGH').length} HIGH risk`}
+          color={proxies.length > 0 ? '#FF9A00' : '#06D6A0'} />
+        <Mini label="Feature Laundering" value={String(laundering.filter((l: any) => l.laundering_detected).length)}
+          sub={`of ${laundering.length} tested`}
+          color={laundering.some((l: any) => l.laundering_detected) ? '#FF165D' : '#06D6A0'} />
       </div>
 
-      {/* Config summary */}
+      {/* Config */}
       <div className="card">
         <h3 className="text-xs font-semibold mb-3" style={{ color: '#8892A5' }}>Audit Configuration</h3>
         <div className="grid grid-cols-2 gap-y-2 text-sm">
-          <span style={{ color: '#5A6478' }}>Label Column</span>
-          <span>{audit.labelCol}</span>
-          <span style={{ color: '#5A6478' }}>Positive Value</span>
-          <span>{audit.positiveLabel}</span>
-          <span style={{ color: '#5A6478' }}>Fairness Threshold</span>
-          <span>{audit.threshold?.toFixed(2)}</span>
-          <span style={{ color: '#5A6478' }}>Dataset</span>
-          <span className="text-xs" style={{ color: '#8892A5' }}>{audit.storagePath?.split('/').pop()}</span>
+          <span style={{ color: '#5A6478' }}>Label Column</span><span>{audit.labelCol}</span>
+          <span style={{ color: '#5A6478' }}>Positive Value</span><span>{audit.positiveLabel}</span>
+          <span style={{ color: '#5A6478' }}>Protected Attributes</span><span>{audit.protectedCols?.join(', ')}</span>
+          <span style={{ color: '#5A6478' }}>Threshold</span><span>{audit.threshold}</span>
+          <span style={{ color: '#5A6478' }}>Data Only</span><span>{audit.dataOnly ? 'Yes' : 'No'}</span>
         </div>
       </div>
 
-      {/* Proxy warnings summary */}
-      {proxies.length > 0 && (
-        <div className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.3)', background: 'rgba(255, 22, 93, 0.03)' }}>
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle size={16} style={{ color: '#FF165D' }} />
-            <span className="text-xs font-semibold" style={{ color: '#FF165D' }}>
-              Proxy Variables Detected — {proxies.length} found
-            </span>
+      {/* Auto-binning info */}
+      {audit.binning && Object.keys(audit.binning).length > 0 && (
+        <div className="card" style={{ borderColor: 'rgba(62, 193, 211, 0.2)', background: 'rgba(62, 193, 211, 0.03)' }}>
+          <h3 className="text-xs font-semibold mb-2" style={{ color: '#3EC1D3' }}>
+            <Info size={13} className="inline mr-1" />Auto-Binned Attributes
+          </h3>
+          <div className="text-[10px] mb-2" style={{ color: '#5A6478' }}>
+            Continuous columns were binned into groups for meaningful fairness analysis
           </div>
           <div className="space-y-1">
-            {proxies.slice(0, 3).map((p: any, i: number) => (
-              <div key={i} className="text-sm" style={{ color: '#C8CCD4' }}>
-                <strong style={{ color: '#FF9A00' }}>{p.proxy_column}</strong> → correlates with <strong>{p.protected_column}</strong> ({p.method}: {p.association_score.toFixed(2)})
+            {Object.entries(audit.binning).map(([col, info]: [string, any]) => (
+              <div key={col} className="flex items-center gap-2 text-xs">
+                <span className="font-medium" style={{ color: '#E8EAED' }}>{col}</span>
+                <span style={{ color: '#5A6478' }}>→</span>
+                <span style={{ color: '#3EC1D3' }}>
+                  {info.labels ? info.labels.join(', ') : info.description}
+                </span>
+                <span className="badge badge-pass text-[10px]">{info.n_groups} groups</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Imbalance warnings */}
-      {profiles.filter((p: any) => p.imbalance_warning).map((profile: any, i: number) => (
-        <div key={i} className="card" style={{ borderColor: 'rgba(255, 154, 0, 0.2)', background: 'rgba(255, 154, 0, 0.03)' }}>
-          <div className="flex items-center gap-2 mb-2">
-            <Users size={16} style={{ color: '#FF9A00' }} />
-            <span className="text-xs font-semibold" style={{ color: '#FF9A00' }}>
-              Group Imbalance — {profile.attribute} (ratio: {profile.imbalance_ratio}x)
-            </span>
-          </div>
-          <div className="flex gap-3">
-            {Object.entries(profile.group_counts as Record<string, number>).map(([group, count]) => (
-              <div key={group} className="text-center px-3 py-2 rounded-lg" style={{ background: '#1A1F2B' }}>
-                <div className="text-sm font-bold" style={{ color: '#E8EAED' }}>{(count as number).toLocaleString()}</div>
-                <div className="text-[10px]" style={{ color: '#8892A5' }}>{group} ({profile.group_percentages[group]}%)</div>
-              </div>
+      {/* Severity penalties */}
+      {sev.penalties?.length > 0 && (
+        <div className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.2)' }}>
+          <h3 className="text-xs font-semibold mb-2" style={{ color: '#FF165D' }}>
+            <AlertTriangle size={13} className="inline mr-1" />Score Penalties
+          </h3>
+          <div className="space-y-1">
+            {sev.penalties.map((p: string, i: number) => (
+              <div key={i} className="text-xs" style={{ color: '#C8CCD4' }}>• {p}</div>
             ))}
           </div>
         </div>
-      ))}
-    </div>
-  );
-}
+      )}
 
-/* ============ DATA TAB ============ */
-function DataTab({ schema }: { schema: any }) {
-  if (!schema) return <div className="card text-center py-8 text-sm" style={{ color: '#5A6478' }}>No schema data available.</div>;
-
-  return (
-    <div className="space-y-3">
-      <div className="card" style={{ padding: 0 }}>
-        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
-          Column Analysis — {schema.column_count} columns, {schema.row_count?.toLocaleString()} rows
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Column</th>
-              <th>Type</th>
-              <th>Unique</th>
-              <th>Nulls</th>
-              <th>Sensitivity</th>
-              <th>Auto-Flagged</th>
-              <th>Reason</th>
-            </tr>
-          </thead>
-          <tbody>
-            {schema.columns?.map((col: any) => (
-              <tr key={col.name}>
-                <td className="font-medium">{col.name}</td>
-                <td className="text-xs" style={{ color: '#8892A5' }}>{col.dtype}</td>
-                <td>{col.unique_count}</td>
-                <td style={{ color: col.null_count > 0 ? '#FF9A00' : '#5A6478' }}>{col.null_count}</td>
-                <td>
-                  <div className="flex items-center gap-2">
-                    <span style={{ color: col.sensitivity_score >= 0.65 ? '#FF165D' : col.sensitivity_score > 0 ? '#FF9A00' : '#5A6478' }}>
-                      {col.sensitivity_score.toFixed(2)}
-                    </span>
-                    <div className="w-12 h-1.5 rounded-full" style={{ background: '#1A1F2B' }}>
-                      <div className="h-full rounded-full" style={{
-                        width: `${col.sensitivity_score * 100}%`,
-                        background: col.sensitivity_score >= 0.65 ? '#FF165D' : col.sensitivity_score > 0 ? '#FF9A00' : '#353D4F'
-                      }} />
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  {col.auto_flagged ? (
-                    <span className="badge badge-critical">YES</span>
-                  ) : (
-                    <span className="text-xs" style={{ color: '#5A6478' }}>—</span>
-                  )}
-                </td>
-                <td className="text-xs" style={{ color: '#8892A5' }}>{col.flagged_reason || '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-/* ============ PROXIES TAB ============ */
-function ProxiesTab({ proxies }: { proxies: any[] }) {
-  if (proxies.length === 0) {
-    return (
-      <div className="card flex items-center gap-3 text-center" style={{ background: 'rgba(6, 214, 160, 0.05)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
-        <CheckCircle2 size={20} style={{ color: '#06D6A0' }} />
-        <div>
-          <div className="text-sm font-medium" style={{ color: '#06D6A0' }}>No proxy variables detected</div>
-          <div className="text-xs" style={{ color: '#8892A5' }}>No columns show significant statistical association with protected attributes.</div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="card" style={{ padding: 0 }}>
-        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
-          Proxy Variable Detection — {proxies.length} found
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Proxy Column</th>
-              <th>Correlated With</th>
-              <th>Score</th>
-              <th>Method</th>
-              <th>Risk</th>
-            </tr>
-          </thead>
-          <tbody>
-            {proxies.map((pv: any, i: number) => (
-              <tr key={i}>
-                <td className="font-medium">{pv.proxy_column}</td>
-                <td>{pv.protected_column}</td>
-                <td>
-                  <div className="flex items-center gap-2">
-                    <span style={{ color: pv.association_score >= 0.5 ? '#FF165D' : '#FF9A00' }}>
-                      {pv.association_score.toFixed(2)}
-                    </span>
-                    <div className="w-12 h-1.5 rounded-full" style={{ background: '#1A1F2B' }}>
-                      <div className="h-full rounded-full" style={{ width: `${pv.association_score * 100}%`, background: pv.risk_level === 'HIGH' ? '#FF165D' : '#FF9A00' }} />
-                    </div>
-                  </div>
-                </td>
-                <td className="text-xs" style={{ color: '#8892A5' }}>{pv.method}</td>
-                <td><span className={`badge badge-${pv.risk_level.toLowerCase()}`}>{pv.risk_level}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Explanations */}
-      <div className="card space-y-2">
-        <h3 className="text-xs font-semibold" style={{ color: '#8892A5' }}>Detailed Explanations</h3>
-        {proxies.map((pv: any, i: number) => (
-          <div key={i} className="flex items-start gap-2 text-sm" style={{ color: '#C8CCD4' }}>
-            <AlertTriangle size={14} style={{ color: pv.risk_level === 'HIGH' ? '#FF165D' : '#FF9A00', marginTop: 2, flexShrink: 0 }} />
-            <span>{pv.explanation}</span>
+      {/* Historical harm */}
+      {harm.length > 0 && (
+        <div className="card space-y-3" style={{ borderColor: 'rgba(255, 22, 93, 0.2)' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle size={16} style={{ color: '#FF165D' }} />
+            <span className="text-sm font-semibold" style={{ color: '#FF165D' }}>Historical Harm Estimates ({harm.length})</span>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ============ PROFILES TAB ============ */
-function ProfilesTab({ profiles }: { profiles: any[] }) {
-  if (profiles.length === 0) {
-    return <div className="card text-center py-8 text-sm" style={{ color: '#5A6478' }}>No profile data available.</div>;
-  }
-
-  return (
-    <div className="space-y-4">
-      {profiles.map((profile: any, idx: number) => (
-        <div key={idx} className="card space-y-3">
-          <div className="flex items-center gap-2">
-            <Users size={16} style={{ color: '#3EC1D3' }} />
-            <h3 className="text-sm font-semibold">{profile.attribute}</h3>
-            {profile.imbalance_warning && (
-              <span className="badge badge-high">IMBALANCED ({profile.imbalance_ratio}x)</span>
-            )}
-          </div>
-
-          {/* Group distribution */}
-          <div className="flex gap-2 flex-wrap">
-            {Object.entries(profile.group_counts as Record<string, number>).map(([group, count]) => {
-              const pct = profile.group_percentages[group];
-              return (
-                <div key={group} className="flex-1 min-w-[120px] p-3 rounded-lg" style={{ background: '#1A1F2B', border: '1px solid #2A3040' }}>
-                  <div className="text-xs font-medium mb-1" style={{ color: '#8892A5' }}>{group}</div>
-                  <div className="text-lg font-bold" style={{ color: '#E8EAED' }}>{(count as number).toLocaleString()}</div>
-                  <div className="w-full h-1.5 rounded-full mt-1" style={{ background: '#2A3040' }}>
-                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#3EC1D3' }} />
-                  </div>
-                  <div className="text-[10px] mt-1" style={{ color: '#5A6478' }}>{pct}%</div>
+          <div className="space-y-3 pr-2" style={{ maxHeight: '420px', overflowY: 'auto' }}>
+            {harm.map((h: any, i: number) => (
+              <div key={i} className="p-3 rounded-lg border border-[#2A3040]" style={{ background: 'rgba(255, 22, 93, 0.03)' }}>
+                <div className="text-sm mb-1" style={{ color: '#E8EAED' }}>{h.headline}</div>
+                <div className="text-[10px] mb-2" style={{ color: '#5A6478' }}>{h.disclaimer}</div>
+                <div className="flex gap-4 text-xs font-medium">
+                  <span style={{ color: '#8892A5' }}>{h.months_deployed} months</span>
+                  <span style={{ color: '#8892A5' }}>{h.total_decisions?.toLocaleString()} decisions</span>
+                  <span style={{ color: '#FF165D' }}>{h.estimated_individuals_harmed?.toLocaleString()} harmed</span>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
+        </div>
+      )}
 
-          {/* Label distribution per group */}
-          {profile.label_distribution_per_group && Object.keys(profile.label_distribution_per_group).length > 0 && (
-            <div>
-              <div className="text-xs font-semibold mb-2" style={{ color: '#8892A5' }}>Outcome Rate by Group</div>
-              <div className="space-y-1.5">
-                {Object.entries(profile.label_distribution_per_group as Record<string, any>).map(([group, rates]) => (
-                  <div key={group} className="flex items-center gap-3">
-                    <span className="text-xs w-24 truncate" style={{ color: '#8892A5' }}>{group}</span>
-                    <div className="flex-1 h-4 rounded-full overflow-hidden flex" style={{ background: '#1A1F2B' }}>
-                      <div className="h-full flex items-center justify-center text-[9px] font-bold"
-                        style={{ width: `${(rates as any).positive}%`, background: '#06D6A0', color: '#0B0E14' }}>
-                        {(rates as any).positive}%
-                      </div>
-                      <div className="h-full flex items-center justify-center text-[9px] font-bold"
-                        style={{ width: `${(rates as any).negative}%`, background: '#FF165D', color: '#fff' }}>
-                        {(rates as any).negative}%
-                      </div>
-                    </div>
+      {/* Quick warnings */}
+      {imbalanced > 0 && (
+        <div className="card" style={{ borderColor: 'rgba(255, 154, 0, 0.2)', background: 'rgba(255, 154, 0, 0.03)' }}>
+          <div className="flex items-center gap-2">
+            <Users size={16} style={{ color: '#FF9A00' }} />
+            <span className="text-xs font-semibold" style={{ color: '#FF9A00' }}>{imbalanced} group imbalance warnings detected</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ==================== DATA ANALYSIS ==================== */
+function DataTab({ audit }: { audit: any }) {
+  const dataBias = audit.dataBias || {};
+  const schema = audit.schema;
+  const proxies = audit.proxies || [];
+  const profiles = audit.profiles || [];
+
+  return (
+    <div className="space-y-3">
+      {/* Disparate Impact table */}
+      <div className="card" style={{ padding: 0 }}>
+        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
+          Disparate Impact Analysis
+        </div>
+        <table>
+          <thead><tr>
+            <th>Attribute</th><th>Privileged Group</th><th>DI Ratio</th><th>SPD</th><th>Pos Rate (Priv)</th><th>Pos Rate (Unpriv)</th><th>Verdict</th>
+          </tr></thead>
+          <tbody>
+            {Object.values(dataBias).map((b: any) => (
+              <tr key={b.attribute}>
+                <td className="font-medium">{b.attribute}</td>
+                <td>{b.privileged_group}</td>
+                <td><span style={{ color: b.metrics.disparate_impact < 0.8 ? '#FF165D' : '#06D6A0', fontWeight: 600 }}>
+                  {b.metrics.disparate_impact?.toFixed(2) ?? '—'}</span></td>
+                <td style={{ color: Math.abs(b.metrics.statistical_parity_difference) > 0.1 ? '#FF9A00' : '#8892A5' }}>
+                  {b.metrics.statistical_parity_difference?.toFixed(3)}</td>
+                <td>{(b.metrics.positive_rate_privileged * 100).toFixed(1)}%</td>
+                <td>{(b.metrics.positive_rate_unprivileged * 100).toFixed(1)}%</td>
+                <td><span className={`badge ${sevBadge(b.severity)}`}>{b.verdict}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Group profiles */}
+      {profiles.map((p: any, i: number) => (
+        <div key={i} className="card space-y-2">
+          <div className="flex items-center gap-2">
+            <Users size={14} style={{ color: '#3EC1D3' }} />
+            <span className="text-sm font-semibold">{p.attribute}</span>
+            {p.imbalance_warning && <span className="badge badge-high">IMBALANCED ({p.imbalance_ratio}x)</span>}
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {Object.entries(p.group_counts as Record<string, number>).map(([g, c]) => (
+              <div key={g} className="flex-1 min-w-[100px] p-2 rounded-lg" style={{ background: '#1A1F2B' }}>
+                <div className="text-xs" style={{ color: '#8892A5' }}>{g}</div>
+                <div className="text-sm font-bold">{(c as number).toLocaleString()}</div>
+                <div className="w-full h-1 rounded-full mt-1" style={{ background: '#2A3040' }}>
+                  <div className="h-full rounded-full" style={{ width: `${p.group_percentages[g]}%`, background: '#3EC1D3' }} />
+                </div>
+                <div className="text-[10px]" style={{ color: '#5A6478' }}>{p.group_percentages[g]}%</div>
+              </div>
+            ))}
+          </div>
+          {/* Label rates */}
+          {p.label_distribution_per_group && (
+            <div className="space-y-1 mt-2">
+              <div className="text-xs font-semibold" style={{ color: '#8892A5' }}>Outcome Rate by Group</div>
+              {Object.entries(p.label_distribution_per_group as Record<string, any>).map(([g, r]) => (
+                <div key={g} className="flex items-center gap-2">
+                  <span className="text-xs w-20 truncate" style={{ color: '#8892A5' }}>{g}</span>
+                  <div className="flex-1 h-3 rounded-full overflow-hidden flex" style={{ background: '#1A1F2B' }}>
+                    <div className="h-full flex items-center justify-center text-[8px] font-bold"
+                      style={{ width: `${(r as any).positive}%`, background: '#06D6A0', color: '#0B0E14' }}>
+                      {(r as any).positive}%</div>
+                    <div className="h-full flex items-center justify-center text-[8px] font-bold"
+                      style={{ width: `${(r as any).negative}%`, background: '#FF165D', color: '#fff' }}>
+                      {(r as any).negative}%</div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* SMOTE recommendations */}
-          {profile.smote_recommendations && Object.keys(profile.smote_recommendations).length > 0 && (
-            <div className="p-3 rounded-lg" style={{ background: 'rgba(62, 193, 211, 0.05)', border: '1px solid rgba(62, 193, 211, 0.15)' }}>
-              <div className="text-xs font-semibold mb-2" style={{ color: '#3EC1D3' }}>
-                <Zap size={11} className="inline mr-1" />
-                SMOTE Oversampling Recommendations
-              </div>
-              {Object.entries(profile.smote_recommendations as Record<string, any>).map(([group, rec]) => (
-                <div key={group} className="text-sm" style={{ color: '#C8CCD4' }}>
-                  <strong style={{ color: '#FF9A00' }}>{group}</strong>: Add {(rec as any).synthetic_samples_needed.toLocaleString()} synthetic samples
-                  <span className="text-xs ml-2" style={{ color: '#5A6478' }}>({(rec as any).current_count} → {(rec as any).target_count})</span>
                 </div>
               ))}
             </div>
           )}
         </div>
       ))}
+
+      {/* Proxy table */}
+      {proxies.length > 0 && (
+        <div className="card" style={{ padding: 0 }}>
+          <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
+            Proxy Variables — {proxies.length} found
+          </div>
+          <table>
+            <thead><tr><th>Proxy Column</th><th>Correlates With</th><th>Score</th><th>Method</th><th>Risk</th></tr></thead>
+            <tbody>
+              {proxies.map((p: any, i: number) => (
+                <tr key={i}>
+                  <td className="font-medium">{p.proxy_column}</td>
+                  <td>{p.protected_column}</td>
+                  <td><span style={{ color: p.association_score >= 0.5 ? '#FF165D' : '#FF9A00' }}>
+                    {p.association_score.toFixed(2)}</span></td>
+                  <td className="text-xs" style={{ color: '#8892A5' }}>{p.method}</td>
+                  <td><span className={`badge ${sevBadge(p.risk_level)}`}>{p.risk_level}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Schema table */}
+      {schema && (
+        <div className="card" style={{ padding: 0 }}>
+          <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
+            Schema — {schema.column_count} columns
+          </div>
+          <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Unique</th><th>Nulls</th><th>Sensitivity</th><th>Flagged</th></tr></thead>
+            <tbody>
+              {schema.columns?.map((c: any) => (
+                <tr key={c.name}>
+                  <td className="font-medium">{c.name}</td>
+                  <td className="text-xs" style={{ color: '#8892A5' }}>{c.dtype}</td>
+                  <td>{c.unique_count}</td>
+                  <td style={{ color: c.null_count > 0 ? '#FF9A00' : '#5A6478' }}>{c.null_count}</td>
+                  <td>
+                    <div className="flex items-center gap-1">
+                      <span style={{ color: c.sensitivity_score >= 0.65 ? '#FF165D' : '#5A6478' }}>{c.sensitivity_score.toFixed(2)}</span>
+                      <div className="w-10 h-1 rounded-full" style={{ background: '#1A1F2B' }}>
+                        <div className="h-full rounded-full" style={{
+                          width: `${c.sensitivity_score * 100}%`,
+                          background: c.sensitivity_score >= 0.65 ? '#FF165D' : '#353D4F',
+                        }} />
+                      </div>
+                    </div>
+                  </td>
+                  <td>{c.auto_flagged ? <span className="badge badge-critical">YES</span> : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
-/* ---- Helper ---- */
-function MetricMini({ label, value, sub, color }: { label: string; value: string; sub: string; color: string }) {
+/* Collapsible Equalized Odds group per attribute */
+function EqOddsGroup({ attr, groups }: { attr: string; groups: any }) {
+  const [open, setOpen] = useState(false);
+  const entries = Object.entries(groups);
+  const fprs = entries.map(([, m]: [string, any]) => m.fpr);
+  const maxFpr = Math.max(...fprs);
+  const fprGap = fprs.length >= 2 ? (Math.max(...fprs) - Math.min(...fprs)) : 0;
+
+  return (
+    <div style={{ borderBottom: '1px solid #2A3040' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-[#1A1F2B] transition-colors"
+        style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-xs" style={{ color: '#5A6478', transform: open ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▶</span>
+          <span className="text-xs font-semibold">{attr}</span>
+          <span className="text-[10px]" style={{ color: '#5A6478' }}>{entries.length} groups</span>
+        </div>
+        <div className="flex items-center gap-3 text-[10px]">
+          <span style={{ color: fprGap > 0.1 ? '#FF165D' : '#06D6A0' }}>
+            FPR gap: {(fprGap * 100).toFixed(1)}%
+          </span>
+          <span className={`badge ${fprGap > 0.1 ? 'badge-critical' : 'badge-pass'}`} style={{ fontSize: '9px', padding: '1px 6px' }}>
+            {fprGap > 0.1 ? 'FAIL' : 'PASS'}
+          </span>
+        </div>
+      </button>
+      {open && (
+        <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
+          <table>
+            <thead className="sticky top-0 sticky-header" style={{ background: '#121620', zIndex: 10 }}>
+              <tr><th>Group</th><th>FPR</th><th>FNR</th><th>Precision</th></tr>
+            </thead>
+            <tbody>
+              {entries.map(([g, m]: [string, any]) => (
+                <tr key={g}>
+                  <td className="font-medium">{g}</td>
+                  <td style={{ color: m.fpr > 0.15 ? '#FF165D' : '#8892A5' }}>{(m.fpr * 100).toFixed(1)}%</td>
+                  <td style={{ color: m.fnr > 0.15 ? '#FF9A00' : '#8892A5' }}>{(m.fnr * 100).toFixed(1)}%</td>
+                  <td>{(m.precision * 100).toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ==================== MODEL ANALYSIS ==================== */
+function ModelTab({ audit }: { audit: any }) {
+  const modelBias = audit.modelBias;
+  const flip = audit.flipSensitivity;
+
+  if (!modelBias) return (
+    <div className="card flex items-center gap-3 py-8" style={{ background: 'rgba(62, 193, 211, 0.04)', borderColor: 'rgba(62, 193, 211, 0.2)' }}>
+      <Info size={20} style={{ color: '#3EC1D3' }} />
+      <div>
+        <div className="text-sm font-medium">No model provided</div>
+        <div className="text-xs" style={{ color: '#8892A5' }}>Upload a model file (.pkl/.joblib) to enable counterfactual testing, equalized odds, and flip sensitivity analysis.</div>
+      </div>
+    </div>
+  );
+
+  const eqOdds = modelBias._equalized_odds || {};
+
+  return (
+    <div className="space-y-3">
+      {/* Counterfactual flip rates */}
+      {Object.entries(modelBias).filter(([k]) => k !== '_equalized_odds').map(([attr, data]: [string, any]) => {
+        const flips = Object.entries(data.flip_rates || {}).filter(([, r]: [string, any]) => r > 0);
+        const totalTested = data.total_transitions_tested || Object.keys(data.flip_rates || {}).length;
+        return (
+          <div key={attr} className="card" style={{ padding: 0 }}>
+            <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid #2A3040' }}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold" style={{ color: '#8892A5' }}>Flip Rates — {attr}</span>
+                <span className="text-[10px]" style={{ color: '#5A6478' }}>
+                  ({flips.length} non-zero of {totalTested} tested)
+                </span>
+              </div>
+              <span className={`badge ${sevBadge(data.verdict)}`}>{data.verdict}</span>
+            </div>
+            {flips.length > 0 ? (
+              <table>
+                <thead><tr><th>Transition</th><th>Flip Rate</th><th>Indicator</th></tr></thead>
+                <tbody>
+                  {flips.slice(0, 10).map(([trans, rate]: [string, any]) => (
+                    <tr key={trans}>
+                      <td className="font-medium">{trans}</td>
+                      <td style={{ color: rate > 0.1 ? '#FF165D' : '#06D6A0' }}>{(rate * 100).toFixed(1)}%</td>
+                      <td>
+                        <div className="w-20 h-1.5 rounded-full" style={{ background: '#1A1F2B' }}>
+                          <div className="h-full rounded-full" style={{ width: `${Math.min(rate * 100, 100)}%`, background: rate > 0.1 ? '#FF165D' : '#06D6A0' }} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="px-4 py-3 text-xs" style={{ color: '#5A6478' }}>
+                No prediction flips detected — model treats all {attr} groups equally.
+              </div>
+            )}
+            <div className="px-4 py-2 text-xs" style={{ color: '#5A6478', borderTop: '1px solid #2A3040' }}>
+              Max: {(data.max_flip_rate * 100).toFixed(1)}% | Mean: {(data.mean_flip_rate * 100).toFixed(1)}%
+              {flips.length > 10 && <span> | Showing top 10 of {flips.length}</span>}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Equalized Odds — collapsible by attribute */}
+      {Object.keys(eqOdds).length > 0 && (
+        <div className="card" style={{ padding: 0 }}>
+          <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
+            Equalized Odds — FPR / FNR per Group
+          </div>
+          {Object.entries(eqOdds).map(([attr, groups]: [string, any]) => (
+            <EqOddsGroup key={attr} attr={attr} groups={groups} />
+          ))}
+        </div>
+      )}
+
+      {/* Flip sensitivity */}
+      {flip && (
+        <div className="card" style={{ borderColor: 'rgba(255, 154, 0, 0.2)' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <Zap size={14} style={{ color: '#FF9A00' }} />
+            <span className="text-xs font-semibold" style={{ color: '#FF9A00' }}>Flip Sensitivity</span>
+          </div>
+          <div className="text-sm mb-2">{flip.explanation}</div>
+          <div className="flex gap-4 text-xs" style={{ color: '#8892A5' }}>
+            <span>Mean: {flip.mean_flip_count}</span>
+            <span>Median: {flip.median_flip_count}</span>
+            <span style={{ color: '#FF165D' }}>{flip.most_vulnerable_count} vulnerable ({flip.most_vulnerable_percentage}%)</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ==================== INTERSECTIONAL ==================== */
+function IntersectionalTab({ audit }: { audit: any }) {
+  const data = audit.intersectional || [];
+
+  if (data.length === 0) return (
+    <div className="card text-center py-8 text-sm" style={{ color: '#5A6478' }}>
+      No intersectional data. Requires 2+ protected attributes.
+    </div>
+  );
+
+  const critical = data.filter((d: any) => d.severity === 'CRITICAL');
+  const high = data.filter((d: any) => d.severity === 'HIGH');
+
+  return (
+    <div className="space-y-3">
+      {critical.length > 0 && (
+        <div className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.3)', background: 'rgba(255, 22, 93, 0.03)' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle size={16} style={{ color: '#FF165D' }} />
+            <span className="text-xs font-semibold" style={{ color: '#FF165D' }}>
+              {critical.length} CRITICAL intersectional violations
+            </span>
+          </div>
+          {critical.slice(0, 5).map((c: any, i: number) => (
+            <div key={i} className="text-sm mb-1" style={{ color: '#C8CCD4' }}>
+              <strong style={{ color: '#FF9A00' }}>{c.group}</strong> — DI: {c.di_vs_overall?.toFixed(2)}, n={c.sample_size}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="card" style={{ padding: 0 }}>
+        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
+          All Intersections — {data.length} groups analyzed
+        </div>
+        <table>
+          <thead><tr><th>Group</th><th>n</th><th>Pos Rate</th><th>DI vs Overall</th><th>Severity</th></tr></thead>
+          <tbody>
+            {data.slice(0, 50).map((d: any, i: number) => (
+              <tr key={i}>
+                <td className="font-medium text-xs">
+                  {d.group}
+                  {d.low_confidence && (
+                    <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-[#2A3040] text-[#5A6478]" title={d.statistical_note}>
+                      n&lt;30
+                    </span>
+                  )}
+                </td>
+                <td>{d.sample_size}</td>
+                <td>{(d.positive_rate * 100).toFixed(1)}%</td>
+                <td style={{ color: d.di_vs_overall < 0.8 && !d.low_confidence ? '#FF165D' : d.di_vs_overall >= 0.8 ? '#06D6A0' : '#8892A5', fontWeight: 600 }}>
+                  {d.di_vs_overall?.toFixed(2)}</td>
+                <td><span className={`badge ${sevBadge(d.severity)}`}>{d.severity}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ==================== EXPLAINABILITY ==================== */
+function ExplainabilityTab({ audit }: { audit: any }) {
+  const laundering = audit.featureLaundering || [];
+  const explainability = audit.explainability || {};
+
+  return (
+    <div className="space-y-3">
+      {/* Feature Laundering */}
+      <div className="card" style={{ padding: 0 }}>
+        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
+          Feature Laundering Detection
+        </div>
+        {laundering.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm" style={{ color: '#5A6478' }}>No laundering analysis available.</div>
+        ) : (
+          <table>
+            <thead><tr><th>Protected Attribute</th><th>Reconstruction Accuracy</th><th>Baseline</th><th>Lift</th><th>Verdict</th></tr></thead>
+            <tbody>
+              {laundering.map((l: any, i: number) => (
+                <tr key={i}>
+                  <td className="font-medium">{l.protected_attribute}</td>
+                  <td style={{ color: l.laundering_detected ? '#FF165D' : '#06D6A0' }}>
+                    {(l.reconstruction_accuracy * 100).toFixed(1)}%</td>
+                  <td>{(l.baseline_accuracy * 100).toFixed(1)}%</td>
+                  <td style={{ color: l.lift_over_baseline > 0.4 ? '#FF165D' : '#8892A5' }}>
+                    {(l.lift_over_baseline * 100).toFixed(1)}%</td>
+                  <td><span className={`badge ${sevBadge(l.severity)}`}>{l.laundering_detected ? 'DETECTED' : 'PASS'}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Explanations */}
+      {laundering.filter((l: any) => l.laundering_detected).map((l: any, i: number) => (
+        <div key={i} className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.2)', background: 'rgba(255, 22, 93, 0.03)' }}>
+          <div className="flex items-start gap-2">
+            <AlertTriangle size={14} style={{ color: '#FF165D', marginTop: 2 }} />
+            <div className="text-sm" style={{ color: '#C8CCD4' }}>{l.explanation}</div>
+          </div>
+        </div>
+      ))}
+
+      {/* SHAP Analysis */}
+      {explainability && Object.keys(explainability).length > 0 ? (
+        Object.entries(explainability).map(([attr, data]: [string, any]) => (
+          <div key={attr} className="card space-y-3">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Zap size={14} style={{ color: '#3EC1D3' }} />
+              SHAP Analysis — {attr}
+            </h3>
+
+            {/* Top features */}
+            {data.top_features?.length > 0 && (
+              <div>
+                <div className="text-xs font-semibold mb-2" style={{ color: '#8892A5' }}>Top Features by Importance</div>
+                <div className="space-y-1">
+                  {data.top_features.slice(0, 10).map((f: any) => {
+                    const maxImp = data.top_features[0]?.importance || 1;
+                    const pct = (f.importance / maxImp) * 100;
+                    return (
+                      <div key={f.feature} className="flex items-center gap-2">
+                        <span className="text-xs w-32 truncate" style={{ color: '#8892A5' }}>{f.feature}</span>
+                        <div className="flex-1 h-3 rounded-full" style={{ background: '#1A1F2B' }}>
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#3EC1D3' }} />
+                        </div>
+                        <span className="text-[10px] w-12 text-right" style={{ color: '#5A6478' }}>{f.importance.toFixed(4)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Disparity flags */}
+            {data.disparity_flags?.length > 0 && (
+              <div className="card" style={{ padding: 0, borderColor: 'rgba(255, 154, 0, 0.2)' }}>
+                <div className="px-4 py-2 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#FF9A00' }}>
+                  SHAP Disparity Flags — {data.disparity_flags.length} features
+                </div>
+                <table>
+                  <thead><tr><th>Feature</th><th>Disparity Ratio</th><th>Explanation</th></tr></thead>
+                  <tbody>
+                    {data.disparity_flags.map((f: any, i: number) => (
+                      <tr key={i}>
+                        <td className="font-medium">{f.feature}</td>
+                        <td style={{ color: '#FF9A00' }}>{f.disparity_ratio}x</td>
+                        <td className="text-xs" style={{ color: '#8892A5' }}>{f.explanation}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {data.error && (
+              <div className="text-xs" style={{ color: '#FF9A00' }}>⚠ {data.error}</div>
+            )}
+          </div>
+        ))
+      ) : (
+        <div className="card flex items-center gap-3" style={{ background: 'rgba(62, 193, 211, 0.04)', borderColor: 'rgba(62, 193, 211, 0.2)' }}>
+          <Info size={18} style={{ color: '#3EC1D3' }} />
+          <div>
+            <div className="text-sm font-medium">SHAP analysis unavailable</div>
+            <div className="text-xs" style={{ color: '#8892A5' }}>
+              {audit.dataOnly ? 'Upload a model file to enable SHAP explainability analysis.' : 'SHAP data not generated for this audit.'}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ==================== FIXES ==================== */
+function FixesTab({ audit }: { audit: any }) {
+  const dataBias = audit.dataBias || {};
+  const laundering = audit.featureLaundering || [];
+  const proxies = audit.proxies || [];
+  const profiles = audit.profiles || [];
+
+  const fixes: any[] = [];
+
+  // DI fixes
+  Object.values(dataBias).forEach((b: any) => {
+    if (b.severity === 'CRITICAL' || b.severity === 'HIGH') {
+      fixes.push({
+        title: `Disparate Impact — ${b.attribute}`,
+        severity: b.severity,
+        technique: 'Reweighting + Threshold Adjustment',
+        description: b.explanation,
+        projected: `Move DI from ${b.metrics.disparate_impact?.toFixed(2)} toward 0.80+`,
+      });
+    }
+  });
+
+  // Laundering fixes
+  laundering.filter((l: any) => l.laundering_detected).forEach((l: any) => {
+    fixes.push({
+      title: `Feature Laundering — ${l.protected_attribute}`,
+      severity: l.severity,
+      technique: 'Feature Removal / Decorrelation',
+      description: l.explanation,
+      projected: 'Remove correlated features or apply adversarial debiasing',
+    });
+  });
+
+  // Proxy fixes
+  proxies.filter((p: any) => p.risk_level === 'HIGH').forEach((p: any) => {
+    fixes.push({
+      title: `Proxy Variable — ${p.proxy_column}`,
+      severity: 'HIGH',
+      technique: 'Feature Removal',
+      description: p.explanation,
+      projected: `Remove or decorrelate '${p.proxy_column}'`,
+    });
+  });
+
+  // Imbalance fixes
+  profiles.filter((p: any) => p.imbalance_warning).forEach((p: any) => {
+    fixes.push({
+      title: `Group Imbalance — ${p.attribute}`,
+      severity: 'MEDIUM',
+      technique: 'SMOTE Oversampling',
+      description: `Imbalance ratio of ${p.imbalance_ratio}x detected.`,
+      projected: 'Apply SMOTE to balance group representation',
+    });
+  });
+
+  // Model bias fixes — flip rates
+  const modelBias = audit.modelBias || {};
+  Object.entries(modelBias).forEach(([attr, data]: [string, any]) => {
+    if (attr === '_equalized_odds') return;
+    if (data.max_flip_rate > 0.10) {
+      fixes.push({
+        title: `Counterfactual Sensitivity — ${attr}`,
+        severity: data.max_flip_rate > 0.25 ? 'CRITICAL' : 'HIGH',
+        technique: 'Adversarial Debiasing / Constraint Training',
+        description: `Changing '${attr}' flips ${(data.max_flip_rate * 100).toFixed(1)}% of predictions. Model is directly influenced by this protected attribute.`,
+        projected: `Retrain with fairness constraints to reduce flip rate below 10%`,
+      });
+    }
+  });
+
+  // Model bias fixes — equalized odds gaps
+  const eqOdds = modelBias._equalized_odds || {};
+  Object.entries(eqOdds).forEach(([attr, groups]: [string, any]) => {
+    const fprs = Object.values(groups).map((g: any) => g.fpr);
+    const fnrs = Object.values(groups).map((g: any) => g.fnr);
+    const fprGap = fprs.length >= 2 ? Math.max(...fprs) - Math.min(...fprs) : 0;
+    const fnrGap = fnrs.length >= 2 ? Math.max(...fnrs) - Math.min(...fnrs) : 0;
+    if (fprGap > 0.1 || fnrGap > 0.1) {
+      fixes.push({
+        title: `Equalized Odds Gap — ${attr}`,
+        severity: fprGap > 0.2 || fnrGap > 0.2 ? 'CRITICAL' : 'HIGH',
+        technique: 'Post-Processing Calibration',
+        description: `FPR gap: ${(fprGap * 100).toFixed(1)}%, FNR gap: ${(fnrGap * 100).toFixed(1)}% across ${attr} groups. Model errors are unevenly distributed.`,
+        projected: 'Apply threshold calibration per group to equalize error rates',
+      });
+    }
+  });
+
+  if (fixes.length === 0) return (
+    <div className="card flex items-center gap-3 py-8" style={{ background: 'rgba(6, 214, 160, 0.04)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
+      <CheckCircle2 size={20} style={{ color: '#06D6A0' }} />
+      <div className="text-sm font-medium" style={{ color: '#06D6A0' }}>No critical issues requiring fixes.</div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      {fixes.map((f, i) => (
+        <div key={i} className="card">
+          <div className="flex items-center gap-2 mb-2">
+            <Wrench size={14} style={{ color: '#3EC1D3' }} />
+            <span className="text-sm font-semibold">{f.title}</span>
+            <span className={`badge ${sevBadge(f.severity)}`}>{f.severity}</span>
+          </div>
+          <div className="text-sm mb-2" style={{ color: '#C8CCD4' }}>{f.description}</div>
+          <div className="flex items-center gap-4 text-xs" style={{ color: '#8892A5' }}>
+            <span><strong style={{ color: '#3EC1D3' }}>Technique:</strong> {f.technique}</span>
+            <span><strong style={{ color: '#06D6A0' }}>Projected:</strong> {f.projected}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ==================== LEGAL ==================== */
+function LegalTab({ audit }: { audit: any }) {
+  const regs = audit.regulationMap || [];
+
+  return (
+    <div className="space-y-3">
+      {/* Disclaimer Banner */}
+      <div className="card" style={{ background: 'rgba(255, 154, 0, 0.05)', borderColor: 'rgba(255, 154, 0, 0.2)' }}>
+        <div className="flex items-start gap-2">
+          <Info size={16} style={{ color: '#FF9A00', marginTop: 2, flexShrink: 0 }} />
+          <div>
+            <div className="text-xs font-bold" style={{ color: '#FF9A00' }}>DISCLAIMER: RISK INDICATORS ONLY</div>
+            <div className="text-[10px] mt-1" style={{ color: '#C8CCD4' }}>
+              This report highlights statistical risks based on fairness metrics and maps them to relevant compliance frameworks for {audit.domain} targeting {audit.jurisdiction}. 
+              It does not constitute formal legal advice, nor does it definitively declare legal liability. 
+              Consult with legal counsel before making compliance determinations.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {regs.length === 0 ? (
+        <div className="card flex items-center gap-3 py-8" style={{ background: 'rgba(6, 214, 160, 0.04)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
+          <CheckCircle2 size={20} style={{ color: '#06D6A0' }} />
+          <div className="text-sm font-medium" style={{ color: '#06D6A0' }}>No regulation risk indicators triggered.</div>
+        </div>
+      ) : (
+        <>
+          <div className="text-xs flex items-center justify-between" style={{ color: '#8892A5' }}>
+            <span>{regs.length} compliance risk mappings triggered</span>
+            <span className="badge badge-medium">Jurisdiction: {audit.jurisdiction || 'Global'}</span>
+          </div>
+          {regs.map((r: any, i: number) => (
+            <div key={i} className="card" style={{ borderColor: r.compliance_risk?.includes('CRITICAL') ? 'rgba(255, 22, 93, 0.3)' : 'rgba(255, 154, 0, 0.2)' }}>
+              <div className="flex items-start gap-3">
+                <Scale size={16} style={{ color: '#FF9A00', marginTop: 2, flexShrink: 0 }} />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-semibold">{r.regulation}</span>
+                    <span className={`badge ${sevBadge(r.compliance_risk)}`}>{r.compliance_risk} RISK</span>
+                  </div>
+                  <div className="text-xs font-medium mb-1" style={{ color: '#3EC1D3' }}>{r.clause}</div>
+                  <div className="text-xs mb-2" style={{ color: '#C8CCD4' }}>{r.indicator_note || r.description}</div>
+                  <div className="flex flex-col gap-1 text-xs px-3 py-2 rounded bg-[#1A1F2B]">
+                    <div><span style={{ color: '#8892A5' }}>Triggered by:</span> <strong style={{ color: '#FF165D' }}>{r.triggered_by}</strong></div>
+                    <div><span style={{ color: '#8892A5' }}>Mitigation:</span> <span style={{ color: '#06D6A0' }}>{r.recommended_mitigation}</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ---- Helpers ---- */
+function Mini({ label, value, sub, color }: { label: string; value: string; sub: string; color: string }) {
   return (
     <div className="card">
       <div className="text-[11px] font-medium mb-1" style={{ color: '#8892A5' }}>{label}</div>

@@ -32,7 +32,7 @@ def initialize_firebase():
         "storageBucket": FIREBASE_STORAGE_BUCKET,
     })
     _initialized = True
-    print(f"✓ Firebase Admin initialized — bucket: {FIREBASE_STORAGE_BUCKET}")
+    print(f"[OK] Firebase Admin initialized - bucket: {FIREBASE_STORAGE_BUCKET}")
 
 
 def download_from_storage(storage_path: str) -> Path:
