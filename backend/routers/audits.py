@@ -1,21 +1,17 @@
 """
-Audit router — Create, retrieve, and list audits.
-Handles the full flow: create audit → run preprocessing → store results in Firestore.
+Audit router — Create, retrieve, list audits.
+Runs full analysis pipeline (Phase 4) async via BackgroundTasks.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from datetime import datetime
-import pandas as pd
-from pathlib import Path
+import traceback
 
-from core.firebase_init import download_from_storage, cleanup_temp_file
-from services.preprocessing.schema_parser import parse_schema
-from services.preprocessing.proxy_detector import detect_proxies
-from services.preprocessing.data_profiler import profile_data
+from services.analysis.pipeline import run_full_pipeline
 
-import firebase_admin
 from firebase_admin import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 router = APIRouter()
 
@@ -34,43 +30,58 @@ class CreateAuditRequest(BaseModel):
     deployed: bool = False
     deployedSince: str | None = None
     decisionsPerMonth: int | None = None
+    jurisdiction: str = "Global"
 
 
-def _load_dataframe(local_path: Path) -> pd.DataFrame:
-    ext = local_path.suffix.lower()
-    if ext == ".csv":
-        return pd.read_csv(local_path)
-    elif ext == ".json":
-        return pd.read_json(local_path)
-    elif ext == ".parquet":
-        return pd.read_parquet(local_path)
-    else:
-        raise ValueError(f"Unsupported format: {ext}")
+def _run_pipeline_background(config: dict, audit_id: str, doc_ref):
+    """Background task: run full pipeline then save results to Firestore."""
+    try:
+        results = run_full_pipeline(config, audit_id)
+
+        update = {
+            "status": "COMPLETE",
+            "rowCount": results.get("schema", {}).get("row_count", 0),
+            "columnCount": results.get("schema", {}).get("column_count", 0),
+            "schema": results.get("schema"),
+            "binning": results.get("binning"),
+            "proxies": results.get("proxies"),
+            "profiles": results.get("profiles"),
+            "dataBias": results.get("dataBias"),
+            "modelBias": results.get("modelBias"),
+            "flipSensitivity": results.get("flipSensitivity"),
+            "explainability": results.get("explainability"),
+            "intersectional": results.get("intersectional"),
+            "featureLaundering": results.get("featureLaundering"),
+            "historicalHarm": results.get("historicalHarm"),
+            "regulationMap": results.get("regulationMap"),
+            "severity": results.get("severity"),
+            "fairnessScore": results.get("severity", {}).get("fairness_score", 0),
+            "letterGrade": results.get("severity", {}).get("letter_grade", "?"),
+            "modelError": results.get("modelError"),
+            "explainabilityError": results.get("explainabilityError"),
+        }
+        doc_ref.update(update)
+    except Exception as e:
+        try:
+            doc_ref.update({
+                "status": "FAILED",
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+            })
+        except Exception:
+            pass
 
 
 @router.post("")
-async def create_audit(req: CreateAuditRequest):
+async def create_audit(req: CreateAuditRequest, background_tasks: BackgroundTasks):
     """
-    Create a new audit:
-    1. Download dataset from GCS
-    2. Run schema parser, proxy detector, data profiler
-    3. Store everything in Firestore
-    4. Return audit ID + preprocessing results
+    Create audit doc → immediately return audit ID.
+    Pipeline runs async in background, updates Firestore when done.
+    Frontend polls GET /api/audits/{id} for status.
     """
-    local_path = None
     try:
         db = firestore.client()
 
-        # Download dataset from GCS
-        local_path = download_from_storage(req.storagePath)
-        df = _load_dataframe(local_path)
-
-        # Run preprocessing pipeline
-        schema = parse_schema(df)
-        proxies = detect_proxies(df, req.protectedCols)
-        profiles = profile_data(df, req.protectedCols, req.labelCol, req.positiveLabel)
-
-        # Build audit document
         audit_doc = {
             "orgId": req.orgId,
             "name": req.name,
@@ -85,40 +96,31 @@ async def create_audit(req: CreateAuditRequest):
             "deployed": req.deployed,
             "deployedSince": req.deployedSince,
             "decisionsPerMonth": req.decisionsPerMonth,
-            "status": "COMPLETE",
+            "jurisdiction": req.jurisdiction,
+            "status": "PROCESSING",
             "createdAt": datetime.utcnow().isoformat(),
-            "rowCount": schema["row_count"],
-            "columnCount": schema["column_count"],
-            # Preprocessing results
-            "schema": schema,
-            "proxies": proxies,
-            "profiles": profiles,
+            "pipeline": {},
         }
-
-        # Save to Firestore
         doc_ref = db.collection("audits").document()
         doc_ref.set(audit_doc)
+        audit_id = doc_ref.id
+
+        # Run pipeline async — returns immediately
+        config = req.model_dump()
+        background_tasks.add_task(_run_pipeline_background, config, audit_id, doc_ref)
 
         return {
-            "auditId": doc_ref.id,
-            "status": "COMPLETE",
-            "schema": schema,
-            "proxies": proxies,
-            "profiles": profiles,
+            "auditId": audit_id,
+            "status": "PROCESSING",
         }
 
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Audit creation failed: {str(e)}")
-    finally:
-        if local_path:
-            cleanup_temp_file(local_path)
 
 
 @router.get("/{audit_id}")
 async def get_audit(audit_id: str):
-    """Retrieve a single audit by ID."""
+    """Retrieve single audit by ID. Frontend polls this for status."""
     try:
         db = firestore.client()
         doc = db.collection("audits").document(audit_id).get()
@@ -133,11 +135,9 @@ async def get_audit(audit_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-from google.cloud.firestore_v1.base_query import FieldFilter
-
 @router.get("")
 async def list_audits(orgId: str):
-    """List all audits for an organization, newest first."""
+    """List all audits for org, newest first."""
     try:
         db = firestore.client()
         docs = (
@@ -150,7 +150,6 @@ async def list_audits(orgId: str):
             data = doc.to_dict()
             data["id"] = doc.id
             audits.append(data)
-        # Sort client-side to avoid needing a composite index
         audits.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
         return audits
     except Exception as e:

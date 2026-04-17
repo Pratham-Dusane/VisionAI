@@ -37,6 +37,7 @@ export async function createAudit(params: {
   deployed: boolean;
   deployedSince?: string;
   decisionsPerMonth?: number;
+  jurisdiction: string;
 }) {
   const res = await fetch(`${API_BASE}/api/audits`, {
     method: 'POST',

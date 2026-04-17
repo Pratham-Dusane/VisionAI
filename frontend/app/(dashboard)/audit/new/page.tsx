@@ -16,6 +16,7 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
+  Calendar,
 } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -34,6 +35,14 @@ const DOMAINS = [
   'Other',
 ];
 
+const JURISDICTIONS = [
+  'Global',
+  'North America',
+  'Europe',
+  'APAC',
+  'India',
+];
+
 interface ColumnInfo {
   name: string;
   dtype: string;
@@ -43,6 +52,73 @@ interface ColumnInfo {
   sensitivity_score: number;
   flagged_reason: string | null;
   auto_flagged: boolean;
+}
+
+function CustomDatePicker({ value, onChange }: { value: string, onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(() => value ? new Date(value) : new Date());
+
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+  const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+
+  const handleDateClick = (day: number) => {
+    const fn = (n: number) => n.toString().padStart(2, '0');
+    const newDate = `${currentMonth.getFullYear()}-${fn(currentMonth.getMonth() + 1)}-${fn(day)}`;
+    onChange(newDate);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative">
+      <div className="flex items-center input" style={{ padding: '6px 10px', minHeight: '38px', position: 'relative' }}>
+        <input 
+          type="text" 
+          value={value} 
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="YYYY-MM-DD"
+          className="bg-transparent border-none outline-none w-full text-sm"
+          style={{ color: '#E8EAED', outline: 'none', boxShadow: 'none' }}
+        />
+        <button type="button" onClick={() => setOpen(!open)} className="ml-2 flex flex-shrink-0 cursor-pointer" style={{ color: '#8892A5', background: 'transparent', border: 'none' }}>
+          <Calendar size={14} />
+        </button>
+      </div>
+      {open && (
+        <div className="absolute z-50 mt-1 p-3 rounded-lg shadow-xl" style={{ background: '#1A1F2B', border: '1px solid #2A3040', width: '240px' }}>
+          <div className="flex justify-between items-center mb-3">
+             <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() - 1)))} className="p-1 hover:text-[#3EC1D3]" style={{ color: '#E8EAED', background: 'transparent', border: 'none', cursor: 'pointer' }}>&lt;</button>
+             <span className="text-sm font-semibold" style={{ color: '#E8EAED' }}>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+             <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)))} className="p-1 hover:text-[#3EC1D3]" style={{ color: '#E8EAED', background: 'transparent', border: 'none', cursor: 'pointer' }}>&gt;</button>
+          </div>
+          <div className="grid grid-cols-7 gap-1 text-center text-xs mb-1 font-semibold" style={{ color: '#8892A5' }}>
+            {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => <div key={d}>{d}</div>)}
+          </div>
+          <div className="grid grid-cols-7 gap-1 text-center text-sm">
+            {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`}/>)}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const d = i + 1;
+              const isSelected = value === `${currentMonth.getFullYear()}-${(currentMonth.getMonth()+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+              return (
+                <button 
+                  key={d} type="button"
+                  onClick={() => handleDateClick(d)}
+                  className="p-1 rounded transition-colors text-xs hover:bg-[#2A3040]"
+                  style={{ 
+                    background: isSelected ? 'rgba(62, 193, 211, 0.2)' : 'transparent', 
+                    color: isSelected ? '#3EC1D3' : '#E8EAED',
+                    cursor: 'pointer',
+                    border: 'none'
+                  }}
+                >
+                  {d}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function NewAuditPage() {
@@ -85,6 +161,7 @@ export default function NewAuditPage() {
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState('');
   const [threshold, setThreshold] = useState(0.8);
+  const [jurisdiction, setJurisdiction] = useState('Global');
 
   // Parse CSV preview client-side (instant feedback)
   const parseClientPreview = (file: File) => {
@@ -491,6 +568,24 @@ export default function NewAuditPage() {
               </div>
             </div>
 
+            <div>
+              <label className="text-xs font-semibold mb-1 block" style={{ color: '#8892A5' }}>
+                Jurisdiction
+              </label>
+              <select
+                className="select w-full"
+                value={jurisdiction}
+                onChange={(e) => setJurisdiction(e.target.value)}
+              >
+                {JURISDICTIONS.map((j) => (
+                  <option key={j} value={j}>{j}</option>
+                ))}
+              </select>
+              <span className="text-[10px] mt-1 block" style={{ color: '#5A6478' }}>
+                Select the legal jurisdiction to filter relevant compliance frameworks
+              </span>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold mb-1 block" style={{ color: '#8892A5' }}>
@@ -592,11 +687,9 @@ export default function NewAuditPage() {
                     <label className="text-[11px] block mb-1" style={{ color: '#5A6478' }}>
                       Deployed since
                     </label>
-                    <input
-                      type="date"
-                      className="input"
+                    <CustomDatePicker 
                       value={deployedSince}
-                      onChange={(e) => setDeployedSince(e.target.value)}
+                      onChange={setDeployedSince}
                     />
                   </div>
                   <div>
@@ -679,13 +772,15 @@ export default function NewAuditPage() {
                 <span style={{ color: '#8892A5' }}>Dataset</span>
                 <span>{dataFile?.name || '—'} ({rowCount.toLocaleString()} rows)</span>
                 <span style={{ color: '#8892A5' }}>Model</span>
-                <span>{dataOnly ? 'Data-only' : modelFile?.name || 'None'}</span>
+                <span>{dataOnly ? 'Data-only' : modelFile?.name || (modelStoragePath ? 'Uploaded' : 'None')}</span>
                 <span style={{ color: '#8892A5' }}>Label Column</span>
                 <span>{labelCol || '—'}</span>
                 <span style={{ color: '#8892A5' }}>Positive Value</span>
                 <span>{positiveLabel || '—'}</span>
                 <span style={{ color: '#8892A5' }}>Protected Attributes</span>
                 <span>{protectedCols.join(', ') || '—'}</span>
+                <span style={{ color: '#8892A5' }}>Jurisdiction</span>
+                <span>{jurisdiction}</span>
                 <span style={{ color: '#8892A5' }}>Fairness Threshold</span>
                 <span>{threshold.toFixed(2)}</span>
                 {deployed && (
@@ -739,6 +834,7 @@ export default function NewAuditPage() {
                       deployed,
                       deployedSince: deployedSince || undefined,
                       decisionsPerMonth: decisionsPerMonth ? parseInt(decisionsPerMonth) : undefined,
+                      jurisdiction,
                     });
                     router.push(`/audit/${result.auditId}`);
                   } catch (err: any) {
