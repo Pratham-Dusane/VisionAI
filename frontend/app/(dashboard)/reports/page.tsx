@@ -10,7 +10,7 @@ export default function ReportsPage() {
   return (
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Reports' }]} />
-      <div className="flex-1 p-5 space-y-3 animate-fade-in">
+      <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-bold">Audit Reports</h1>
           <div className="flex gap-2">
@@ -18,7 +18,7 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-6">
           {completedAudits.map((audit) => (
             <div key={audit.id} className="card card-glow flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"

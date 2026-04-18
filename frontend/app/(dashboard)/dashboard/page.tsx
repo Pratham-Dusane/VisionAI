@@ -89,9 +89,9 @@ export default function DashboardPage() {
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard' }]} />
 
-      <div className="flex-1 p-5 space-y-4 animate-fade-in">
+      <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         {/* Stats Row */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 gap-6">
           {stats.map((s) => {
             const Icon = s.icon;
             return (

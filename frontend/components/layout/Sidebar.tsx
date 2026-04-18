@@ -53,12 +53,13 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen z-50 flex flex-col transition-all duration-300 ${
+      className={`fixed left-4 top-4 z-50 flex flex-col transition-all duration-300 rounded-3xl ${
         collapsed ? 'w-[60px]' : 'w-[220px]'
       }`}
       style={{
+        height: 'calc(100vh - 32px)',
         background: 'var(--surface)',
-        borderRight: '1px solid var(--border)',
+        border: '1px solid var(--border)',
       }}
     >
       {/* Logo */}
@@ -86,13 +87,12 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 mx-2 mb-0.5 rounded-lg transition-all duration-200 group ${
-                collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
+              className={`flex items-center gap-3 mx-2 mb-0.5 rounded-full transition-all duration-200 group ${
+                collapsed ? 'justify-center px-0 py-2.5' : 'px-4 py-2.5'
               }`}
               style={{
                 background: active ? 'var(--sidebar-active-bg)' : 'transparent',
                 color: active ? 'var(--sidebar-active-text)' : 'var(--muted)',
-                borderLeft: active && !collapsed ? '3px solid var(--sidebar-active-border)' : '3px solid transparent',
               }}
             >
               <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
