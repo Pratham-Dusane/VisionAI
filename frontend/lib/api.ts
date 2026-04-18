@@ -86,3 +86,71 @@ export async function listAudits(orgId: string) {
 
   return res.json();
 }
+
+/**
+ * Download PDF audit report.
+ */
+export async function exportPDF(auditId: string) {
+  const res = await fetch(`${API_BASE}/api/audits/${auditId}/export/pdf`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to export PDF (${res.status})`);
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `audit-${auditId}.pdf`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+/**
+ * Download legal compliance JSON export.
+ */
+export async function exportLegalJSON(auditId: string) {
+  const res = await fetch(`${API_BASE}/api/audits/${auditId}/export/legal`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to export legal JSON (${res.status})`);
+  }
+
+  const payload = await res.json();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `audit-${auditId}-legal.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+/**
+ * Download anonymized whistleblower export.
+ */
+export async function exportAnonJSON(auditId: string) {
+  const res = await fetch(`${API_BASE}/api/audits/${auditId}/export/anon`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to export anonymized report (${res.status})`);
+  }
+
+  const payload = await res.json();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `audit-${auditId}-anon.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.URL.revokeObjectURL(url);
+}

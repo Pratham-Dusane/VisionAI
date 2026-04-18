@@ -1,0 +1,16 @@
+{
+  "name": "visionai-reporting-pdf",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Node PDF renderer for VisionAI Phase 6 exports",
+  "scripts": {
+    "render": "node pdf_export.js"
+  },
+  "dependencies": {
+    "puppeteer": "^24.7.2",
+    "react": "^19.2.0",
+    "satori": "^0.13.2",
+    "sharp": "^0.34.2"
+  }
+}

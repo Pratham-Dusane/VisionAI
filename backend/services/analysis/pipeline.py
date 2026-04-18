@@ -42,9 +42,12 @@ def _load_dataframe(local_path: Path) -> pd.DataFrame:
 
 
 def _update_progress(db, audit_id: str, step: str, status: str):
+    ts = datetime.utcnow().isoformat()
     db.collection("audits").document(audit_id).update({
         f"pipeline.{step}": status,
-        "updatedAt": datetime.utcnow().isoformat(),
+        f"pipelineMeta.{step}.status": status,
+        f"pipelineMeta.{step}.updatedAt": ts,
+        "updatedAt": ts,
     })
 
 

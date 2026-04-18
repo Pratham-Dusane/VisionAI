@@ -19,3 +19,7 @@ temp_uploads/
 .vscode/
 .idea/
 *.swp
+
+# Node tooling for Puppeteer PDF renderer
+node_modules/
+services/reporting/node_pdf/node_modules/
