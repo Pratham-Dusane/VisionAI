@@ -183,8 +183,8 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button className="btn btn-secondary btn-sm"><Share2 size={13} /> Share</button>
-            <button className="btn btn-primary btn-sm"><Download size={13} /> PDF</button>
+            <button className="btn btn-outline btn-sm"><Share2 size={13} /> Share</button>
+            <button className="btn btn-outline btn-sm"><Download size={13} /> PDF</button>
           </div>
         </div>
 

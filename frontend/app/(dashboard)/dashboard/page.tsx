@@ -236,14 +236,14 @@ export default function DashboardPage() {
                   <button
                     onClick={() => setPage(Math.max(0, page - 1))}
                     disabled={page === 0}
-                    className="btn btn-secondary btn-sm"
+                    className="btn btn-outline btn-sm"
                   >
                     <ChevronLeft size={13} />
                   </button>
                   <button
                     onClick={() => setPage(page + 1)}
                     disabled={(page + 1) * perPage >= audits.length}
-                    className="btn btn-secondary btn-sm"
+                    className="btn btn-outline btn-sm"
                   >
                     <ChevronRight size={13} />
                   </button>

@@ -61,7 +61,7 @@ export default function SettingsPage() {
               <code className="text-xs" style={{ color: 'var(--muted)' }}>vai_live_••••••••••••</code>
               <span className="badge badge-pass">Active</span>
             </div>
-            <button className="btn btn-secondary btn-sm"><Key size={12} /> Generate New Key</button>
+            <button className="btn btn-outline btn-sm"><Key size={12} /> Generate New Key</button>
           </div>
 
           {/* Toggles */}

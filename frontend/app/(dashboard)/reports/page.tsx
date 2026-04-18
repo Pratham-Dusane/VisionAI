@@ -14,7 +14,7 @@ export default function ReportsPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-bold">Audit Reports</h1>
           <div className="flex gap-2">
-            <button className="btn btn-secondary btn-sm"><Filter size={13} /> Filter</button>
+            <button className="btn btn-outline btn-sm"><Filter size={13} /> Filter</button>
           </div>
         </div>
 
@@ -35,7 +35,7 @@ export default function ReportsPage() {
                   <span style={{ color: getScoreColor(audit.fairnessScore || 0) }}>Score: {audit.fairnessScore}</span>
                 </div>
               </div>
-              <button className="btn btn-secondary btn-sm shrink-0"><Download size={12} /> PDF</button>
+              <button className="btn btn-outline btn-sm shrink-0"><Download size={12} /> PDF</button>
             </div>
           ))}
         </div>
