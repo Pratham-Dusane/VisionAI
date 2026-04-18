@@ -19,12 +19,26 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
 
-const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'New Audit', href: '/audit/new', icon: PlusCircle },
-  { label: 'Drift Monitor', href: '/drift', icon: TrendingUp },
-  { label: 'Reports', href: '/reports', icon: FileText },
-  { label: 'Settings', href: '/settings', icon: Settings },
+const NAV_GROUPS = [
+  {
+    title: 'Core',
+    items: [
+      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    ]
+  },
+  {
+    title: 'Monitoring',
+    items: [
+      { label: 'Drift Monitor', href: '/drift', icon: TrendingUp },
+      { label: 'Reports', href: '/reports', icon: FileText },
+    ]
+  },
+  {
+    title: 'Administration',
+    items: [
+      { label: 'Settings', href: '/settings', icon: Settings },
+    ]
+  }
 ];
 
 function getInitials(name?: string | null, email?: string | null): string {
@@ -78,30 +92,53 @@ export default function Sidebar() {
         )}
       </div>
 
+      {/* Compose Button */}
+      <div className="px-3 py-3">
+        <Link
+          href="/audit/new"
+          className={`flex items-center gap-3 w-full bg-white transition-shadow shadow-sm hover:shadow-md border border-border-light text-primary font-semibold ${
+            collapsed ? 'justify-center p-3 rounded-2xl' : 'px-4 py-3.5 rounded-2xl'
+          }`}
+          style={{ background: 'var(--surface)' }}
+        >
+          <PlusCircle size={20} strokeWidth={2.5} style={{ color: 'var(--primary)' }} />
+          {!collapsed && <span>New Audit</span>}
+        </Link>
+      </div>
+
       {/* Nav */}
-      <nav className="flex-1 py-2 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 mx-2 mb-0.5 rounded-full transition-all duration-200 group ${
-                collapsed ? 'justify-center px-0 py-2.5' : 'px-4 py-2.5'
-              }`}
-              style={{
-                background: active ? 'var(--sidebar-active-bg)' : 'transparent',
-                color: active ? 'var(--sidebar-active-text)' : 'var(--muted)',
-              }}
-            >
-              <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
-              {!collapsed && (
-                <span className="text-[13px] font-medium">{item.label}</span>
-              )}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 py-1 overflow-y-auto">
+        {NAV_GROUPS.map((group, groupIdx) => (
+          <div key={group.title} className={groupIdx > 0 ? 'mt-4' : ''}>
+            {!collapsed && (
+              <div className="px-5 mb-1 text-[10px] font-bold tracking-wider uppercase" style={{ color: 'var(--placeholder)' }}>
+                {group.title}
+              </div>
+            )}
+            {group.items.map((item) => {
+              const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 mx-2 mb-0.5 rounded-full transition-all duration-200 group ${
+                    collapsed ? 'justify-center px-0 py-2.5' : 'px-4 py-2.5'
+                  }`}
+                  style={{
+                    background: active ? 'var(--sidebar-active-bg)' : 'transparent',
+                    color: active ? 'var(--sidebar-active-text)' : 'var(--muted)',
+                  }}
+                >
+                  <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
+                  {!collapsed && (
+                    <span className="text-[13px] font-medium">{item.label}</span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Bottom */}

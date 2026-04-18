@@ -747,7 +747,7 @@ export default function NewAuditPage() {
             </div>
 
             <div className="flex justify-between">
-              <button className="btn btn-secondary" onClick={() => setStep(1)}>
+              <button className="btn btn-outline" onClick={() => setStep(1)}>
                 <ChevronLeft size={14} /> Back
               </button>
               <button className="btn btn-primary" onClick={() => setStep(3)}>
@@ -808,7 +808,7 @@ export default function NewAuditPage() {
             </div>
 
             <div className="flex justify-between">
-              <button className="btn btn-secondary" onClick={() => setStep(2)}>
+              <button className="btn btn-outline" onClick={() => setStep(2)}>
                 <ChevronLeft size={14} /> Back
               </button>
               <button
