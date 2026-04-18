@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, Briefcase, Users, ArrowRight, Eye, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
@@ -24,13 +24,18 @@ export default function OnboardingPage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Redirect checks
-  if (!loading && !user) {
-    router.replace('/login');
-    return null;
-  }
-  if (!loading && !orgLoading && org) {
-    router.replace('/dashboard');
+  // Redirect checks must run in an effect, not during render.
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login');
+      return;
+    }
+    if (!loading && !orgLoading && org) {
+      router.replace('/dashboard');
+    }
+  }, [loading, user, orgLoading, org, router]);
+
+  if ((!loading && !user) || (!loading && !orgLoading && !!org)) {
     return null;
   }
 
