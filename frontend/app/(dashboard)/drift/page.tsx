@@ -56,22 +56,22 @@ export default function DriftPage() {
         {/* Stats */}
         <div className="grid grid-cols-4 gap-6">
           <div className="card">
-            <div className="text-xs font-medium" style={{ color: 'var(--muted)' }}>Current Score</div>
+            <div className="label-text mb-2" style={{ color: 'var(--muted)' }}>Current Score</div>
             <div className="text-xl font-bold" style={{ color: getScoreColor(latest.fairnessScore) }}>{latest.fairnessScore}</div>
           </div>
           <div className="card">
-            <div className="text-xs font-medium" style={{ color: 'var(--muted)' }}>Change</div>
+            <div className="label-text mb-2" style={{ color: 'var(--muted)' }}>Change</div>
             <div className="flex items-center gap-1.5">
               <TrendingDown size={16} style={{ color: 'var(--danger)' }} />
               <span className="text-xl font-bold" style={{ color: 'var(--danger)' }}>{scoreDelta}</span>
             </div>
           </div>
           <div className="card">
-            <div className="text-xs font-medium" style={{ color: 'var(--muted)' }}>Batches</div>
+            <div className="label-text mb-2" style={{ color: 'var(--muted)' }}>Batches</div>
             <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{data.length}</div>
           </div>
           <div className="card">
-            <div className="text-xs font-medium" style={{ color: 'var(--muted)' }}>Latest Batch</div>
+            <div className="label-text mb-2" style={{ color: 'var(--muted)' }}>Latest Batch</div>
             <div className="text-xl font-bold">{latest.date}</div>
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function DriftPage() {
         {/* Chart */}
         <div className="card" style={{ padding: '16px 12px' }}>
           <div className="flex items-center justify-between mb-4 px-2">
-            <h2 className="text-sm font-semibold">Fairness Score & DI Ratio Over Time</h2>
+            <h2 className="card-title">Fairness Score & DI Ratio Over Time</h2>
             <button className="btn btn-primary btn-sm" onClick={() => setShowUpload(!showUpload)}>
               <Upload size={13} /> Upload New Batch
             </button>
@@ -132,25 +132,34 @@ export default function DriftPage() {
         {/* Upload Drawer */}
         {showUpload && (
           <div className="card" style={{ borderColor: 'color-mix(in srgb, var(--primary) 30%, transparent)' }}>
-            <h3 className="text-sm font-semibold mb-3">Upload New Data Batch</h3>
+            <h3 className="card-title mb-4">Upload New Data Batch</h3>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>
+                <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>
                   <Database size={11} className="inline mr-1" /> Data File
                 </label>
-                <div className="upload-zone py-6">
+                <div 
+                  className="upload-zone py-6"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                    }
+                  }}
+                >
                   <Upload size={20} style={{ color: 'var(--primary)', margin: '0 auto 4px' }} />
                   <div className="text-xs">Drop CSV here</div>
                 </div>
               </div>
               <div>
-                <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>
+                <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>
                   <Calendar size={11} className="inline mr-1" /> Collection Date
                 </label>
                 <input type="date" className="input" />
               </div>
               <div>
-                <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Notes</label>
+                <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>Notes</label>
                 <textarea className="input" style={{ minHeight: 80 }} placeholder="Optional notes about this batch..." />
               </div>
             </div>
@@ -164,7 +173,7 @@ export default function DriftPage() {
 
         {/* Batch History */}
         <div className="card" style={{ padding: 0 }}>
-          <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
+          <div className="px-4 py-3 card-title" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
             Batch History
           </div>
           <table>

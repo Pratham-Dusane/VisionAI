@@ -166,7 +166,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-lg font-bold">{audit.name}</h1>
+              <h1 className="page-title">{audit.name}</h1>
               <span className={`badge ${audit.status === 'COMPLETE' ? 'badge-pass' : 'badge-medium'}`}>{audit.status}</span>
             </div>
             <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--muted)' }}>
@@ -1237,7 +1237,7 @@ function Mini({ label, value, sub, color }: { label: string; value: string; sub:
   return (
     <div className="card">
       <div className="text-xs font-medium mb-1" style={{ color: 'var(--muted)' }}>{label}</div>
-      <div className="text-lg font-bold" style={{ color }}>{value}</div>
+      <div className="page-title" style={{ color }}>{value}</div>
       <div className="text-xs" style={{ color: 'var(--placeholder)' }}>{sub}</div>
     </div>
   );

@@ -89,7 +89,7 @@ export default function OnboardingPage() {
           >
             <Eye size={24} color="#FFFFFF" strokeWidth={2.5} />
           </div>
-          <h1 className="text-lg font-bold" style={{ color: 'var(--fg)' }}>
+          <h1 className="page-title" style={{ color: 'var(--fg)' }}>
             Set up your organization
           </h1>
           <p className="text-xs mt-1 text-center" style={{ color: 'var(--muted)' }}>
