@@ -43,29 +43,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setThemeState(t);
   };
 
-  // Prevent flash of wrong theme
-  if (!mounted) {
-    return (
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              try {
-                var t = localStorage.getItem('vai-theme');
-                if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-              } catch(e) {}
-            })();
-          `,
-        }}
-      />
-    );
-  }
-
+  // We don't render the script here anymore, it's in layout.tsx `<head>`
+  // Just render children to avoid hydration errors
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
-      {children}
+      <div style={{ visibility: mounted ? 'visible' : 'hidden' }}>
+        {children}
+      </div>
     </ThemeContext.Provider>
   );
+
+
 }
 
 export function useTheme() {
