@@ -1,0 +1,294 @@
+'use client';
+
+import { useRef, useEffect, useState } from 'react';
+import * as d3 from 'd3';
+
+interface IntersectionalHeatmapProps {
+  data: Array<{
+    group: string;
+    col_a: string;
+    val_a: string;
+    col_b: string;
+    val_b: string;
+    sample_size: number;
+    positive_rate: number;
+    di_vs_overall: number | null;
+    severity: string;
+    low_confidence?: boolean;
+    statistical_note?: string;
+  }>;
+}
+
+export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapProps) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedPair, setSelectedPair] = useState<string>('');
+  const [selectedCell, setSelectedCell] = useState<any>(null);
+
+  // Extract available attribute pairs
+  const pairs = new Map<string, { colA: string; colB: string }>();
+  data.forEach((d) => {
+    const key = `${d.col_a} × ${d.col_b}`;
+    if (!pairs.has(key)) pairs.set(key, { colA: d.col_a, colB: d.col_b });
+  });
+  const pairKeys = Array.from(pairs.keys());
+
+  // Auto-select first pair
+  useEffect(() => {
+    if (!selectedPair && pairKeys.length > 0) {
+      setSelectedPair(pairKeys[0]);
+    }
+  }, [pairKeys.length]);
+
+  useEffect(() => {
+    if (!svgRef.current || !containerRef.current || !selectedPair || data.length === 0) return;
+
+    const pair = pairs.get(selectedPair);
+    if (!pair) return;
+
+    // Filter to selected pair
+    const filtered = data.filter(
+      (d) => d.col_a === pair.colA && d.col_b === pair.colB
+    );
+
+    const rowValues = Array.from(new Set(filtered.map((d) => d.val_a)));
+    const colValues = Array.from(new Set(filtered.map((d) => d.val_b)));
+
+    const cellSize = Math.min(
+      Math.floor((containerRef.current.clientWidth - 140) / Math.max(colValues.length, 1)),
+      80
+    );
+
+    const margin = { top: 50, right: 20, bottom: 10, left: 120 };
+    const width = margin.left + colValues.length * cellSize + margin.right;
+    const height = margin.top + rowValues.length * cellSize + margin.bottom;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove();
+    svg.attr('width', width).attr('height', height);
+
+    const colorScale = (di: number | null) => {
+      if (di === null) return '#2A3040';
+      if (di >= 0.8) return '#06D6A0';
+      if (di >= 0.6) return '#FF9A00';
+      return '#FF165D';
+    };
+
+    const opacityScale = (di: number | null) => {
+      if (di === null) return 0.3;
+      return 0.15 + Math.min(Math.abs(1 - di), 0.5) * 1.4;
+    };
+
+    // Column labels (top)
+    svg.append('g')
+      .selectAll('text')
+      .data(colValues)
+      .join('text')
+      .attr('x', (_, i) => margin.left + i * cellSize + cellSize / 2)
+      .attr('y', margin.top - 10)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'var(--muted)')
+      .attr('font-size', 11)
+      .attr('font-weight', 600)
+      .text((d) => d.length > 10 ? d.slice(0, 10) + '…' : d);
+
+    // Row labels (left)
+    svg.append('g')
+      .selectAll('text')
+      .data(rowValues)
+      .join('text')
+      .attr('x', margin.left - 8)
+      .attr('y', (_, i) => margin.top + i * cellSize + cellSize / 2 + 4)
+      .attr('text-anchor', 'end')
+      .attr('fill', 'var(--muted)')
+      .attr('font-size', 11)
+      .attr('font-weight', 600)
+      .text((d) => d.length > 14 ? d.slice(0, 14) + '…' : d);
+
+    // Cells
+    const cells = svg.append('g');
+
+    rowValues.forEach((rowVal, ri) => {
+      colValues.forEach((colVal, ci) => {
+        const entry = filtered.find(
+          (d) => d.val_a === rowVal && d.val_b === colVal
+        );
+
+        const di = entry?.di_vs_overall ?? null;
+        const x = margin.left + ci * cellSize;
+        const y = margin.top + ri * cellSize;
+
+        const cell = cells.append('g')
+          .style('cursor', entry ? 'pointer' : 'default');
+
+        // Background rect
+        cell.append('rect')
+          .attr('x', x + 1)
+          .attr('y', y + 1)
+          .attr('width', cellSize - 2)
+          .attr('height', cellSize - 2)
+          .attr('rx', 4)
+          .attr('fill', colorScale(di))
+          .attr('fill-opacity', opacityScale(di))
+          .attr('stroke', colorScale(di))
+          .attr('stroke-width', 1)
+          .attr('stroke-opacity', 0.3);
+
+        // DI value text
+        cell.append('text')
+          .attr('x', x + cellSize / 2)
+          .attr('y', y + cellSize / 2 + 1)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('fill', di !== null ? colorScale(di) : 'var(--placeholder)')
+          .attr('font-size', 13)
+          .attr('font-weight', 700)
+          .text(di !== null ? di.toFixed(2) : '-');
+
+        // Sample size
+        if (entry) {
+          cell.append('text')
+            .attr('x', x + cellSize / 2)
+            .attr('y', y + cellSize / 2 + 14)
+            .attr('text-anchor', 'middle')
+            .attr('fill', 'var(--placeholder)')
+            .attr('font-size', 8)
+            .text(`n=${entry.sample_size}`);
+        }
+
+        // Click handler
+        if (entry) {
+          cell.on('click', () => {
+            setSelectedCell(entry);
+          });
+        }
+      });
+    });
+
+    // Axis labels
+    svg.append('text')
+      .attr('x', margin.left + (colValues.length * cellSize) / 2)
+      .attr('y', margin.top - 35)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'var(--primary)')
+      .attr('font-size', 11)
+      .attr('font-weight', 700)
+      .text(pair.colB);
+
+    svg.append('text')
+      .attr('x', 14)
+      .attr('y', margin.top + (rowValues.length * cellSize) / 2)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'var(--primary)')
+      .attr('font-size', 11)
+      .attr('font-weight', 700)
+      .attr('transform', `rotate(-90, 14, ${margin.top + (rowValues.length * cellSize) / 2})`)
+      .text(pair.colA);
+
+  }, [data, selectedPair]);
+
+  if (data.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      {/* Pair selector */}
+      {pairKeys.length > 1 && (
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+            Attribute Pair:
+          </label>
+          <select
+            className="select"
+            value={selectedPair}
+            onChange={(e) => { setSelectedPair(e.target.value); setSelectedCell(null); }}
+            style={{ minWidth: 200 }}
+          >
+            {pairKeys.map((k) => (
+              <option key={k} value={k}>{k}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="card" style={{ padding: '16px 12px', position: 'relative' }}>
+        <div className="flex items-center justify-between mb-3 px-2">
+          <h4 className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+            Intersectional Fairness Heatmap
+          </h4>
+          <div className="flex items-center gap-3 text-xs">
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: '#06D6A0' }} />
+              Pass (≥0.8)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: '#FF9A00' }} />
+              Medium (0.6–0.8)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: '#FF165D' }} />
+              Critical (&lt;0.6)
+            </span>
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          <div ref={containerRef} className="flex-1 overflow-x-auto">
+            <svg ref={svgRef} style={{ display: 'block' }} />
+          </div>
+
+          {/* Side panel on cell click */}
+          {selectedCell && (
+            <div className="shrink-0 w-56 p-3 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+              <button
+                className="float-right text-xs"
+                style={{ color: 'var(--placeholder)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                onClick={() => setSelectedCell(null)}
+              >
+                ✕
+              </button>
+              <div className="text-xs font-bold mb-2" style={{ color: 'var(--primary)' }}>
+                {selectedCell.group}
+              </div>
+              <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--muted)' }}>DI vs Overall</span>
+                  <span style={{
+                    color: selectedCell.di_vs_overall < 0.6 ? 'var(--danger)' :
+                      selectedCell.di_vs_overall < 0.8 ? 'var(--accent)' : 'var(--success)',
+                    fontWeight: 700,
+                  }}>
+                    {selectedCell.di_vs_overall?.toFixed(3)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--muted)' }}>Positive Rate</span>
+                  <span>{(selectedCell.positive_rate * 100).toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--muted)' }}>Sample Size</span>
+                  <span>{selectedCell.sample_size}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--muted)' }}>Severity</span>
+                  <span className={`badge ${selectedCell.severity === 'CRITICAL' ? 'badge-critical' : selectedCell.severity === 'HIGH' ? 'badge-high' : 'badge-pass'}`}
+                    style={{ fontSize: 9, padding: '1px 6px' }}>
+                    {selectedCell.severity}
+                  </span>
+                </div>
+                {selectedCell.low_confidence && (
+                  <div className="text-xs mt-1 p-1.5 rounded" style={{ background: 'var(--surface)', color: 'var(--accent)' }}>
+                    ⚠ {selectedCell.statistical_note || 'Low confidence (n < 30)'}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="text-xs px-2 mt-2" style={{ color: 'var(--placeholder)' }}>
+          Click any cell to see full metrics. Cell value = Disparate Impact vs overall positive rate.
+        </div>
+      </div>
+    </div>
+  );
+}

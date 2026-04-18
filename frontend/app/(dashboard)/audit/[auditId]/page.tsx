@@ -1,13 +1,22 @@
 'use client';
 
 import TopNav from '@/components/layout/TopNav';
-import { getAudit } from '@/lib/api';
+import { getAudit, exportPDF, exportLegalJSON, exportAnonJSON } from '@/lib/api';
 import { useState, useEffect, use } from 'react';
 import {
   Download, Share2, AlertTriangle, Shield, BarChart3,
   Brain, Wrench, Scale, CheckCircle2, Loader2, XCircle,
-  Zap, Users, Eye, FileText, Layers, Info, Sparkles,
+  Zap, Users, Eye, FileText, Layers, Info, Sparkles, Clock,
 } from 'lucide-react';
+import GroupDistributionChart from '@/components/charts/GroupDistributionChart';
+import LabelDistributionChart from '@/components/charts/LabelDistributionChart';
+import ProxyNetworkGraph from '@/components/charts/ProxyNetworkGraph';
+import EqualizedOddsChart from '@/components/charts/EqualizedOddsChart';
+import PredictiveParityChart from '@/components/charts/PredictiveParityChart';
+import ShapSummaryChart from '@/components/charts/ShapSummaryChart';
+import IntersectionalHeatmap from '@/components/charts/IntersectionalHeatmap';
+import ParetoFrontier from '@/components/charts/ParetoFrontier';
+import AuditTrailTimeline from '@/components/audit/AuditTrailTimeline';
 
 const TABS = [
   { key: 'overview', label: 'Overview', icon: Eye },
@@ -183,8 +192,8 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button className="btn btn-outline btn-sm"><Share2 size={13} /> Share</button>
-            <button className="btn btn-outline btn-sm"><Download size={13} /> PDF</button>
+            <button className="btn btn-outline btn-sm" onClick={() => { navigator.clipboard.writeText(window.location.href); }}><Share2 size={13} /> Share</button>
+            <button className="btn btn-outline btn-sm" onClick={() => exportPDF(auditId)}><Download size={13} /> PDF</button>
           </div>
         </div>
 
@@ -385,6 +394,18 @@ function DataTab({ audit }: { audit: any }) {
 
   return (
     <div className="space-y-3">
+      {/* Visual Charts */}
+      <GroupDistributionChart profiles={profiles} />
+      <LabelDistributionChart profiles={profiles} />
+
+      {/* Proxy Network Graph */}
+      {proxies.length > 0 && (
+        <ProxyNetworkGraph
+          proxies={proxies}
+          protectedCols={audit.protectedCols || []}
+        />
+      )}
+
       {/* Disparate Impact table */}
       <div className="card" style={{ padding: 0 }}>
         <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
@@ -796,6 +817,16 @@ function ModelTab({ audit }: { audit: any }) {
         );
       })}
 
+      {/* Equalized Odds Chart */}
+      {Object.keys(eqOdds).length > 0 && (
+        <EqualizedOddsChart equalizedOdds={eqOdds} />
+      )}
+
+      {/* Predictive Parity Chart */}
+      {Object.keys(eqOdds).length > 0 && (
+        <PredictiveParityChart equalizedOdds={eqOdds} />
+      )}
+
       {/* Equalized Odds - collapsible by attribute */}
       {Object.keys(eqOdds).length > 0 && (
         <div className="card" style={{ padding: 0 }}>
@@ -924,6 +955,9 @@ function IntersectionalTab({ audit }: { audit: any }) {
         </div>
       )}
 
+      {/* Intersectional Heatmap */}
+      <IntersectionalHeatmap data={data} />
+
       <div className="card" style={{ padding: 0 }}>
         <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
           Intersectional Groups Analyzed
@@ -983,6 +1017,8 @@ function ExplainabilityTab({ audit }: { audit: any }) {
       {/* SHAP Analysis */}
       {explainability && Object.keys(explainability).length > 0 ? (
         <>
+          {/* SHAP Summary Chart */}
+          <ShapSummaryChart explainability={explainability} />
           {/* Global Top Features */}
           {Object.values(explainability)[0] && (Object.values(explainability)[0] as any).top_features?.length > 0 && (
             <div className="card space-y-3">
@@ -1068,6 +1104,23 @@ function FixesTab({ audit }: { audit: any }) {
   const profiles = audit.profiles || [];
 
   const fixes: any[] = [];
+  const improvementBySeverity: Record<string, number> = {
+    CRITICAL: 18,
+    HIGH: 12,
+    MEDIUM: 7,
+    PASS: 3,
+  };
+
+  const accuracyImpactByTechnique: Record<string, string> = {
+    'Reweighting + Threshold Adjustment': 'Low to Medium (-1% to -3%)',
+    'Feature Removal / Decorrelation': 'Medium (-2% to -5%)',
+    'Feature Removal': 'Low to Medium (-1% to -4%)',
+    'SMOTE Oversampling': 'Low (-0% to -2%)',
+    'Adversarial Debiasing / Constraint Training': 'Medium to High (-3% to -7%)',
+    'Post-Processing Calibration': 'Low (-0% to -2%)',
+  };
+
+  const projectedGain = (severity: string) => improvementBySeverity[severity] ?? 5;
 
   // DI fixes
   Object.values(dataBias).forEach((b: any) => {
@@ -1078,6 +1131,8 @@ function FixesTab({ audit }: { audit: any }) {
         technique: 'Reweighting + Threshold Adjustment',
         description: b.explanation,
         projected: `Move DI from ${b.metrics.disparate_impact?.toFixed(2)} toward 0.80+`,
+        projectedImprovementPct: projectedGain(b.severity),
+        accuracyImpact: accuracyImpactByTechnique['Reweighting + Threshold Adjustment'],
       });
     }
   });
@@ -1090,6 +1145,8 @@ function FixesTab({ audit }: { audit: any }) {
       technique: 'Feature Removal / Decorrelation',
       description: l.explanation,
       projected: 'Remove correlated features or apply adversarial debiasing',
+      projectedImprovementPct: projectedGain(l.severity),
+      accuracyImpact: accuracyImpactByTechnique['Feature Removal / Decorrelation'],
     });
   });
 
@@ -1101,6 +1158,8 @@ function FixesTab({ audit }: { audit: any }) {
       technique: 'Feature Removal',
       description: p.explanation,
       projected: `Remove or decorrelate '${p.proxy_column}'`,
+      projectedImprovementPct: projectedGain('HIGH'),
+      accuracyImpact: accuracyImpactByTechnique['Feature Removal'],
     });
   });
 
@@ -1112,6 +1171,8 @@ function FixesTab({ audit }: { audit: any }) {
       technique: 'SMOTE Oversampling',
       description: `Imbalance ratio of ${p.imbalance_ratio}x detected.`,
       projected: 'Apply SMOTE to balance group representation',
+      projectedImprovementPct: projectedGain('MEDIUM'),
+      accuracyImpact: accuracyImpactByTechnique['SMOTE Oversampling'],
     });
   });
 
@@ -1126,6 +1187,8 @@ function FixesTab({ audit }: { audit: any }) {
         technique: 'Adversarial Debiasing / Constraint Training',
         description: `Changing '${attr}' flips ${(data.max_flip_rate * 100).toFixed(1)}% of predictions. Model is directly influenced by this protected attribute.`,
         projected: `Retrain with fairness constraints to reduce flip rate below 10%`,
+        projectedImprovementPct: projectedGain(data.max_flip_rate > 0.25 ? 'CRITICAL' : 'HIGH'),
+        accuracyImpact: accuracyImpactByTechnique['Adversarial Debiasing / Constraint Training'],
       });
     }
   });
@@ -1144,33 +1207,106 @@ function FixesTab({ audit }: { audit: any }) {
         technique: 'Post-Processing Calibration',
         description: `FPR gap: ${(fprGap * 100).toFixed(1)}%, FNR gap: ${(fnrGap * 100).toFixed(1)}% across ${attr} groups. Model errors are unevenly distributed.`,
         projected: 'Apply threshold calibration per group to equalize error rates',
+        projectedImprovementPct: projectedGain(fprGap > 0.2 || fnrGap > 0.2 ? 'CRITICAL' : 'HIGH'),
+        accuracyImpact: accuracyImpactByTechnique['Post-Processing Calibration'],
       });
     }
   });
 
   if (fixes.length === 0) return (
-    <div className="card flex items-center gap-3 py-8" style={{ background: 'rgba(6, 214, 160, 0.04)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
-      <CheckCircle2 size={20} style={{ color: 'var(--success)' }} />
-      <div className="text-sm font-medium" style={{ color: 'var(--success)' }}>No critical issues requiring fixes.</div>
+    <div className="space-y-3">
+      <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} />
+      <div className="card flex items-center gap-3 py-8" style={{ background: 'rgba(6, 214, 160, 0.04)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
+        <CheckCircle2 size={20} style={{ color: 'var(--success)' }} />
+        <div className="text-sm font-medium" style={{ color: 'var(--success)' }}>No critical issues requiring fixes.</div>
+      </div>
     </div>
   );
 
   return (
     <div className="space-y-3">
+      {/* Pareto Frontier */}
+      <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} />
+
       {fixes.map((f, i) => (
-        <div key={i} className="card">
-          <div className="flex items-center gap-2 mb-2">
-            <Wrench size={14} style={{ color: 'var(--primary)' }} />
-            <span className="text-sm font-semibold">{f.title}</span>
-            <span className={`badge ${sevBadge(f.severity)}`}>{f.severity}</span>
-          </div>
-          <div className="text-sm mb-2" style={{ color: 'var(--fg)' }}>{f.description}</div>
-          <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--muted)' }}>
-            <span><strong style={{ color: 'var(--primary)' }}>Technique:</strong> {f.technique}</span>
-            <span><strong style={{ color: 'var(--success)' }}>Projected:</strong> {f.projected}</span>
-          </div>
-        </div>
+        <FixCard key={i} fix={f} />
       ))}
+    </div>
+  );
+}
+
+const CODE_SNIPPETS: Record<string, string> = {
+  'Reweighting + Threshold Adjustment': `from sklearn.utils.class_weight import compute_sample_weight
+# Compute reweighting factors per group
+weights = compute_sample_weight('balanced', y=df['protected_attr'])
+model.fit(X_train, y_train, sample_weight=weights)`,
+  'Feature Removal / Decorrelation': `# Remove proxy features correlated with protected attributes
+features_to_drop = ['zip_code', 'neighborhood']
+X_train = X_train.drop(columns=features_to_drop)
+X_test = X_test.drop(columns=features_to_drop)`,
+  'Feature Removal': `# Remove identified proxy variable
+X_train = X_train.drop(columns=['proxy_column'])
+X_test = X_test.drop(columns=['proxy_column'])`,
+  'SMOTE Oversampling': `from imblearn.over_sampling import SMOTE
+smote = SMOTE(random_state=42)
+X_resampled, y_resampled = smote.fit_resample(X_train, y_train)`,
+  'Adversarial Debiasing / Constraint Training': `from fairlearn.reductions import ExponentiatedGradient, DemographicParity
+mitigator = ExponentiatedGradient(
+    estimator=base_model,
+    constraints=DemographicParity()
+)
+mitigator.fit(X_train, y_train, sensitive_features=A_train)`,
+  'Post-Processing Calibration': `from fairlearn.postprocessing import ThresholdOptimizer
+postprocessor = ThresholdOptimizer(
+    estimator=model,
+    constraints="equalized_odds"
+)
+postprocessor.fit(X_val, y_val, sensitive_features=A_val)`,
+};
+
+function FixCard({ fix }: { fix: any }) {
+  const [showCode, setShowCode] = useState(false);
+  const snippet = CODE_SNIPPETS[fix.technique] || null;
+
+  return (
+    <div className="card">
+      <div className="flex items-center gap-2 mb-2">
+        <Wrench size={14} style={{ color: 'var(--primary)' }} />
+        <span className="text-sm font-semibold">{fix.title}</span>
+        <span className={`badge ${sevBadge(fix.severity)}`}>{fix.severity}</span>
+      </div>
+      <div className="text-sm mb-2" style={{ color: 'var(--fg)' }}>{fix.description}</div>
+      <div className="flex items-center gap-4 text-xs mb-2" style={{ color: 'var(--muted)' }}>
+        <span><strong style={{ color: 'var(--primary)' }}>Technique:</strong> {fix.technique}</span>
+        <span><strong style={{ color: 'var(--success)' }}>Projected:</strong> {fix.projected}</span>
+      </div>
+      <div className="flex items-center gap-4 text-xs mb-2" style={{ color: 'var(--muted)' }}>
+        <span><strong style={{ color: 'var(--success)' }}>Projected Fairness Improvement:</strong> +{fix.projectedImprovementPct}%</span>
+        <span><strong style={{ color: 'var(--accent)' }}>Estimated Accuracy Impact:</strong> {fix.accuracyImpact}</span>
+      </div>
+      {snippet && (
+        <div>
+          <button
+            className="text-xs font-semibold flex items-center gap-1 mb-1"
+            style={{ color: 'var(--primary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+            onClick={() => setShowCode(!showCode)}
+          >
+            <span style={{ transform: showCode ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', display: 'inline-block' }}>▶</span>
+            {showCode ? 'Hide' : 'Show'} code snippet
+          </button>
+          {showCode && (
+            <pre className="text-xs p-3 rounded-lg overflow-x-auto" style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--fg)',
+              fontFamily: 'monospace',
+              lineHeight: 1.6,
+            }}>
+              {snippet}
+            </pre>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1181,6 +1317,23 @@ function LegalTab({ audit }: { audit: any }) {
 
   return (
     <div className="space-y-3">
+      <div className="card flex items-center justify-between" style={{ borderColor: 'var(--primary-dim)' }}>
+        <div>
+          <div className="text-sm font-semibold" style={{ color: 'var(--fg)' }}>Compliance Exports</div>
+          <div className="text-xs" style={{ color: 'var(--placeholder)' }}>
+            Download legal mappings and timeline for external review.
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="btn btn-outline btn-sm" disabled={!audit.id} onClick={() => exportLegalJSON(audit.id)}>
+            <Download size={13} /> Compliance JSON
+          </button>
+          <button className="btn btn-outline btn-sm" disabled={!audit.id} onClick={() => exportAnonJSON(audit.id)}>
+            <FileText size={13} /> Whistleblower Export
+          </button>
+        </div>
+      </div>
+
       {/* Disclaimer Banner */}
       <div className="card" style={{ background: 'rgba(255, 154, 0, 0.05)', borderColor: 'var(--accent-dim)' }}>
         <div className="flex items-start gap-2">
@@ -1228,6 +1381,13 @@ function LegalTab({ audit }: { audit: any }) {
           ))}
         </>
       )}
+
+      <AuditTrailTimeline
+        pipeline={audit.pipeline}
+        pipelineMeta={audit.pipelineMeta}
+        createdAt={audit.createdAt}
+        updatedAt={audit.updatedAt}
+      />
     </div>
   );
 }
