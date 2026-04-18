@@ -99,7 +99,7 @@ export default function LoginPage() {
           >
             <Eye size={24} color="#FFFFFF" strokeWidth={2.5} />
           </div>
-          <h1 className="text-xl font-bold tracking-wide">
+          <h1 className="page-title tracking-wide">
             <span style={{ color: 'var(--logo-primary)' }}>Vision</span>
             <span style={{ color: 'var(--logo-secondary)' }}>AI</span>
           </h1>
