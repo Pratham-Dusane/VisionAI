@@ -109,7 +109,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {steps.map(([step, status]) => (
-                  <div key={step} className="flex items-center gap-1.5 text-[10px]">
+                  <div key={step} className="flex items-center gap-1.5 text-xs">
                     {status === 'complete' ? <CheckCircle2 size={10} style={{ color: 'var(--success)' }} /> :
                       status === 'running' ? <Loader2 size={10} className="animate-spin" style={{ color: 'var(--primary)' }} /> :
                         <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--border)' }} />}
@@ -160,7 +160,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-2xl font-black" style={{ color: gradeColor(grade) }}>{grade}</span>
-              <span className="text-[10px] font-bold" style={{ color: scoreColor(score) }}>{score}/100</span>
+              <span className="text-xs font-bold" style={{ color: scoreColor(score) }}>{score}/100</span>
             </div>
           </div>
 
@@ -176,7 +176,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
               <span>•</span><span>{audit.columnCount} cols</span>
             </div>
             {sev.penalties?.length > 0 && (
-              <div className="text-[10px] mt-1" style={{ color: 'var(--placeholder)' }}>
+              <div className="text-xs mt-1" style={{ color: 'var(--placeholder)' }}>
                 {sev.penalties.length} penalty deductions applied
               </div>
             )}
@@ -256,7 +256,7 @@ function OverviewTab({ audit }: { audit: any }) {
             <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>
               {audit.blindSpots.length} AI-detected blind spots
             </span>
-            <span className="text-[10px]" style={{ color: 'var(--placeholder)' }}>See Data Analysis tab for details</span>
+            <span className="text-xs" style={{ color: 'var(--placeholder)' }}>See Data Analysis tab for details</span>
           </div>
         </div>
       )}
@@ -279,7 +279,7 @@ function OverviewTab({ audit }: { audit: any }) {
           <h3 className="text-xs font-semibold mb-2" style={{ color: 'var(--primary)' }}>
             <Info size={13} className="inline mr-1" />Auto-Binned Attributes
           </h3>
-          <div className="text-[10px] mb-2" style={{ color: 'var(--placeholder)' }}>
+          <div className="text-xs mb-2" style={{ color: 'var(--placeholder)' }}>
             Continuous columns were binned into groups for meaningful fairness analysis
           </div>
           <div className="space-y-1">
@@ -290,7 +290,7 @@ function OverviewTab({ audit }: { audit: any }) {
                 <span style={{ color: 'var(--primary)' }}>
                   {info.labels ? info.labels.join(', ') : info.description}
                 </span>
-                <span className="badge badge-pass text-[10px]">{info.n_groups} groups</span>
+                <span className="badge badge-pass text-xs">{info.n_groups} groups</span>
               </div>
             ))}
           </div>
@@ -304,7 +304,7 @@ function OverviewTab({ audit }: { audit: any }) {
             <AlertTriangle size={13} className="inline mr-1" />
             AI-Detected Blind Spots ({audit.blindSpots.length})
           </h3>
-          <div className="text-[10px] mb-2" style={{ color: 'var(--placeholder)' }}>
+          <div className="text-xs mb-2" style={{ color: 'var(--placeholder)' }}>
             Gemini AI identified potential protected attributes you may have missed
           </div>
           <div className="space-y-2">
@@ -312,14 +312,14 @@ function OverviewTab({ audit }: { audit: any }) {
               <div key={i} className="p-2 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-xs" style={{ color: 'var(--fg)' }}>{bs.column}</span>
-                  <span className={`badge ${bs.confidence === 'HIGH' ? 'badge-critical' : bs.confidence === 'MEDIUM' ? 'badge-medium' : 'badge-neutral'} text-[10px]`}>
+                  <span className={`badge ${bs.confidence === 'HIGH' ? 'badge-critical' : bs.confidence === 'MEDIUM' ? 'badge-medium' : 'badge-neutral'} text-xs`}>
                     {bs.confidence}
                   </span>
                 </div>
-                <div className="text-[10px] mb-1" style={{ color: 'var(--muted)' }}>
+                <div className="text-xs mb-1" style={{ color: 'var(--muted)' }}>
                   May encode: <span style={{ color: 'var(--accent)', fontWeight: 500 }}>{bs.encodes}</span>
                 </div>
-                <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{bs.reason}</div>
+                <div className="text-xs" style={{ color: 'var(--placeholder)' }}>{bs.reason}</div>
               </div>
             ))}
           </div>
@@ -351,7 +351,7 @@ function OverviewTab({ audit }: { audit: any }) {
             {harm.map((h: any, i: number) => (
               <div key={i} className="p-3 rounded-lg border border-[#2A3040]" style={{ background: 'var(--danger-dim)' }}>
                 <div className="text-sm mb-1" style={{ color: 'var(--fg)' }}>{h.headline}</div>
-                <div className="text-[10px] mb-2" style={{ color: 'var(--placeholder)' }}>{h.disclaimer}</div>
+                <div className="text-xs mb-2" style={{ color: 'var(--placeholder)' }}>{h.disclaimer}</div>
                 <div className="flex gap-4 text-xs font-medium">
                   <span style={{ color: 'var(--muted)' }}>{h.months_deployed} months</span>
                   <span style={{ color: 'var(--muted)' }}>{h.total_decisions?.toLocaleString()} decisions</span>
@@ -428,7 +428,7 @@ function DataTab({ audit }: { audit: any }) {
                 <div className="w-full h-1 rounded-full mt-1" style={{ background: 'var(--border)' }}>
                   <div className="h-full rounded-full" style={{ width: `${p.group_percentages[g]}%`, background: 'var(--primary)' }} />
                 </div>
-                <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{p.group_percentages[g]}%</div>
+                <div className="text-xs" style={{ color: 'var(--placeholder)' }}>{p.group_percentages[g]}%</div>
               </div>
             ))}
           </div>
@@ -484,10 +484,10 @@ function DataTab({ audit }: { audit: any }) {
           <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
             <Sparkles size={13} style={{ color: 'var(--primary)' }} />
             <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>AI Blind Spot Detection</span>
-            <span className="text-[10px] ml-auto" style={{ color: 'var(--placeholder)' }}>Powered by Gemini</span>
+            <span className="text-xs ml-auto" style={{ color: 'var(--placeholder)' }}>Powered by Gemini</span>
           </div>
           <div className="p-4 space-y-2">
-            <div className="text-[10px] mb-3" style={{ color: 'var(--placeholder)' }}>
+            <div className="text-xs mb-3" style={{ color: 'var(--placeholder)' }}>
               Gemini identified columns that may encode protected characteristics not yet flagged in your audit.
             </div>
             {audit.blindSpots.map((bs: any, i: number) => (
@@ -654,7 +654,7 @@ function NarrativesTab({ audit }: { audit: any }) {
                 {m.label}
               </span>
             </div>
-            <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{m.desc}</div>
+            <div className="text-xs" style={{ color: 'var(--placeholder)' }}>{m.desc}</div>
           </button>
         ))}
       </div>
@@ -666,7 +666,7 @@ function NarrativesTab({ audit }: { audit: any }) {
           <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>
             {MODES.find(m => m.key === mode)?.label} Narrative
           </span>
-          <span className="text-[10px] ml-auto" style={{ color: 'var(--placeholder)' }}>Generated by Gemini AI</span>
+          <span className="text-xs ml-auto" style={{ color: 'var(--placeholder)' }}>Generated by Gemini AI</span>
         </div>
         <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '8px' }}>
           {currentNarrative ? renderMarkdown(currentNarrative) : (
@@ -698,9 +698,9 @@ function EqOddsGroup({ attr, groups }: { attr: string; groups: any }) {
         <div className="flex items-center gap-3">
           <span className="text-xs" style={{ color: 'var(--placeholder)', transform: open ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▶</span>
           <span className="text-xs font-semibold">{attr}</span>
-          <span className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{entries.length} groups</span>
+          <span className="text-xs" style={{ color: 'var(--placeholder)' }}>{entries.length} groups</span>
         </div>
-        <div className="flex items-center gap-3 text-[10px]">
+        <div className="flex items-center gap-3 text-xs">
           <span style={{ color: fprGap > 0.1 ? 'var(--danger)' : 'var(--success)' }}>
             FPR gap: {(fprGap * 100).toFixed(1)}%
           </span>
@@ -760,7 +760,7 @@ function ModelTab({ audit }: { audit: any }) {
             <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Flip Rates - {attr}</span>
-                <span className="text-[10px]" style={{ color: 'var(--placeholder)' }}>
+                <span className="text-xs" style={{ color: 'var(--placeholder)' }}>
                   ({flips.length} non-zero of {totalTested} tested)
                 </span>
               </div>
@@ -843,9 +843,9 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
         <div className="flex items-center gap-3">
           <span className="text-xs" style={{ color: 'var(--placeholder)', transform: open ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▶</span>
           <span className="text-xs font-semibold">{intersectionKey}</span>
-          <span className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{items.length} groups tested</span>
+          <span className="text-xs" style={{ color: 'var(--placeholder)' }}>{items.length} groups tested</span>
         </div>
-        <div className="flex items-center gap-3 text-[10px]">
+        <div className="flex items-center gap-3 text-xs">
           {criticalCount > 0 ? (
             <span className="badge badge-critical" style={{ fontSize: '9px', padding: '1px 6px' }}>{criticalCount} CRITICAL</span>
           ) : highCount > 0 ? (
@@ -867,7 +867,7 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
                   <td className="font-medium text-xs">
                     {d.group}
                     {d.low_confidence && (
-                      <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-[#2A3040] text-[#5A6478]" title={d.statistical_note}>
+                      <span className="ml-2 px-1.5 py-0.5 rounded text-xs bg-[#2A3040] text-[#5A6478]" title={d.statistical_note}>
                         n&lt;30
                       </span>
                     )}
@@ -1000,7 +1000,7 @@ function ExplainabilityTab({ audit }: { audit: any }) {
                       <div className="flex-1 h-3 rounded-full" style={{ background: 'var(--surface-2)' }}>
                         <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--primary)' }} />
                       </div>
-                      <span className="text-[10px] w-12 text-right" style={{ color: 'var(--placeholder)' }}>{f.importance.toFixed(4)}</span>
+                      <span className="text-xs w-12 text-right" style={{ color: 'var(--placeholder)' }}>{f.importance.toFixed(4)}</span>
                     </div>
                   );
                 })}
@@ -1187,7 +1187,7 @@ function LegalTab({ audit }: { audit: any }) {
           <Info size={16} style={{ color: 'var(--accent)', marginTop: 2, flexShrink: 0 }} />
           <div>
             <div className="text-xs font-bold" style={{ color: 'var(--accent)' }}>DISCLAIMER: RISK INDICATORS ONLY</div>
-            <div className="text-[10px] mt-1" style={{ color: 'var(--fg)' }}>
+            <div className="text-xs mt-1" style={{ color: 'var(--fg)' }}>
               This report highlights statistical risks based on fairness metrics and maps them to relevant compliance frameworks for {audit.domain} targeting {audit.jurisdiction}. 
               It does not constitute formal legal advice, nor does it definitively declare legal liability. 
               Consult with legal counsel before making compliance determinations.
@@ -1236,9 +1236,9 @@ function LegalTab({ audit }: { audit: any }) {
 function Mini({ label, value, sub, color }: { label: string; value: string; sub: string; color: string }) {
   return (
     <div className="card">
-      <div className="text-[11px] font-medium mb-1" style={{ color: 'var(--muted)' }}>{label}</div>
+      <div className="text-xs font-medium mb-1" style={{ color: 'var(--muted)' }}>{label}</div>
       <div className="text-lg font-bold" style={{ color }}>{value}</div>
-      <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{sub}</div>
+      <div className="text-xs" style={{ color: 'var(--placeholder)' }}>{sub}</div>
     </div>
   );
 }

@@ -24,11 +24,11 @@ export default function SettingsPage() {
               <Building2 size={14} style={{ color: 'var(--primary)' }} /> Organization
             </div>
             <div>
-              <label className="text-[11px] block mb-1" style={{ color: 'var(--muted)' }}>Name</label>
+              <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Name</label>
               <input className="input" defaultValue="VisionAI Org" />
             </div>
             <div>
-              <label className="text-[11px] block mb-1" style={{ color: 'var(--muted)' }}>Industry</label>
+              <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Industry</label>
               <select className="select w-full" defaultValue="Technology">
                 <option>Technology</option>
                 <option>Finance</option>
@@ -45,11 +45,11 @@ export default function SettingsPage() {
               <User size={14} style={{ color: 'var(--accent)' }} /> Profile
             </div>
             <div>
-              <label className="text-[11px] block mb-1" style={{ color: 'var(--muted)' }}>Display Name</label>
+              <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Display Name</label>
               <input className="input" defaultValue="Pratham Dusane" />
             </div>
             <div>
-              <label className="text-[11px] block mb-1" style={{ color: 'var(--muted)' }}>Email</label>
+              <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Email</label>
               <input className="input" defaultValue="pratham@visionai.app" disabled style={{ opacity: 0.6 }} />
             </div>
           </div>
@@ -97,7 +97,7 @@ function Toggle({ label, sub, icon: Icon, on, onToggle }: { label: string; sub: 
         <Icon size={13} style={{ color: 'var(--muted)' }} />
         <div>
           <div className="text-sm">{label}</div>
-          <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{sub}</div>
+          <div className="text-xs" style={{ color: 'var(--placeholder)' }}>{sub}</div>
         </div>
       </div>
       <button onClick={onToggle} className="cursor-pointer" style={{ color: on ? 'var(--primary)' : 'var(--border-light)' }}>

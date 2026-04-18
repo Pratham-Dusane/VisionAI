@@ -298,7 +298,7 @@ export default function NewAuditPage() {
           {['Upload Files', 'Define Context', 'Review & Launch'].map((l, i) => (
             <span
               key={l}
-              className="text-[11px] font-medium"
+              className="text-xs font-medium"
               style={{ color: step === i + 1 ? 'var(--primary)' : 'var(--placeholder)' }}
             >
               {l}
@@ -400,7 +400,7 @@ export default function NewAuditPage() {
                           <div className="text-xs mt-1.5 p-2 rounded-md" style={{ color: 'var(--danger)', background: 'var(--danger-dim)' }}>
                             {analyzeError || 'Invalid dataset schema. Please try again.'}
                           </div>
-                          <div className="mt-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--primary)' }}>Click to try again</div>
+                          <div className="mt-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--primary)' }}>Click to try again</div>
                         </div>
                       )}
                     </div>
@@ -434,13 +434,13 @@ export default function NewAuditPage() {
                 ) : useApi ? (
                   <div className="space-y-2 p-4" style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}>
                     <div>
-                      <label className="text-[11px] block mb-1" style={{ color: 'var(--muted)' }}>
+                      <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>
                         <Globe size={11} className="inline mr-1" /> REST API Endpoint
                       </label>
                       <input className="input" placeholder="https://api.example.com/predict" />
                     </div>
                     <div>
-                      <label className="text-[11px] block mb-1" style={{ color: 'var(--muted)' }}>
+                      <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>
                         <Link2 size={11} className="inline mr-1" /> Bearer Token (optional)
                       </label>
                       <input className="input" type="password" placeholder="sk-..." />
@@ -512,7 +512,7 @@ export default function NewAuditPage() {
                             <div className="text-xs mt-1.5 p-2 rounded-md" style={{ color: 'var(--danger)', background: 'var(--danger-dim)' }}>
                               {modelUploadProgress.error || 'Failed to upload model file. Please try again.'}
                             </div>
-                            <div className="mt-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--warning)' }}>Click to try again</div>
+                            <div className="mt-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--warning)' }}>Click to try again</div>
                           </div>
                         ) : (
                           <div className="text-center w-full max-w-sm">
@@ -635,8 +635,8 @@ export default function NewAuditPage() {
 
         {/* Step 2 - Context Definition */}
         {step === 2 && (
-          <div className="max-w-3xl mx-auto space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="max-w-3xl mx-auto space-y-6">
+            <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--muted)' }}>
                   Audit Name <span style={{ color: 'var(--danger)' }}>*</span>
@@ -665,7 +665,7 @@ export default function NewAuditPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--muted)' }}>
                   Label Column <span style={{ color: 'var(--danger)' }}>*</span>
@@ -680,7 +680,7 @@ export default function NewAuditPage() {
                     <option key={c.name} value={c.name}>{c.name}</option>
                   ))}
                 </select>
-                <span className="text-[10px] mt-1 block" style={{ color: 'var(--placeholder)' }}>
+                <span className="text-xs mt-1 block" style={{ color: 'var(--placeholder)' }}>
                   Which column is the outcome / decision? e.g., &apos;approved&apos;, &apos;hired&apos;
                 </span>
               </div>
@@ -705,7 +705,7 @@ export default function NewAuditPage() {
                 </label>
                 {columns.length > 5 && (
                   <button 
-                    className="text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                    className="text-xs font-semibold flex items-center gap-1 transition-colors"
                     style={{ color: 'var(--primary)' }}
                     onClick={() => setShowAllColumns(!showAllColumns)}
                   >
@@ -746,7 +746,7 @@ export default function NewAuditPage() {
                       {col.auto_flagged && (
                         <span className="tooltip ml-auto">
                           <AlertTriangle size={12} style={{ color: 'var(--warning)' }} />
-                          <span className="tooltip-content text-[10px]">{col.flagged_reason}</span>
+                          <span className="tooltip-content text-xs">{col.flagged_reason}</span>
                         </span>
                       )}
                     </label>
@@ -757,7 +757,7 @@ export default function NewAuditPage() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-3 text-[10px]" style={{ color: 'var(--warning)' }}>
+              <div className="flex items-center gap-1.5 mt-3 text-xs" style={{ color: 'var(--warning)' }}>
                 <Info size={10} />
                 Amber-highlighted columns were auto-detected as sensitive by VisionAI
               </div>
@@ -776,7 +776,7 @@ export default function NewAuditPage() {
                   </div>
                   Advanced Configuration
                 </div>
-                <span className="text-[10px] font-medium px-2 py-1 rounded" style={{ background: 'var(--surface)', color: 'var(--muted)' }}>
+                <span className="text-xs font-medium px-2 py-1 rounded" style={{ background: 'var(--surface)', color: 'var(--muted)' }}>
                   Optional
                 </span>
               </button>
@@ -796,7 +796,7 @@ export default function NewAuditPage() {
                         <option key={j} value={j}>{j}</option>
                       ))}
                     </select>
-                    <span className="text-[10px] mt-1 block" style={{ color: 'var(--placeholder)' }}>
+                    <span className="text-xs mt-1 block" style={{ color: 'var(--placeholder)' }}>
                       Select the legal jurisdiction to filter relevant compliance frameworks
                     </span>
                   </div>
@@ -817,7 +817,7 @@ export default function NewAuditPage() {
                     {deployed && (
                       <div className="grid grid-cols-2 gap-3 p-3 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                         <div>
-                          <label className="text-[11px] block mb-1" style={{ color: 'var(--placeholder)' }}>
+                          <label className="text-xs block mb-1" style={{ color: 'var(--placeholder)' }}>
                             Deployed since
                           </label>
                           <CustomDatePicker 
@@ -826,7 +826,7 @@ export default function NewAuditPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[11px] block mb-1" style={{ color: 'var(--placeholder)' }}>
+                          <label className="text-xs block mb-1" style={{ color: 'var(--placeholder)' }}>
                             Decisions per month
                           </label>
                           <input
@@ -872,7 +872,7 @@ export default function NewAuditPage() {
                         0.80 legal
                       </div>
                     </div>
-                    <div className="flex justify-between text-[10px] mt-1" style={{ color: 'var(--placeholder)' }}>
+                    <div className="flex justify-between text-xs mt-1" style={{ color: 'var(--placeholder)' }}>
                       <span>0.60</span>
                       <span>1.00</span>
                     </div>

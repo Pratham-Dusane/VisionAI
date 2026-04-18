@@ -142,7 +142,7 @@ export default function OnboardingPage() {
           {/* Team Size */}
           <div>
             <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--muted)' }}>
-              Team Size <span className="text-[10px]" style={{ color: 'var(--placeholder)' }}>(optional)</span>
+              Team Size <span className="text-xs" style={{ color: 'var(--placeholder)' }}>(optional)</span>
             </label>
             <div className="login-field">
               <Users size={15} className="login-field-icon" />

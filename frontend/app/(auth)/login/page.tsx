@@ -135,7 +135,7 @@ export default function LoginPage() {
         {/* Divider */}
         <div className="flex items-center gap-3 my-4">
           <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-          <span className="text-[11px] font-medium" style={{ color: 'var(--placeholder)' }}>
+          <span className="text-xs font-medium" style={{ color: 'var(--placeholder)' }}>
             or continue with email
           </span>
           <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
