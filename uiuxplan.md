@@ -117,7 +117,7 @@ Make the context form feel smarter and less overwhelming.
 
 - Only show fields when they are relevant.
 - Prefill or suggest values when the backend has already inferred something.
-- Keep advanced options tucked away until needed.
+- Keep advanced options tucked away until needed(give a show advanced features button or something)
 - Use helpful labels and examples for the most important inputs.
 
 The context step is critical, but it should not feel dense or intimidating. Progressive disclosure keeps the flow approachable.

@@ -48,17 +48,17 @@
   --avatar-gradient: linear-gradient(135deg, #4285F4, #34A853);
   
   /* Density defaults (Comfortable) */
-  --table-py: 12px;
-  --table-px: 16px;
-  --table-text: 13px;
-  --table-text-th: 11px;
+  --table-py: 16px;
+  --table-px: 20px;
+  --table-text: 14px;
+  --table-text-th: 12px;
 }
 
 [data-density="compact"] {
-  --table-py: 6px;
-  --table-px: 12px;
-  --table-text: 12px;
-  --table-text-th: 10px;
+  --table-py: 8px;
+  --table-px: 16px;
+  --table-text: 13px;
+  --table-text-th: 11px;
 }
 
 /* ========== DARK THEME ========== */
@@ -154,7 +154,7 @@ textarea:focus-visible,
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 20px;
+  padding: 24px;
   transition: border-color 0.2s, box-shadow 0.2s;
   box-shadow: var(--card-shadow);
 }
