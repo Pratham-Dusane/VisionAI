@@ -1,10 +1,12 @@
 'use client';
 
 import TopNav from '@/components/layout/TopNav';
-import { Settings as SettingsIcon, User, Building2, Key, Bell, ToggleLeft, ToggleRight, Shield, Globe } from 'lucide-react';
+import { Settings as SettingsIcon, User, Building2, Key, Bell, ToggleLeft, ToggleRight, Shield, Globe, Moon, Sun, LayoutTemplate, Rows3 } from 'lucide-react';
 import { useState } from 'react';
+import { useTheme } from '@/lib/theme-context';
 
 export default function SettingsPage() {
+  const { theme, toggleTheme, density, toggleDensity } = useTheme();
   const [benchOptIn, setBenchOptIn] = useState(false);
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [explainMode, setExplainMode] = useState(false);
@@ -62,6 +64,15 @@ export default function SettingsPage() {
               <span className="badge badge-pass">Active</span>
             </div>
             <button className="btn btn-outline btn-sm"><Key size={12} /> Generate New Key</button>
+          </div>
+
+          {/* Appearance */}
+          <div className="card space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <LayoutTemplate size={14} style={{ color: 'var(--primary)' }} /> Appearance
+            </div>
+            <Toggle label="Dark Mode" sub="Toggle dark theme" icon={theme === 'dark' ? Moon : Sun} on={theme === 'dark'} onToggle={toggleTheme} />
+            <Toggle label="Compact View" sub="Increase data density" icon={Rows3} on={density === 'compact'} onToggle={toggleDensity} />
           </div>
 
           {/* Toggles */}

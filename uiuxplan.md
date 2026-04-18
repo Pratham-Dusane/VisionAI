@@ -61,9 +61,13 @@ Treat the dashboard as a live operational view, not a static summary page.
   - Proxy Alerts down since last audit
 - Make the dashboard feel like a live control panel for fairness monitoring.
 
-
+Add a DensityContext (alongside the Theme) to persist either comfortable or compact modes.
+Introduce CSS variables for table padding and font-size that shrink by ~50% when compact mode is active.
+Expose both the Density toggle and the Theme toggle directly in the Settings page under a new "Appearance" card.
 The dashboard is the main landing page after login, so it should immediately communicate value and urgency.
+ stick to just tables for density toggles
 
+ 
 ### Success criteria
 - The dashboard center is useful data, not empty space.
 - The most important metrics are obvious in under a few seconds.
