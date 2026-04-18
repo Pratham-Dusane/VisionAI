@@ -323,6 +323,8 @@ export default function NewAuditPage() {
                     background: dragOver === 'data' ? 'var(--primary-dim)' : 'var(--surface-2)',
                     borderColor: dragOver === 'data' ? 'var(--primary)' : 'var(--border)'
                   }}
+                  role="button"
+                  tabIndex={0}
                   onDragOver={(e) => { e.preventDefault(); setDragOver('data'); }}
                   onDragLeave={() => setDragOver(null)}
                   onDrop={(e) => handleDrop(e, 'data')}
@@ -336,6 +338,20 @@ export default function NewAuditPage() {
                       if (f) handleDataFile(f);
                     };
                     input.click();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (uploadProgress?.state === 'uploading' || analyzing) return;
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = '.csv,.json,.parquet';
+                      input.onchange = (ev) => {
+                        const f = (ev.target as HTMLInputElement).files?.[0];
+                        if (f) handleDataFile(f);
+                      };
+                      input.click();
+                    }
                   }}
                 >
                   {dataFile ? (
@@ -438,6 +454,8 @@ export default function NewAuditPage() {
                       background: dragOver === 'model' ? 'var(--warning-dim)' : 'var(--surface-2)',
                       borderColor: dragOver === 'model' ? 'var(--warning)' : 'var(--border)'
                     }}
+                    role="button"
+                    tabIndex={0}
                     onDragOver={(e) => { e.preventDefault(); setDragOver('model'); }}
                     onDragLeave={() => setDragOver(null)}
                     onDrop={(e) => handleDrop(e, 'model')}
@@ -451,6 +469,20 @@ export default function NewAuditPage() {
                         if (f) handleModelFile(f);
                       };
                       input.click();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (modelUploadProgress?.state === 'uploading') return;
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = '.pkl,.onnx,.joblib';
+                        input.onchange = (ev) => {
+                          const f = (ev.target as HTMLInputElement).files?.[0];
+                          if (f) handleModelFile(f);
+                        };
+                        input.click();
+                      }
                     }}
                   >
                     {modelFile ? (
@@ -686,7 +718,7 @@ export default function NewAuditPage() {
                   (showAllColumns ? columns : columns.filter(c => c.auto_flagged || protectedCols.includes(c.name))).map((col) => (
                     <label
                       key={col.name}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all text-sm"
+                      className="focus-ring-wrapper flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all text-sm"
                       style={{
                         background: protectedCols.includes(col.name)
                           ? col.auto_flagged
