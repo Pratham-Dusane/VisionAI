@@ -17,8 +17,9 @@ import {
   CheckCircle2,
   XCircle,
   Calendar,
+  PlusCircle,
 } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { uploadDatasetFile, uploadModelFile, type UploadProgress } from '@/lib/storage';
@@ -163,6 +164,30 @@ export default function NewAuditPage() {
   const [threshold, setThreshold] = useState(0.8);
   const [jurisdiction, setJurisdiction] = useState('Global');
 
+  // Progressive Disclosure states
+  const [showAllColumns, setShowAllColumns] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Smart Prefilling logic
+  useEffect(() => {
+    if (step === 2 && columns.length > 0 && !labelCol) {
+      const targetNames = ['label', 'target', 'outcome', 'decision', 'approved', 'status', 'is_hired', 'hired'];
+      const guessedCol = columns.find(c => targetNames.includes(c.name.toLowerCase()));
+      if (guessedCol) {
+        setLabelCol(guessedCol.name);
+        
+        // Naive guess for positive label if it has sample values
+        const samples = guessedCol.sample_values || [];
+        const posGuess = samples.find(v => ['1', 'true', 'yes', 'approved', 'success', 'hired'].includes(String(v).toLowerCase()));
+        if (posGuess) {
+          setPositiveLabel(String(posGuess));
+        } else if (samples.length > 0) {
+          setPositiveLabel(String(samples[0]));
+        }
+      }
+    }
+  }, [step, columns, labelCol]);
+
   // Parse CSV preview client-side (instant feedback)
   const parseClientPreview = (file: File) => {
     if (!file.name.endsWith('.csv')) {
@@ -274,7 +299,7 @@ export default function NewAuditPage() {
             <span
               key={l}
               className="text-[11px] font-medium"
-              style={{ color: step === i + 1 ? '#3EC1D3' : '#5A6478' }}
+              style={{ color: step === i + 1 ? 'var(--primary)' : 'var(--placeholder)' }}
             >
               {l}
             </span>
@@ -287,16 +312,22 @@ export default function NewAuditPage() {
             <div className="grid grid-cols-2 gap-4">
               {/* Dataset Upload */}
               <div>
-                <label className="text-xs font-semibold mb-2 block" style={{ color: '#8892A5' }}>
-                  <FileSpreadsheet size={13} className="inline mr-1" style={{ color: '#3EC1D3' }} />
-                  Dataset <span style={{ color: '#FF165D' }}>*</span>
+                <label className="text-xs font-semibold mb-2 block" style={{ color: 'var(--muted)' }}>
+                  <FileSpreadsheet size={13} className="inline mr-1" style={{ color: 'var(--primary)' }} />
+                  Dataset <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <div
-                  className={`upload-zone ${dragOver === 'data' ? 'drag-over' : ''}`}
+                  className={`upload-zone flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden ${dragOver === 'data' ? 'drag-over scale-[1.02]' : ''}`}
+                  style={{ 
+                    minHeight: 180,
+                    background: dragOver === 'data' ? 'var(--primary-dim)' : 'var(--surface-2)',
+                    borderColor: dragOver === 'data' ? 'var(--primary)' : 'var(--border)'
+                  }}
                   onDragOver={(e) => { e.preventDefault(); setDragOver('data'); }}
                   onDragLeave={() => setDragOver(null)}
                   onDrop={(e) => handleDrop(e, 'data')}
                   onClick={() => {
+                    if (uploadProgress?.state === 'uploading' || analyzing) return;
                     const input = document.createElement('input');
                     input.type = 'file';
                     input.accept = '.csv,.json,.parquet';
@@ -308,55 +339,61 @@ export default function NewAuditPage() {
                   }}
                 >
                   {dataFile ? (
-                    <div>
+                    <div className="w-full px-6 flex flex-col items-center">
                       {uploadProgress?.state === 'uploading' ? (
-                        <>
-                          <Loader2 size={28} className="mx-auto mb-2 animate-spin" style={{ color: '#3EC1D3' }} />
-                          <div className="text-sm font-medium" style={{ color: '#3EC1D3' }}>
-                            Uploading... {uploadProgress.progress}%
+                        <div className="w-full max-w-sm">
+                          <Loader2 size={28} className="mx-auto mb-4 animate-spin" style={{ color: 'var(--primary)' }} />
+                          <div className="flex justify-between text-xs font-semibold mb-2" style={{ color: 'var(--primary)' }}>
+                            <span>Uploading {dataFile.name}</span>
+                            <span>{uploadProgress.progress}%</span>
                           </div>
-                          <div className="w-48 mx-auto mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: '#2A3040' }}>
+                          <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
                             <div
                               className="h-full rounded-full transition-all duration-300"
-                              style={{ width: `${uploadProgress.progress}%`, background: '#3EC1D3' }}
+                              style={{ width: `${uploadProgress.progress}%`, background: 'var(--primary)' }}
                             />
                           </div>
-                        </>
+                        </div>
                       ) : analyzing ? (
-                        <>
-                          <Loader2 size={28} className="mx-auto mb-2 animate-spin" style={{ color: '#FF9A00' }} />
-                          <div className="text-sm font-medium" style={{ color: '#FF9A00' }}>
-                            Analyzing columns...
+                        <div className="w-full max-w-sm text-center">
+                          <Loader2 size={28} className="mx-auto mb-3 animate-spin" style={{ color: 'var(--warning)' }} />
+                          <div className="text-sm font-medium" style={{ color: 'var(--warning)' }}>
+                            Processing schema...
                           </div>
-                        </>
+                        </div>
                       ) : columns.length > 0 ? (
-                        <>
-                          <CheckCircle2 size={28} style={{ color: '#06D6A0', margin: '0 auto 8px' }} />
-                          <div className="text-sm font-semibold" style={{ color: '#06D6A0' }}>
+                        <div className="text-center w-full max-w-sm">
+                          <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--success-dim)' }}>
+                            <CheckCircle2 size={24} style={{ color: 'var(--success)' }} />
+                          </div>
+                          <div className="text-[15px] font-semibold" style={{ color: 'var(--fg)' }}>
                             {dataFile.name}
                           </div>
-                          <div className="text-xs mt-1" style={{ color: '#8892A5' }}>
-                            {(dataFile.size / 1024).toFixed(1)} KB • {rowCount.toLocaleString()} rows • {columns.length} columns
+                          <div className="text-xs mt-1.5 font-medium" style={{ color: 'var(--muted)' }}>
+                            {(dataFile.size / 1024 / 1024).toFixed(2)} MB • {rowCount.toLocaleString()} rows • {columns.length} columns
                           </div>
-                        </>
+                        </div>
                       ) : (
-                        <>
-                          <XCircle size={28} style={{ color: '#FF165D', margin: '0 auto 8px' }} />
-                          <div className="text-sm font-medium" style={{ color: '#FF165D' }}>
-                            {dataFile.name}
+                        <div className="text-center w-full max-w-sm">
+                          <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--danger-dim)' }}>
+                            <XCircle size={24} style={{ color: 'var(--danger)' }} />
                           </div>
-                          <div className="text-xs mt-1" style={{ color: '#FF165D' }}>
-                            {analyzeError || 'Upload failed'}
+                          <div className="text-[15px] font-semibold" style={{ color: 'var(--fg)' }}>
+                            Upload Failed
                           </div>
-                        </>
+                          <div className="text-xs mt-1.5 p-2 rounded-md" style={{ color: 'var(--danger)', background: 'var(--danger-dim)' }}>
+                            {analyzeError || 'Invalid dataset schema. Please try again.'}
+                          </div>
+                          <div className="mt-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--primary)' }}>Click to try again</div>
+                        </div>
                       )}
                     </div>
                   ) : (
-                    <div>
-                      <Upload size={28} style={{ color: '#3EC1D3', margin: '0 auto 8px' }} />
-                      <div className="text-sm font-medium mb-1">Drag & drop your dataset</div>
-                      <div className="text-xs" style={{ color: '#5A6478' }}>
-                        .csv, .json, .parquet - up to 500MB
+                    <div className="text-center pointer-events-none">
+                      <Upload size={32} style={{ color: 'var(--primary)', margin: '0 auto 12px' }} />
+                      <div className="text-[15px] font-semibold mb-1" style={{ color: 'var(--fg)' }}>Drag & drop your dataset</div>
+                      <div className="text-xs font-medium" style={{ color: 'var(--placeholder)' }}>
+                        .csv, .json, .parquet — up to 500MB
                       </div>
                     </div>
                   )}
@@ -365,8 +402,8 @@ export default function NewAuditPage() {
 
               {/* Model Upload */}
               <div>
-                <label className="text-xs font-semibold mb-2 block" style={{ color: '#8892A5' }}>
-                  <Cpu size={13} className="inline mr-1" style={{ color: '#FF9A00' }} />
+                <label className="text-xs font-semibold mb-2 block" style={{ color: 'var(--muted)' }}>
+                  <Cpu size={13} className="inline mr-1" style={{ color: 'var(--warning)' }} />
                   Model <span className="text-xs font-normal">(optional)</span>
                 </label>
                 {dataOnly ? (
@@ -374,20 +411,20 @@ export default function NewAuditPage() {
                     className="upload-zone flex items-center justify-center"
                     style={{ opacity: 0.4, cursor: 'default', minHeight: 140 }}
                   >
-                    <div className="text-xs" style={{ color: '#5A6478' }}>
+                    <div className="text-xs" style={{ color: 'var(--placeholder)' }}>
                       Model upload disabled - data-only audit
                     </div>
                   </div>
                 ) : useApi ? (
-                  <div className="space-y-2 p-4" style={{ background: '#141820', borderRadius: 12, border: '1px solid #2A3040' }}>
+                  <div className="space-y-2 p-4" style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}>
                     <div>
-                      <label className="text-[11px] block mb-1" style={{ color: '#8892A5' }}>
+                      <label className="text-[11px] block mb-1" style={{ color: 'var(--muted)' }}>
                         <Globe size={11} className="inline mr-1" /> REST API Endpoint
                       </label>
                       <input className="input" placeholder="https://api.example.com/predict" />
                     </div>
                     <div>
-                      <label className="text-[11px] block mb-1" style={{ color: '#8892A5' }}>
+                      <label className="text-[11px] block mb-1" style={{ color: 'var(--muted)' }}>
                         <Link2 size={11} className="inline mr-1" /> Bearer Token (optional)
                       </label>
                       <input className="input" type="password" placeholder="sk-..." />
@@ -395,11 +432,17 @@ export default function NewAuditPage() {
                   </div>
                 ) : (
                   <div
-                    className={`upload-zone ${dragOver === 'model' ? 'drag-over' : ''}`}
+                    className={`upload-zone flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden ${dragOver === 'model' ? 'drag-over scale-[1.02]' : ''}`}
+                    style={{ 
+                      minHeight: 180,
+                      background: dragOver === 'model' ? 'var(--warning-dim)' : 'var(--surface-2)',
+                      borderColor: dragOver === 'model' ? 'var(--warning)' : 'var(--border)'
+                    }}
                     onDragOver={(e) => { e.preventDefault(); setDragOver('model'); }}
                     onDragLeave={() => setDragOver(null)}
                     onDrop={(e) => handleDrop(e, 'model')}
                     onClick={() => {
+                      if (modelUploadProgress?.state === 'uploading') return;
                       const input = document.createElement('input');
                       input.type = 'file';
                       input.accept = '.pkl,.onnx,.joblib';
@@ -411,32 +454,54 @@ export default function NewAuditPage() {
                     }}
                   >
                     {modelFile ? (
-                      <div>
+                      <div className="w-full px-6 flex flex-col items-center">
                         {modelUploadProgress?.state === 'uploading' ? (
-                          <>
-                            <Loader2 size={28} className="mx-auto mb-2 animate-spin" style={{ color: '#FF9A00' }} />
-                            <div className="text-sm font-medium" style={{ color: '#FF9A00' }}>
-                              Uploading... {modelUploadProgress.progress}%
+                          <div className="w-full max-w-sm">
+                            <Loader2 size={28} className="mx-auto mb-4 animate-spin" style={{ color: 'var(--warning)' }} />
+                            <div className="flex justify-between text-xs font-semibold mb-2" style={{ color: 'var(--warning)' }}>
+                              <span>Uploading {modelFile.name}</span>
+                              <span>{modelUploadProgress.progress}%</span>
                             </div>
-                          </>
+                            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                              <div
+                                className="h-full rounded-full transition-all duration-300"
+                                style={{ width: `${modelUploadProgress.progress}%`, background: 'var(--warning)' }}
+                              />
+                            </div>
+                          </div>
+                        ) : modelUploadProgress?.state === 'error' ? (
+                          <div className="text-center w-full max-w-sm">
+                            <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--danger-dim)' }}>
+                              <XCircle size={24} style={{ color: 'var(--danger)' }} />
+                            </div>
+                            <div className="text-[15px] font-semibold" style={{ color: 'var(--fg)' }}>
+                              Upload Failed
+                            </div>
+                            <div className="text-xs mt-1.5 p-2 rounded-md" style={{ color: 'var(--danger)', background: 'var(--danger-dim)' }}>
+                              {modelUploadProgress.error || 'Failed to upload model file. Please try again.'}
+                            </div>
+                            <div className="mt-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--warning)' }}>Click to try again</div>
+                          </div>
                         ) : (
-                          <>
-                            <CheckCircle2 size={28} style={{ color: '#06D6A0', margin: '0 auto 8px' }} />
-                            <div className="text-sm font-semibold" style={{ color: '#06D6A0' }}>
+                          <div className="text-center w-full max-w-sm">
+                            <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--success-dim)' }}>
+                              <CheckCircle2 size={24} style={{ color: 'var(--success)' }} />
+                            </div>
+                            <div className="text-[15px] font-semibold" style={{ color: 'var(--fg)' }}>
                               {modelFile.name}
                             </div>
-                            <div className="text-xs mt-1" style={{ color: '#8892A5' }}>
-                              {(modelFile.size / 1024).toFixed(1)} KB
+                            <div className="text-xs mt-1.5 font-medium" style={{ color: 'var(--muted)' }}>
+                              {(modelFile.size / 1024 / 1024).toFixed(2)} MB
                             </div>
-                          </>
+                          </div>
                         )}
                       </div>
                     ) : (
-                      <div>
-                        <Cpu size={28} style={{ color: '#FF9A00', margin: '0 auto 8px' }} />
-                        <div className="text-sm font-medium mb-1">Upload your model</div>
-                        <div className="text-xs" style={{ color: '#5A6478' }}>
-                          .pkl, .onnx, .joblib
+                      <div className="text-center pointer-events-none">
+                        <Cpu size={32} style={{ color: 'var(--warning)', margin: '0 auto 12px' }} />
+                        <div className="text-[15px] font-semibold mb-1" style={{ color: 'var(--fg)' }}>Upload your model</div>
+                        <div className="text-xs font-medium" style={{ color: 'var(--placeholder)' }}>
+                          .pkl, .onnx, .joblib — up to 500MB
                         </div>
                       </div>
                     )}
@@ -445,7 +510,7 @@ export default function NewAuditPage() {
 
                 {/* Toggles */}
                 <div className="flex items-center gap-4 mt-2">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: '#8892A5' }}>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: 'var(--muted)' }}>
                     <input
                       type="checkbox"
                       checked={dataOnly}
@@ -455,7 +520,7 @@ export default function NewAuditPage() {
                     Data-only audit
                   </label>
                   {!dataOnly && (
-                    <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: '#8892A5' }}>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: 'var(--muted)' }}>
                       <input
                         type="checkbox"
                         checked={useApi}
@@ -472,7 +537,7 @@ export default function NewAuditPage() {
             {/* Preview table - from backend (or client-side CSV fallback) */}
             {(previewRows.length > 0 || clientPreview.length > 1) && (
               <div className="card" style={{ padding: 0 }}>
-                <div className="px-4 py-2.5 text-xs font-semibold" style={{ color: '#8892A5', borderBottom: '1px solid #2A3040' }}>
+                <div className="px-4 py-2.5 text-xs font-semibold" style={{ color: 'var(--muted)', borderBottom: '1px solid var(--border)' }}>
                   Dataset Preview - first 5 rows
                   {rowCount > 0 && (
                     <span className="ml-2 font-normal">({rowCount.toLocaleString()} total)</span>
@@ -493,7 +558,7 @@ export default function NewAuditPage() {
                         ? previewRows.map((row, r) => (
                             <tr key={r}>
                               {columns.map((c) => (
-                                <td key={c.name} className="text-xs" style={{ color: '#8892A5' }}>
+                                <td key={c.name} className="text-xs" style={{ color: 'var(--muted)' }}>
                                   {row[c.name] ?? ''}
                                 </td>
                               ))}
@@ -502,7 +567,7 @@ export default function NewAuditPage() {
                         : clientPreview.slice(1, 6).map((row, r) => (
                             <tr key={r}>
                               {row.map((val, i) => (
-                                <td key={i} className="text-xs" style={{ color: '#8892A5' }}>
+                                <td key={i} className="text-xs" style={{ color: 'var(--muted)' }}>
                                   {val}
                                 </td>
                               ))}
@@ -518,8 +583,8 @@ export default function NewAuditPage() {
             {/* Error banner */}
             {analyzeError && !analyzing && (
               <div className="flex items-center gap-2 px-4 py-3 rounded-lg" style={{ background: 'rgba(255, 22, 93, 0.08)', border: '1px solid rgba(255, 22, 93, 0.2)' }}>
-                <AlertTriangle size={16} style={{ color: '#FF165D' }} />
-                <span className="text-sm" style={{ color: '#FF165D' }}>{analyzeError}</span>
+                <AlertTriangle size={16} style={{ color: 'var(--danger)' }} />
+                <span className="text-sm" style={{ color: 'var(--danger)' }}>{analyzeError}</span>
               </div>
             )}
 
@@ -541,8 +606,8 @@ export default function NewAuditPage() {
           <div className="max-w-3xl mx-auto space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold mb-1 block" style={{ color: '#8892A5' }}>
-                  Audit Name <span style={{ color: '#FF165D' }}>*</span>
+                <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--muted)' }}>
+                  Audit Name <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <input
                   className="input"
@@ -552,8 +617,8 @@ export default function NewAuditPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold mb-1 block" style={{ color: '#8892A5' }}>
-                  Domain <span style={{ color: '#FF165D' }}>*</span>
+                <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--muted)' }}>
+                  Domain <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <select
                   className="select w-full"
@@ -568,28 +633,10 @@ export default function NewAuditPage() {
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-semibold mb-1 block" style={{ color: '#8892A5' }}>
-                Jurisdiction
-              </label>
-              <select
-                className="select w-full"
-                value={jurisdiction}
-                onChange={(e) => setJurisdiction(e.target.value)}
-              >
-                {JURISDICTIONS.map((j) => (
-                  <option key={j} value={j}>{j}</option>
-                ))}
-              </select>
-              <span className="text-[10px] mt-1 block" style={{ color: '#5A6478' }}>
-                Select the legal jurisdiction to filter relevant compliance frameworks
-              </span>
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold mb-1 block" style={{ color: '#8892A5' }}>
-                  Label Column <span style={{ color: '#FF165D' }}>*</span>
+                <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--muted)' }}>
+                  Label Column <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <select
                   className="select w-full"
@@ -601,13 +648,13 @@ export default function NewAuditPage() {
                     <option key={c.name} value={c.name}>{c.name}</option>
                   ))}
                 </select>
-                <span className="text-[10px] mt-1 block" style={{ color: '#5A6478' }}>
+                <span className="text-[10px] mt-1 block" style={{ color: 'var(--placeholder)' }}>
                   Which column is the outcome / decision? e.g., &apos;approved&apos;, &apos;hired&apos;
                 </span>
               </div>
               <div>
-                <label className="text-xs font-semibold mb-1 block" style={{ color: '#8892A5' }}>
-                  Positive Outcome Value <span style={{ color: '#FF165D' }}>*</span>
+                <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--muted)' }}>
+                  Positive Outcome Value <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <input
                   className="input"
@@ -618,132 +665,188 @@ export default function NewAuditPage() {
               </div>
             </div>
 
-            {/* Protected Attributes - from real schema */}
+            {/* Protected Attributes - Progressive Disclosure */}
             <div className="card">
-              <label className="text-xs font-semibold mb-2 block" style={{ color: '#8892A5' }}>
-                Protected Attributes
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {columns.map((col) => (
-                  <label
-                    key={col.name}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all text-sm"
-                    style={{
-                      background: protectedCols.includes(col.name)
-                        ? col.auto_flagged
-                          ? 'rgba(255, 154, 0, 0.08)'
-                          : 'rgba(62, 193, 211, 0.08)'
-                        : '#1A1F2B',
-                      border: `1px solid ${
-                        protectedCols.includes(col.name)
-                          ? col.auto_flagged
-                            ? 'rgba(255, 154, 0, 0.3)'
-                            : 'rgba(62, 193, 211, 0.3)'
-                          : '#2A3040'
-                      }`,
-                    }}
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+                  Protected Attributes
+                </label>
+                {columns.length > 5 && (
+                  <button 
+                    className="text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                    style={{ color: 'var(--primary)' }}
+                    onClick={() => setShowAllColumns(!showAllColumns)}
                   >
-                    <input
-                      type="checkbox"
-                      checked={protectedCols.includes(col.name)}
-                      onChange={() => toggleProtected(col.name)}
-                      className="accent-teal"
-                    />
-                    <span style={{ color: protectedCols.includes(col.name) ? '#E8EAED' : '#8892A5' }}>
-                      {col.name}
-                    </span>
-                    {col.auto_flagged && (
-                      <span className="tooltip ml-auto">
-                        <AlertTriangle size={12} style={{ color: '#FF9A00' }} />
-                        <span className="tooltip-content text-[10px]">{col.flagged_reason}</span>
-                      </span>
-                    )}
-                  </label>
-                ))}
+                    {showAllColumns ? 'Hide all columns' : `Show all ${columns.length} columns`}
+                  </button>
+                )}
               </div>
-              <div className="flex items-center gap-1.5 mt-2 text-[10px]" style={{ color: '#FF9A00' }}>
+              <div className="grid grid-cols-3 gap-2">
+                {(showAllColumns ? columns : columns.filter(c => c.auto_flagged || protectedCols.includes(c.name))).length > 0 ? (
+                  (showAllColumns ? columns : columns.filter(c => c.auto_flagged || protectedCols.includes(c.name))).map((col) => (
+                    <label
+                      key={col.name}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all text-sm"
+                      style={{
+                        background: protectedCols.includes(col.name)
+                          ? col.auto_flagged
+                            ? 'var(--warning-dim)'
+                            : 'var(--primary-dim)'
+                          : 'var(--surface-2)',
+                        border: `1px solid ${
+                          protectedCols.includes(col.name)
+                            ? col.auto_flagged
+                              ? 'var(--warning)'
+                              : 'var(--primary)'
+                            : 'var(--border)'
+                        }`,
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={protectedCols.includes(col.name)}
+                        onChange={() => toggleProtected(col.name)}
+                        className="accent-teal"
+                      />
+                      <span style={{ color: protectedCols.includes(col.name) ? 'var(--fg)' : 'var(--muted)', fontWeight: protectedCols.includes(col.name) ? 500 : 400 }}>
+                        {col.name}
+                      </span>
+                      {col.auto_flagged && (
+                        <span className="tooltip ml-auto">
+                          <AlertTriangle size={12} style={{ color: 'var(--warning)' }} />
+                          <span className="tooltip-content text-[10px]">{col.flagged_reason}</span>
+                        </span>
+                      )}
+                    </label>
+                  ))
+                ) : (
+                  <div className="col-span-3 text-center py-4 text-xs font-medium" style={{ color: 'var(--placeholder)', border: '1px dashed var(--border)', borderRadius: '8px' }}>
+                    No attributes auto-flagged. Click &apos;Show all columns&apos; to select manually.
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-3 text-[10px]" style={{ color: 'var(--warning)' }}>
                 <Info size={10} />
                 Amber-highlighted columns were auto-detected as sensitive by VisionAI
               </div>
             </div>
 
-            {/* Deployment */}
-            <div className="card">
-              <label className="text-xs font-semibold mb-2 block" style={{ color: '#8892A5' }}>
-                Deployment Duration (for Historical Harm Calculator)
-              </label>
-              <label className="flex items-center gap-2 text-sm cursor-pointer mb-3">
-                <input
-                  type="checkbox"
-                  checked={deployed}
-                  onChange={(e) => setDeployed(e.target.checked)}
-                  className="accent-teal"
-                />
-                This model has been deployed in production
-              </label>
-              {deployed && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] block mb-1" style={{ color: '#5A6478' }}>
-                      Deployed since
-                    </label>
-                    <CustomDatePicker 
-                      value={deployedSince}
-                      onChange={setDeployedSince}
-                    />
+            {/* Advanced Configuration Accordion */}
+            <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+              <button 
+                className="w-full flex items-center justify-between p-4 cursor-pointer text-sm font-semibold transition-colors"
+                style={{ background: showAdvanced ? 'var(--surface-2)' : 'transparent', color: 'var(--fg)', border: 'none' }}
+                onClick={() => setShowAdvanced(!showAdvanced)}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: 'var(--primary-dim)' }}>
+                    <PlusCircle size={14} style={{ color: 'var(--primary)', transform: showAdvanced ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
                   </div>
+                  Advanced Configuration
+                </div>
+                <span className="text-[10px] font-medium px-2 py-1 rounded" style={{ background: 'var(--surface)', color: 'var(--muted)' }}>
+                  Optional
+                </span>
+              </button>
+              
+              {showAdvanced && (
+                <div className="p-4 pt-2 space-y-4 border-t" style={{ borderColor: 'var(--border)' }}>
                   <div>
-                    <label className="text-[11px] block mb-1" style={{ color: '#5A6478' }}>
-                      Decisions per month
+                    <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--muted)' }}>
+                      Jurisdiction
                     </label>
-                    <input
-                      type="number"
-                      className="input"
-                      placeholder="e.g., 3000"
-                      value={decisionsPerMonth}
-                      onChange={(e) => setDecisionsPerMonth(e.target.value)}
-                    />
+                    <select
+                      className="select w-full"
+                      value={jurisdiction}
+                      onChange={(e) => setJurisdiction(e.target.value)}
+                    >
+                      {JURISDICTIONS.map((j) => (
+                        <option key={j} value={j}>{j}</option>
+                      ))}
+                    </select>
+                    <span className="text-[10px] mt-1 block" style={{ color: 'var(--placeholder)' }}>
+                      Select the legal jurisdiction to filter relevant compliance frameworks
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold mb-2 block" style={{ color: 'var(--muted)' }}>
+                      Deployment Duration (for Historical Harm Calculator)
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer mb-3">
+                      <input
+                        type="checkbox"
+                        checked={deployed}
+                        onChange={(e) => setDeployed(e.target.checked)}
+                        className="accent-teal"
+                      />
+                      This model has been deployed in production
+                    </label>
+                    {deployed && (
+                      <div className="grid grid-cols-2 gap-3 p-3 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                        <div>
+                          <label className="text-[11px] block mb-1" style={{ color: 'var(--placeholder)' }}>
+                            Deployed since
+                          </label>
+                          <CustomDatePicker 
+                            value={deployedSince}
+                            onChange={setDeployedSince}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] block mb-1" style={{ color: 'var(--placeholder)' }}>
+                            Decisions per month
+                          </label>
+                          <input
+                            type="number"
+                            className="input bg-transparent"
+                            placeholder="e.g., 3000"
+                            value={decisionsPerMonth}
+                            onChange={(e) => setDecisionsPerMonth(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+                        Fairness Threshold (Disparate Impact Ratio)
+                      </label>
+                      <span className="text-sm font-bold" style={{ color: 'var(--primary)' }}>
+                        {threshold.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="range"
+                        min="0.6"
+                        max="1.0"
+                        step="0.01"
+                        value={threshold}
+                        onChange={(e) => setThreshold(parseFloat(e.target.value))}
+                        className="w-full"
+                      />
+                      <div
+                        className="absolute -top-5 text-[9px] font-bold px-1 py-0.5 rounded"
+                        style={{
+                          left: `${((0.8 - 0.6) / 0.4) * 100}%`,
+                          transform: 'translateX(-50%)',
+                          background: 'var(--warning-dim)',
+                          color: 'var(--warning)',
+                        }}
+                      >
+                        0.80 legal
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-[10px] mt-1" style={{ color: 'var(--placeholder)' }}>
+                      <span>0.60</span>
+                      <span>1.00</span>
+                    </div>
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Fairness Threshold */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold" style={{ color: '#8892A5' }}>
-                  Fairness Threshold (Disparate Impact Ratio)
-                </label>
-                <span className="text-sm font-bold" style={{ color: '#3EC1D3' }}>
-                  {threshold.toFixed(2)}
-                </span>
-              </div>
-              <div className="relative">
-                <input
-                  type="range"
-                  min="0.6"
-                  max="1.0"
-                  step="0.01"
-                  value={threshold}
-                  onChange={(e) => setThreshold(parseFloat(e.target.value))}
-                  className="w-full"
-                />
-                <div
-                  className="absolute -top-5 text-[9px] font-bold px-1 py-0.5 rounded"
-                  style={{
-                    left: `${((0.8 - 0.6) / 0.4) * 100}%`,
-                    transform: 'translateX(-50%)',
-                    background: 'rgba(255, 154, 0, 0.15)',
-                    color: '#FF9A00',
-                  }}
-                >
-                  0.80 legal
-                </div>
-              </div>
-              <div className="flex justify-between text-[10px] mt-1" style={{ color: '#5A6478' }}>
-                <span>0.60</span>
-                <span>1.00</span>
-              </div>
             </div>
 
             <div className="flex justify-between">
@@ -761,33 +864,33 @@ export default function NewAuditPage() {
         {step === 3 && (
           <div className="max-w-2xl mx-auto space-y-4">
             <div className="card space-y-3">
-              <h3 className="text-sm font-semibold" style={{ color: '#3EC1D3' }}>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>
                 Audit Configuration Summary
               </h3>
               <div className="grid grid-cols-2 gap-y-2 text-sm">
-                <span style={{ color: '#8892A5' }}>Name</span>
+                <span style={{ color: 'var(--muted)' }}>Name</span>
                 <span>{auditName || 'Untitled Audit'}</span>
-                <span style={{ color: '#8892A5' }}>Domain</span>
+                <span style={{ color: 'var(--muted)' }}>Domain</span>
                 <span>{domain || '-'}</span>
-                <span style={{ color: '#8892A5' }}>Dataset</span>
+                <span style={{ color: 'var(--muted)' }}>Dataset</span>
                 <span>{dataFile?.name || '-'} ({rowCount.toLocaleString()} rows)</span>
-                <span style={{ color: '#8892A5' }}>Model</span>
+                <span style={{ color: 'var(--muted)' }}>Model</span>
                 <span>{dataOnly ? 'Data-only' : modelFile?.name || (modelStoragePath ? 'Uploaded' : 'None')}</span>
-                <span style={{ color: '#8892A5' }}>Label Column</span>
+                <span style={{ color: 'var(--muted)' }}>Label Column</span>
                 <span>{labelCol || '-'}</span>
-                <span style={{ color: '#8892A5' }}>Positive Value</span>
+                <span style={{ color: 'var(--muted)' }}>Positive Value</span>
                 <span>{positiveLabel || '-'}</span>
-                <span style={{ color: '#8892A5' }}>Protected Attributes</span>
+                <span style={{ color: 'var(--muted)' }}>Protected Attributes</span>
                 <span>{protectedCols.join(', ') || '-'}</span>
-                <span style={{ color: '#8892A5' }}>Jurisdiction</span>
+                <span style={{ color: 'var(--muted)' }}>Jurisdiction</span>
                 <span>{jurisdiction}</span>
-                <span style={{ color: '#8892A5' }}>Fairness Threshold</span>
+                <span style={{ color: 'var(--muted)' }}>Fairness Threshold</span>
                 <span>{threshold.toFixed(2)}</span>
                 {deployed && (
                   <>
-                    <span style={{ color: '#8892A5' }}>Deployed Since</span>
+                    <span style={{ color: 'var(--muted)' }}>Deployed Since</span>
                     <span>{deployedSince || '-'}</span>
-                    <span style={{ color: '#8892A5' }}>Monthly Decisions</span>
+                    <span style={{ color: 'var(--muted)' }}>Monthly Decisions</span>
                     <span>{decisionsPerMonth || '-'}</span>
                   </>
                 )}
@@ -798,10 +901,10 @@ export default function NewAuditPage() {
               className="card flex items-center gap-3"
               style={{ background: 'rgba(62, 193, 211, 0.05)', borderColor: 'rgba(62, 193, 211, 0.2)' }}
             >
-              <Info size={16} style={{ color: '#3EC1D3' }} />
+              <Info size={16} style={{ color: 'var(--primary)' }} />
               <div>
                 <div className="text-sm font-medium">Estimated analysis time</div>
-                <div className="text-xs" style={{ color: '#8892A5' }}>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>
                   ~{estimatedTime} seconds ({rowCount.toLocaleString()} rows × 10 analysis modules)
                 </div>
               </div>
@@ -856,3 +959,4 @@ export default function NewAuditPage() {
     </>
   );
 }
+
