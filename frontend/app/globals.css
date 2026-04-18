@@ -10,7 +10,7 @@
   --border: #DADCE0;
   --border-light: #E8EAED;
   --muted: #5F6368;
-  --placeholder: #9AA0A6;
+  --placeholder: #80868B;
   --primary: #4285F4;
   --primary-hover: #3367D6;
   --primary-dim: rgba(66, 133, 244, 0.08);
@@ -70,8 +70,8 @@
   --surface-3: #222836;
   --border: #2A3040;
   --border-light: #353D4F;
-  --muted: #8892A5;
-  --placeholder: #5A6478;
+  --muted: #9BA4B5;
+  --placeholder: #738096;
   --primary: #3EC1D3;
   --primary-hover: #52d0e0;
   --primary-dim: rgba(62, 193, 211, 0.10);
@@ -118,10 +118,29 @@
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-outfit), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   transition: background 0.25s ease, color 0.25s ease;
+}
+
+/* ---- Accessibility (Focus States) ---- */
+button:focus-visible, 
+a:focus-visible, 
+input:focus-visible, 
+select:focus-visible, 
+textarea:focus-visible, 
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Ensure focus states on custom components like checkbox wrappers */
+.focus-ring-wrapper:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 8px; /* match inner element */
 }
 
 /* ---- Scrollbar ---- */
