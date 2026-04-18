@@ -163,7 +163,7 @@ export const MOCK_RESULTS: AuditResults = {
     medianFlipCount: 2,
     mostVulnerableCount: 1842,
     mostVulnerablePercentage: 18.4,
-    explanation: '1,842 individuals (18.4% of the dataset) are on the decision boundary — a single feature change flips their outcome.',
+    explanation: '1,842 individuals (18.4% of the dataset) are on the decision boundary - a single feature change flips their outcome.',
   },
   historicalHarm: {
     monthsDeployed: 14,
@@ -176,9 +176,9 @@ export const MOCK_RESULTS: AuditResults = {
     disclaimer: 'This is a statistical estimate based on measured bias metrics. Actual impact may vary.',
   },
   regulationMap: [
-    { finding: 'disparate_impact_below_0.8', regulation: 'US EEOC Uniform Guidelines', clause: '29 CFR § 1607.4(D) — Four-Fifths Rule', description: 'A selection rate less than 4/5ths (80%) of the highest group rate is evidence of adverse impact.', liability: 'HIGH', requiredAction: 'Demonstrate business necessity or eliminate the adverse impact.' },
-    { finding: 'disparate_impact_below_0.8', regulation: 'EU AI Act (2024)', clause: 'Article 10 — Data Governance', description: 'High-risk AI systems must use training data free of errors accounting for characteristics leading to discrimination.', liability: 'HIGH — Up to EUR 30M or 6% of global turnover', requiredAction: 'Document data governance practices and mitigation measures.' },
-    { finding: 'feature_laundering_detected', regulation: 'EU AI Act (2024)', clause: 'Article 13 — Transparency', description: 'High-risk AI systems shall allow identification of protected characteristics influencing outcomes.', liability: 'CRITICAL — Intentional obfuscation may constitute fraud', requiredAction: 'Remove all proxy features that reconstruct protected attributes.' },
+    { finding: 'disparate_impact_below_0.8', regulation: 'US EEOC Uniform Guidelines', clause: '29 CFR § 1607.4(D) - Four-Fifths Rule', description: 'A selection rate less than 4/5ths (80%) of the highest group rate is evidence of adverse impact.', liability: 'HIGH', requiredAction: 'Demonstrate business necessity or eliminate the adverse impact.' },
+    { finding: 'disparate_impact_below_0.8', regulation: 'EU AI Act (2024)', clause: 'Article 10 - Data Governance', description: 'High-risk AI systems must use training data free of errors accounting for characteristics leading to discrimination.', liability: 'HIGH - Up to EUR 30M or 6% of global turnover', requiredAction: 'Document data governance practices and mitigation measures.' },
+    { finding: 'feature_laundering_detected', regulation: 'EU AI Act (2024)', clause: 'Article 13 - Transparency', description: 'High-risk AI systems shall allow identification of protected characteristics influencing outcomes.', liability: 'CRITICAL - Intentional obfuscation may constitute fraud', requiredAction: 'Remove all proxy features that reconstruct protected attributes.' },
   ],
   proxyVariables: [
     { proxyColumn: 'zip_code', protectedColumn: 'race', associationScore: 0.72, method: "Cramer's V", riskLevel: 'HIGH', explanation: "'zip_code' has Cramer's V of 0.72 with 'race'. If 'race' is excluded but 'zip_code' is kept, the model may still discriminate via this proxy." },
@@ -200,27 +200,27 @@ export const MOCK_DRIFT_DATA = [
 ];
 
 export const MOCK_NARRATIVES: Record<string, string> = {
-  technical: `## Technical Audit Summary\n\n### Disparate Impact Analysis\nThe hiring pipeline exhibits **significant adverse impact** across two protected attributes:\n\n- **Gender (DI = 0.71):** Female applicants have a 51% positive outcome rate vs 72% for males, yielding a DI ratio of 0.71 — below the 0.80 legal threshold (4/5ths rule). SPD = -0.21.\n- **Race (DI = 0.58):** Non-white applicants receive positive outcomes at 43% vs 74% for white applicants. DI = 0.58 — severely below threshold. SPD = -0.30.\n\n### Model Perturbation Testing\nFlip rate analysis reveals the model directly uses protected attributes:\n- Gender flip rate: 22% (Male→Female)\n- Race flip rate: 31% (White→Black)\n\nBoth exceed the 10% acceptable threshold.\n\n### Feature Laundering\n**CRITICAL:** Race can be reconstructed from remaining features with 82% accuracy (baseline: 45%). The exclusion of race from the feature set is ineffective — the model accesses racial information through zip_code and surname proxies.\n\n### SHAP Disparity\ninterview_score has 1.7x higher impact for female applicants, suggesting subjective evaluation introduces gender bias.`,
+  technical: `## Technical Audit Summary\n\n### Disparate Impact Analysis\nThe hiring pipeline exhibits **significant adverse impact** across two protected attributes:\n\n- **Gender (DI = 0.71):** Female applicants have a 51% positive outcome rate vs 72% for males, yielding a DI ratio of 0.71 - below the 0.80 legal threshold (4/5ths rule). SPD = -0.21.\n- **Race (DI = 0.58):** Non-white applicants receive positive outcomes at 43% vs 74% for white applicants. DI = 0.58 - severely below threshold. SPD = -0.30.\n\n### Model Perturbation Testing\nFlip rate analysis reveals the model directly uses protected attributes:\n- Gender flip rate: 22% (Male→Female)\n- Race flip rate: 31% (White→Black)\n\nBoth exceed the 10% acceptable threshold.\n\n### Feature Laundering\n**CRITICAL:** Race can be reconstructed from remaining features with 82% accuracy (baseline: 45%). The exclusion of race from the feature set is ineffective - the model accesses racial information through zip_code and surname proxies.\n\n### SHAP Disparity\ninterview_score has 1.7x higher impact for female applicants, suggesting subjective evaluation introduces gender bias.`,
 
-  executive: `## Executive Summary — Hiring Pipeline Risk Assessment\n\n**Overall Fairness Grade: D (42/100)**\n\n🔴 **Key Finding:** Your hiring AI approves 72% of male applicants but only 51% of female applicants, and 74% of white applicants vs 43% of non-white applicants. This constitutes measurable discrimination.\n\n🟠 **Business Risk:** Over 14 months of deployment, approximately **3,410 non-white individuals** may have received unfavorable hiring decisions due to bias. This represents significant legal exposure under EEOC guidelines and potential class action liability.\n\n🟢 **Recommended Action:** Immediately suspend automated hiring decisions pending remediation. Implement SMOTE rebalancing and remove zip_code/surname from model features. Estimated remediation timeline: 3-4 weeks.`,
+  executive: `## Executive Summary - Hiring Pipeline Risk Assessment\n\n**Overall Fairness Grade: D (42/100)**\n\n🔴 **Key Finding:** Your hiring AI approves 72% of male applicants but only 51% of female applicants, and 74% of white applicants vs 43% of non-white applicants. This constitutes measurable discrimination.\n\n🟠 **Business Risk:** Over 14 months of deployment, approximately **3,410 non-white individuals** may have received unfavorable hiring decisions due to bias. This represents significant legal exposure under EEOC guidelines and potential class action liability.\n\n🟢 **Recommended Action:** Immediately suspend automated hiring decisions pending remediation. Implement SMOTE rebalancing and remove zip_code/surname from model features. Estimated remediation timeline: 3-4 weeks.`,
 
-  legal: `## Legal Compliance Assessment\n\n### Finding 1: Disparate Impact — Race (DI = 0.58)\n**Applicable Regulation:** US EEOC Uniform Guidelines, 29 CFR § 1607.4(D)\n**Violation:** Selection rate for non-white applicants (43%) is less than four-fifths of the white applicant rate (74%). DI = 0.58.\n**Liability Assessment:** HIGH — Federal employment discrimination claim risk. Pattern suggests systemic adverse impact actionable under Title VII.\n**Required Action:** Employer must demonstrate business necessity defense or eliminate adverse impact through model remediation.\n\n### Finding 2: Feature Laundering — Race\n**Applicable Regulation:** EU AI Act (2024), Article 13\n**Violation:** Protected attribute (race) reconstructable at 82% accuracy from remaining features.\n**Liability Assessment:** CRITICAL — Intentional obfuscation may constitute fraud under Article 5(1)(a).\n**Required Action:** Immediate removal of proxy features. Legal counsel consultation required.`,
+  legal: `## Legal Compliance Assessment\n\n### Finding 1: Disparate Impact - Race (DI = 0.58)\n**Applicable Regulation:** US EEOC Uniform Guidelines, 29 CFR § 1607.4(D)\n**Violation:** Selection rate for non-white applicants (43%) is less than four-fifths of the white applicant rate (74%). DI = 0.58.\n**Liability Assessment:** HIGH - Federal employment discrimination claim risk. Pattern suggests systemic adverse impact actionable under Title VII.\n**Required Action:** Employer must demonstrate business necessity defense or eliminate adverse impact through model remediation.\n\n### Finding 2: Feature Laundering - Race\n**Applicable Regulation:** EU AI Act (2024), Article 13\n**Violation:** Protected attribute (race) reconstructable at 82% accuracy from remaining features.\n**Liability Assessment:** CRITICAL - Intentional obfuscation may constitute fraud under Article 5(1)(a).\n**Required Action:** Immediate removal of proxy features. Legal counsel consultation required.`,
 };
 
 export function getScoreColor(score: number): string {
-  if (score >= 80) return '#06D6A0';
-  if (score >= 65) return '#3EC1D3';
-  if (score >= 50) return '#FFD166';
-  if (score >= 35) return '#FF9A00';
-  return '#FF165D';
+  if (score >= 80) return 'var(--grade-a)';
+  if (score >= 65) return 'var(--grade-b)';
+  if (score >= 50) return 'var(--grade-c)';
+  if (score >= 35) return 'var(--grade-d)';
+  return 'var(--grade-f)';
 }
 
 export function getGradeColor(grade: string): string {
-  const map: Record<string, string> = { A: '#06D6A0', B: '#3EC1D3', C: '#FFD166', D: '#FF9A00', F: '#FF165D' };
-  return map[grade] || '#8892A5';
+  const map: Record<string, string> = { A: 'var(--grade-a)', B: 'var(--grade-b)', C: 'var(--grade-c)', D: 'var(--grade-d)', F: 'var(--grade-f)' };
+  return map[grade] || 'var(--muted)';
 }
 
 export function getSeverityColor(severity: string): string {
-  const map: Record<string, string> = { CRITICAL: '#FF165D', HIGH: '#FF9A00', MEDIUM: '#FFD166', LOW: '#3EC1D3', PASS: '#06D6A0' };
-  return map[severity] || '#8892A5';
+  const map: Record<string, string> = { CRITICAL: 'var(--severity-critical)', HIGH: 'var(--severity-high)', MEDIUM: 'var(--severity-medium)', LOW: 'var(--severity-low)', PASS: 'var(--severity-pass)' };
+  return map[severity] || 'var(--muted)';
 }

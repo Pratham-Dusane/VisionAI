@@ -13,8 +13,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { useTheme } from '@/lib/theme-context';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -37,6 +40,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, org, signOutUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const handleSignOut = async () => {
     await signOutUser();
@@ -53,22 +57,22 @@ export default function Sidebar() {
         collapsed ? 'w-[60px]' : 'w-[220px]'
       }`}
       style={{
-        background: 'linear-gradient(180deg, #0D1117 0%, #0B0E14 100%)',
-        borderRight: '1px solid #2A3040',
+        background: 'var(--surface)',
+        borderRight: '1px solid var(--border)',
       }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 h-[52px] shrink-0" style={{ borderBottom: '1px solid #2A3040' }}>
+      <div className="flex items-center gap-2 px-4 h-[56px] shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background: 'linear-gradient(135deg, #3EC1D3, #FF9A00)' }}
+          style={{ background: 'var(--primary)' }}
         >
-          <Eye size={15} color="#0B0E14" strokeWidth={2.5} />
+          <Eye size={15} color="#FFFFFF" strokeWidth={2.5} />
         </div>
         {!collapsed && (
           <span className="text-sm font-bold tracking-wide">
-            <span style={{ color: '#3EC1D3' }}>Vision</span>
-            <span style={{ color: '#FF9A00' }}>AI</span>
+            <span style={{ color: 'var(--logo-primary)' }}>Vision</span>
+            <span style={{ color: 'var(--logo-secondary)' }}>AI</span>
           </span>
         )}
       </div>
@@ -86,9 +90,9 @@ export default function Sidebar() {
                 collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
               }`}
               style={{
-                background: active ? 'rgba(62, 193, 211, 0.1)' : 'transparent',
-                color: active ? '#3EC1D3' : '#8892A5',
-                borderLeft: active && !collapsed ? '3px solid #3EC1D3' : '3px solid transparent',
+                background: active ? 'var(--sidebar-active-bg)' : 'transparent',
+                color: active ? 'var(--sidebar-active-text)' : 'var(--muted)',
+                borderLeft: active && !collapsed ? '3px solid var(--sidebar-active-border)' : '3px solid transparent',
               }}
             >
               <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
@@ -101,7 +105,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom */}
-      <div className="px-2 pb-3" style={{ borderTop: '1px solid #2A3040' }}>
+      <div className="px-2 pb-3" style={{ borderTop: '1px solid var(--border)' }}>
         {/* User */}
         <div className={`flex items-center gap-2.5 py-3 ${collapsed ? 'justify-center' : 'px-2'}`}>
           {user?.photoURL ? (
@@ -114,18 +118,32 @@ export default function Sidebar() {
           ) : (
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-              style={{ background: 'linear-gradient(135deg, #FF165D, #FF9A00)', color: '#0B0E14' }}
+              style={{ background: 'var(--avatar-gradient)', color: '#FFFFFF' }}
             >
               {initials}
             </div>
           )}
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold text-foreground truncate">{displayName}</div>
-              <div className="text-[10px] truncate" style={{ color: '#8892A5' }}>{orgName}</div>
+              <div className="text-xs font-semibold truncate" style={{ color: 'var(--fg)' }}>{displayName}</div>
+              <div className="text-[10px] truncate" style={{ color: 'var(--muted)' }}>{orgName}</div>
             </div>
           )}
         </div>
+
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className={`w-full flex items-center gap-2 mb-1 py-1.5 rounded-lg transition-colors cursor-pointer ${
+            collapsed ? 'justify-center' : 'px-3'
+          }`}
+          style={{ color: 'var(--muted)' }}
+          id="theme-toggle-btn"
+          title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+        >
+          {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+          {!collapsed && <span className="text-[11px]">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>}
+        </button>
 
         {/* Sign out */}
         <button
@@ -133,7 +151,7 @@ export default function Sidebar() {
           className={`w-full flex items-center gap-2 mb-1 py-1.5 rounded-lg transition-colors cursor-pointer ${
             collapsed ? 'justify-center' : 'px-3'
           }`}
-          style={{ color: '#8892A5' }}
+          style={{ color: 'var(--muted)' }}
           id="sign-out-btn"
         >
           <LogOut size={14} />
@@ -146,7 +164,7 @@ export default function Sidebar() {
           className={`w-full flex items-center justify-center gap-2 py-1.5 rounded-lg transition-colors cursor-pointer ${
             collapsed ? '' : 'px-3'
           }`}
-          style={{ background: '#141820', color: '#8892A5' }}
+          style={{ background: 'var(--surface-2)', color: 'var(--muted)' }}
         >
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           {!collapsed && <span className="text-[11px]">Collapse</span>}

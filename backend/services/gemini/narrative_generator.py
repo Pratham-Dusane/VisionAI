@@ -1,5 +1,5 @@
 """
-Narrative Generator — PRD §8.2
+Narrative Generator - PRD §8.2
 Convert numeric bias findings into plain-English narratives per stakeholder type.
 Uses Gemini API (not Vertex AI).
 """

@@ -1,5 +1,5 @@
 """
-Intersectional Audit — PRD §7.5
+Intersectional Audit - PRD §7.5
 Pairwise protected attribute combinations, DI vs overall for each intersection.
 Groups below statistical significance threshold (n<30) are flagged LOW_CONFIDENCE.
 """
@@ -43,7 +43,7 @@ def intersectional_audit(
                 pos_rate = _pos_rate(group_df, label_col, positive_label)
                 di = round(pos_rate / overall_pos_rate, 4) if overall_pos_rate > 0 else None
 
-                # Assign severity — but only for statistically significant groups
+                # Assign severity - but only for statistically significant groups
                 low_confidence = n < MIN_SAMPLE_SIGNIFICANT
                 severity = "PASS"
                 if di is not None:

@@ -1,5 +1,5 @@
 """
-Regulation Mapper — PRD §9.2
+Regulation Mapper - PRD §9.2
 Maps metric risk indicators to applicable compliance frameworks.
 Filters by domain (industry) and jurisdiction to avoid irrelevant alerts.
 

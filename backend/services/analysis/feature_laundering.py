@@ -1,5 +1,5 @@
 """
-Feature Laundering Detector — PRD §7.7
+Feature Laundering Detector - PRD §7.7
 GradientBoosting reconstruction attack: can protected attrs be predicted from model features?
 """
 
@@ -35,7 +35,7 @@ def detect_feature_laundering(
             continue
 
         try:
-            # Prepare X — one-hot encode categoricals
+            # Prepare X - one-hot encode categoricals
             X = pd.get_dummies(df[available], drop_first=True)
             y = df[protected_col].dropna()
             X = X.loc[y.index]

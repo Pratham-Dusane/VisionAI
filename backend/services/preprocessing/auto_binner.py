@@ -1,5 +1,5 @@
 """
-Auto-Binner — PRD-compliant preprocessing step.
+Auto-Binner - PRD-compliant preprocessing step.
 Detects continuous protected attributes and bins them into meaningful groups
 BEFORE any fairness analysis runs. Without this, DI/SPD on exact numeric
 values like "age=34" or "income=82000" is mathematically useless.
@@ -21,7 +21,7 @@ import numpy as np
 # 1. KEYWORD → BIN SPEC MAPPING
 # ──────────────────────────────────────────────
 # Keywords are checked via substring match against lowercased column names.
-# Order matters — first match wins.
+# Order matters - first match wins.
 
 AGE_BINS = {
     "bins": [0, 25, 35, 45, 55, 65, 200],

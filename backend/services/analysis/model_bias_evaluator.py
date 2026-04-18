@@ -1,5 +1,5 @@
 """
-Model Bias Evaluator — PRD §7.3
+Model Bias Evaluator - PRD §7.3
 Counterfactual perturbation testing + Equalized Odds.
 Skips gracefully when dataOnly=true (no model provided).
 """
@@ -152,7 +152,7 @@ def _equalized_odds(
     feature_cols: list[str],
 ) -> dict:
     """FPR + FNR per group for each protected attribute.
-    Skips continuous columns (>10 unique) — those are covered by flip rates."""
+    Skips continuous columns (>10 unique) - those are covered by flip rates."""
     results = {}
 
     try:
@@ -193,7 +193,7 @@ def _equalized_odds(
     for col in protected_cols:
         if col not in df.columns:
             continue
-        # Skip continuous columns — too many groups
+        # Skip continuous columns - too many groups
         unique_vals = df[col].dropna().unique()
         if len(unique_vals) > 10:
             continue

@@ -1,5 +1,5 @@
 """
-Flip Sensitivity Score — PRD §7.9
+Flip Sensitivity Score - PRD §7.9
 How many feature changes needed to flip individual predictions.
 Requires model. Skips when dataOnly.
 """
@@ -70,6 +70,6 @@ def compute_flip_sensitivity(
         "most_vulnerable_percentage": vuln_pct,
         "explanation": (
             f"{vulnerable} individuals ({vuln_pct}% of sample) "
-            f"are on the decision boundary — a single feature change flips their outcome."
+            f"are on the decision boundary - a single feature change flips their outcome."
         ),
     }

@@ -1,5 +1,5 @@
 """
-Schema Parser — Auto-detect sensitive/protected columns from uploaded datasets.
+Schema Parser - Auto-detect sensitive/protected columns from uploaded datasets.
 Per VisionAI PRD §6.2.
 """
 
@@ -48,7 +48,7 @@ def parse_schema(df: pd.DataFrame) -> dict:
                 sensitivity_score = max(sensitivity_score, 0.92)
                 flagged_reason = "Column values match known race/ethnicity categories"
 
-        # Sample values — handle small datasets
+        # Sample values - handle small datasets
         n_sample = min(5, len(df[col].dropna()))
         sample_values = []
         if n_sample > 0:

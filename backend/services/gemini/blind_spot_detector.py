@@ -1,5 +1,5 @@
 """
-Blind Spot Detector — PRD §8.3
+Blind Spot Detector - PRD §8.3
 Identify protected attributes the user has NOT checked yet using Gemini AI.
 """
 

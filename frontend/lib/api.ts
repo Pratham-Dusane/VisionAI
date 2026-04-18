@@ -1,7 +1,7 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 /**
- * Parse dataset schema — send storage path to backend,
+ * Parse dataset schema - send storage path to backend,
  * get column metadata + preview rows.
  */
 export async function parseSchema(storagePath: string) {
@@ -20,7 +20,7 @@ export async function parseSchema(storagePath: string) {
 }
 
 /**
- * Create a new audit — runs full preprocessing pipeline on backend.
+ * Create a new audit - runs full preprocessing pipeline on backend.
  * Returns audit ID + preprocessing results (schema, proxies, profiles).
  */
 export async function createAudit(params: {

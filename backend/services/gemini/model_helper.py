@@ -1,5 +1,5 @@
 """
-Model Helper — Get the correct Gemini model name
+Model Helper - Get the correct Gemini model name
 Handles model version compatibility across different regions and time periods.
 """
 

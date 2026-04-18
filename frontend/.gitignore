@@ -30,7 +30,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files — committed for private team repo
+# env files - committed for private team repo
 # .env*
 
 # vercel
