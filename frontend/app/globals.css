@@ -46,6 +46,19 @@
   --logo-primary: #4285F4;
   --logo-secondary: #EA4335;
   --avatar-gradient: linear-gradient(135deg, #4285F4, #34A853);
+  
+  /* Density defaults (Comfortable) */
+  --table-py: 12px;
+  --table-px: 16px;
+  --table-text: 13px;
+  --table-text-th: 11px;
+}
+
+[data-density="compact"] {
+  --table-py: 6px;
+  --table-px: 12px;
+  --table-text: 12px;
+  --table-text-th: 10px;
 }
 
 /* ========== DARK THEME ========== */
@@ -300,16 +313,17 @@ table {
 thead { background: var(--surface-2); }
 th {
   text-align: left;
-  padding: 10px 14px;
+  padding: var(--table-py) var(--table-px);
   font-weight: 600;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--table-text-th);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid var(--border);
 }
 td {
-  padding: 10px 14px;
+  padding: var(--table-py) var(--table-px);
+  font-size: var(--table-text);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
   vertical-align: middle;
 }
