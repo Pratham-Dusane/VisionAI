@@ -3,7 +3,14 @@
 **Version:** 1.0  
 **Audience:** Coding Agent / Developer  
 **Stack:** Next.js · FastAPI · Google Cloud · Gemini API · Firebase · Python ML stack  
+problem stmt-
+Unbiased AI Decision
 
+Ensuring Fairness and Detecting Bias in Automated Decisions
+Computer programs now make life-changing decisions about who gets a job, a bank loan, or even medical care. However, if these programs learn from flawed or unfair historical data, they will repeat and amplify those exact same discriminatory mistakes.
+
+Objective
+Build a clear, accessible solution to thoroughly inspect data sets and software models for hidden unfairness or discrimination. Provide organizations with an easy way to measure, flag, and fix harmful bias before their systems impact real people.
 ---
 
 ## Table of Contents
