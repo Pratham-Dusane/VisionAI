@@ -1,5 +1,5 @@
 """
-Proxy Detector — Find columns correlated with protected attributes.
+Proxy Detector - Find columns correlated with protected attributes.
 Per VisionAI PRD §6.3.
 
 Uses Cramér's V for categorical×categorical and Eta-squared for categorical×numeric

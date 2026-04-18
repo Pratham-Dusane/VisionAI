@@ -1,5 +1,5 @@
 """
-Analysis Pipeline Orchestrator — PRD §7.1
+Analysis Pipeline Orchestrator - PRD §7.1
 Runs all analysis steps, updates Firestore progress.
 """
 
@@ -119,7 +119,7 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
                 model_local_path = download_from_storage(config["modelStoragePath"])
                 model = load_model(str(model_local_path))
                 if model:
-                    # Use RAW df for model eval — model trained on raw data
+                    # Use RAW df for model eval - model trained on raw data
                     raw_feature_cols = [c for c in df_raw.columns
                                         if c != config["labelCol"]]
                     model_bias = evaluate_model_bias(
@@ -129,7 +129,7 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
                     )
                     results["modelBias"] = model_bias
 
-                    # Flip sensitivity — also on raw df
+                    # Flip sensitivity - also on raw df
                     flip_sens = compute_flip_sensitivity(
                         model, df_raw, raw_feature_cols, config["protectedCols"],
                     )
@@ -150,7 +150,7 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
         if model is not None:
             _update_progress(db, audit_id, "explainability", "running")
             try:
-                # Use RAW df for SHAP — model trained on raw data
+                # Use RAW df for SHAP - model trained on raw data
                 raw_feature_cols = [c for c in df_raw.columns if c != config["labelCol"]]
                 explainability = compute_explainability_all(
                     model, df_raw, config["protectedCols"], raw_feature_cols,

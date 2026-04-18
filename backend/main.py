@@ -8,11 +8,11 @@ load_dotenv()
 
 app = FastAPI(
     title="VisionAI API",
-    description="Fairness Observability Platform — Backend API",
+    description="Fairness Observability Platform - Backend API",
     version="0.1.0",
 )
 
-# CORS — allow frontend
+# CORS - allow frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -36,7 +36,7 @@ async def startup():
 async def health():
     return {"status": "ok", "service": "visionai-api"}
 
-# Debug endpoint — test binner directly
+# Debug endpoint - test binner directly
 @app.get("/api/debug/binner")
 async def debug_binner():
     import pandas as pd

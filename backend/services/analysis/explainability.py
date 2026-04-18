@@ -1,5 +1,5 @@
 """
-Explainability Layer — PRD §7.4
+Explainability Layer - PRD §7.4
 SHAP values per demographic group. Requires model.
 Skips gracefully when dataOnly=true.
 """
@@ -70,7 +70,7 @@ def compute_shap_by_group(
 
         # Build SHAP dataframe
         if sv.shape[1] != len(actual_cols):
-            # Shape mismatch — truncate to min
+            # Shape mismatch - truncate to min
             n = min(sv.shape[1], len(actual_cols))
             sv = sv[:, :n]
             actual_cols = actual_cols[:n]
@@ -87,7 +87,7 @@ def compute_shap_by_group(
                 for col in actual_cols
             }
 
-        # Find disparity flags — features with >2x difference between groups
+        # Find disparity flags - features with >2x difference between groups
         disparity_flags = []
         groups = list(group_shap.keys())
         if len(groups) >= 2:

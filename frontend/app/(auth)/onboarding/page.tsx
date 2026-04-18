@@ -85,14 +85,14 @@ export default function OnboardingPage() {
         <div className="flex flex-col items-center mb-5">
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
-            style={{ background: 'linear-gradient(135deg, #3EC1D3, #FF9A00)' }}
+            style={{ background: 'var(--primary)' }}
           >
-            <Eye size={24} color="#0B0E14" strokeWidth={2.5} />
+            <Eye size={24} color="#FFFFFF" strokeWidth={2.5} />
           </div>
-          <h1 className="text-lg font-bold" style={{ color: '#E8EAED' }}>
+          <h1 className="text-lg font-bold" style={{ color: 'var(--fg)' }}>
             Set up your organization
           </h1>
-          <p className="text-xs mt-1 text-center" style={{ color: '#8892A5' }}>
+          <p className="text-xs mt-1 text-center" style={{ color: 'var(--muted)' }}>
             Welcome, {user?.displayName || user?.email}! Create your workspace to get started.
           </p>
         </div>
@@ -100,8 +100,8 @@ export default function OnboardingPage() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
           {/* Org Name */}
           <div>
-            <label className="text-xs font-medium mb-1.5 block" style={{ color: '#8892A5' }}>
-              Organization Name <span style={{ color: '#FF165D' }}>*</span>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--muted)' }}>
+              Organization Name <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
             <div className="login-field">
               <Building2 size={15} className="login-field-icon" />
@@ -119,8 +119,8 @@ export default function OnboardingPage() {
 
           {/* Industry */}
           <div>
-            <label className="text-xs font-medium mb-1.5 block" style={{ color: '#8892A5' }}>
-              Industry <span style={{ color: '#FF165D' }}>*</span>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--muted)' }}>
+              Industry <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
             <div className="login-field">
               <Briefcase size={15} className="login-field-icon" />
@@ -141,8 +141,8 @@ export default function OnboardingPage() {
 
           {/* Team Size */}
           <div>
-            <label className="text-xs font-medium mb-1.5 block" style={{ color: '#8892A5' }}>
-              Team Size <span className="text-[10px]" style={{ color: '#5A6478' }}>(optional)</span>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--muted)' }}>
+              Team Size <span className="text-[10px]" style={{ color: 'var(--placeholder)' }}>(optional)</span>
             </label>
             <div className="login-field">
               <Users size={15} className="login-field-icon" />

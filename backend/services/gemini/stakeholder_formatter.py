@@ -1,5 +1,5 @@
 """
-Stakeholder Mode Formatter — PRD §8.4
+Stakeholder Mode Formatter - PRD §8.4
 Generate and cache narratives for all three stakeholder types.
 """
 

@@ -1,5 +1,5 @@
 """
-Historical Harm Calculator — PRD §7.8
+Historical Harm Calculator - PRD §7.8
 Estimate individuals harmed over deployment period.
 """
 

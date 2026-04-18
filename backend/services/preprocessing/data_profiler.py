@@ -1,5 +1,5 @@
 """
-Data Profiler — Compute per-group distribution statistics.
+Data Profiler - Compute per-group distribution statistics.
 Per VisionAI PRD §6.4.
 
 Shows class imbalance, label distribution per demographic group,

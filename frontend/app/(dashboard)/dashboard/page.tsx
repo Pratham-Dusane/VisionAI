@@ -10,8 +10,6 @@ import {
   ChevronRight,
   Eye,
   PlusCircle,
-  RefreshCw,
-  Trash2,
   TrendingUp,
   Loader2,
 } from 'lucide-react';
@@ -51,37 +49,37 @@ export default function DashboardPage() {
   const avgScore = completedAudits.length > 0
     ? Math.round(completedAudits.reduce((s: number, a: any) => s + (a.fairnessScore || 0), 0) / completedAudits.length)
     : 0;
-  const sc = (s: number) => s >= 80 ? '#06D6A0' : s >= 65 ? '#3EC1D3' : s >= 50 ? '#FF9A00' : s >= 35 ? '#FF6B35' : '#FF165D';
+  const sc = (s: number) => s >= 80 ? 'var(--severity-pass)' : s >= 65 ? 'var(--severity-low)' : s >= 50 ? 'var(--severity-medium)' : s >= 35 ? 'var(--severity-high)' : 'var(--severity-critical)';
 
   const stats = [
     {
       label: 'Total Audits',
       value: audits.length,
       icon: BarChart3,
-      color: '#3EC1D3',
-      bg: 'rgba(62, 193, 211, 0.08)',
+      color: 'var(--primary)',
+      bg: 'var(--primary-dim)',
     },
     {
       label: 'Avg Fairness',
       value: avgScore,
       icon: TrendingUp,
       color: sc(avgScore),
-      bg: `${sc(avgScore)}15`,
+      bg: 'var(--primary-dim)',
       suffix: '/100',
     },
     {
       label: 'Proxy Alerts',
       value: alertCount,
       icon: AlertTriangle,
-      color: alertCount > 0 ? '#FF9A00' : '#06D6A0',
-      bg: alertCount > 0 ? 'rgba(255, 154, 0, 0.08)' : 'rgba(6, 214, 160, 0.08)',
+      color: alertCount > 0 ? 'var(--severity-high)' : 'var(--severity-pass)',
+      bg: alertCount > 0 ? 'var(--accent-dim)' : 'var(--success-dim)',
     },
     {
       label: 'Last Audit',
-      value: lastAudit ? new Date(lastAudit).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—',
+      value: lastAudit ? new Date(lastAudit).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-',
       icon: Calendar,
-      color: '#F6F7D7',
-      bg: 'rgba(246, 247, 215, 0.06)',
+      color: 'var(--muted)',
+      bg: 'var(--surface-2)',
     },
   ];
 
@@ -91,7 +89,7 @@ export default function DashboardPage() {
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard' }]} />
 
-      <div className="flex-1 p-4 space-y-4 animate-fade-in">
+      <div className="flex-1 p-5 space-y-4 animate-fade-in">
         {/* Stats Row */}
         <div className="grid grid-cols-4 gap-3">
           {stats.map((s) => {
@@ -105,13 +103,13 @@ export default function DashboardPage() {
                   <Icon size={18} style={{ color: s.color }} />
                 </div>
                 <div>
-                  <div className="text-[11px] font-medium" style={{ color: '#8892A5' }}>
+                  <div className="text-[11px] font-medium" style={{ color: 'var(--muted)' }}>
                     {s.label}
                   </div>
                   <div className="text-xl font-bold" style={{ color: s.color }}>
                     {s.value}
                     {'suffix' in s && s.suffix && (
-                      <span className="text-xs font-normal" style={{ color: '#5A6478' }}>{s.suffix}</span>
+                      <span className="text-xs font-normal" style={{ color: 'var(--placeholder)' }}>{s.suffix}</span>
                     )}
                   </div>
                 </div>
@@ -123,8 +121,8 @@ export default function DashboardPage() {
         {/* Loading */}
         {loading && (
           <div className="card flex items-center justify-center py-12">
-            <Loader2 size={24} className="animate-spin" style={{ color: '#3EC1D3' }} />
-            <span className="ml-3 text-sm" style={{ color: '#8892A5' }}>Loading audits...</span>
+            <Loader2 size={24} className="animate-spin" style={{ color: 'var(--primary)' }} />
+            <span className="ml-3 text-sm" style={{ color: 'var(--muted)' }}>Loading audits...</span>
           </div>
         )}
 
@@ -133,13 +131,13 @@ export default function DashboardPage() {
           <div
             className="card flex flex-col items-center justify-center py-16 text-center"
             style={{
-              background: 'linear-gradient(135deg, rgba(62, 193, 211, 0.05), rgba(255, 154, 0, 0.05))',
-              border: '1px dashed #3EC1D3',
+              background: 'var(--primary-dim)',
+              border: '1px dashed var(--primary)',
             }}
           >
-            <Activity size={40} style={{ color: '#3EC1D3', marginBottom: 12 }} />
+            <Activity size={40} style={{ color: 'var(--primary)', marginBottom: 12 }} />
             <h3 className="text-lg font-semibold mb-1">Run your first fairness audit</h3>
-            <p className="text-sm mb-4" style={{ color: '#8892A5' }}>
+            <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>
               Upload a dataset to get started
             </p>
             <Link href="/audit/new" className="btn btn-primary btn-lg">
@@ -151,7 +149,7 @@ export default function DashboardPage() {
         {/* Audits Table */}
         {!loading && audits.length > 0 && (
           <div className="card" style={{ padding: 0 }}>
-            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #2A3040' }}>
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
               <h2 className="text-sm font-semibold">Recent Audits</h2>
               <Link href="/audit/new" className="btn btn-primary btn-sm">
                 <PlusCircle size={13} /> New Audit
@@ -179,27 +177,27 @@ export default function DashboardPage() {
                         <Link
                           href={`/audit/${audit.id}`}
                           className="font-medium hover:underline"
-                          style={{ color: '#E8EAED' }}
+                          style={{ color: 'var(--fg)' }}
                         >
                           {audit.name}
                         </Link>
                       </td>
                       <td>
-                        <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: '#1A1F2B', color: '#8892A5' }}>
+                        <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: 'var(--surface-2)', color: 'var(--muted)' }}>
                           {audit.domain}
                         </span>
                       </td>
-                      <td style={{ color: '#8892A5' }}>
+                      <td style={{ color: 'var(--muted)' }}>
                         {new Date(audit.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
                       <td>
                         {audit.fairnessScore != null ? (
                           <span style={{ color: sc(audit.fairnessScore), fontWeight: 600 }}>
-                            {audit.fairnessScore}<span className="text-[10px] font-normal" style={{ color: '#5A6478' }}>/{audit.letterGrade}</span>
+                            {audit.fairnessScore}<span className="text-[10px] font-normal" style={{ color: 'var(--placeholder)' }}>/{audit.letterGrade}</span>
                           </span>
-                        ) : '—'}
+                        ) : '-'}
                       </td>
-                      <td>{audit.rowCount?.toLocaleString() || '—'}</td>
+                      <td>{audit.rowCount?.toLocaleString() || '-'}</td>
                       <td>
                         {(audit.proxies?.length || 0) > 0 ? (
                           <span className="badge badge-high">{audit.proxies.length}</span>
@@ -215,10 +213,10 @@ export default function DashboardPage() {
                           <Link
                             href={`/audit/${audit.id}`}
                             className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
-                            style={{ background: '#1A1F2B' }}
+                            style={{ background: 'var(--surface-2)' }}
                             title="View"
                           >
-                            <Eye size={13} style={{ color: '#8892A5' }} />
+                            <Eye size={13} style={{ color: 'var(--muted)' }} />
                           </Link>
                         </div>
                       </td>
@@ -230,8 +228,8 @@ export default function DashboardPage() {
 
             {/* Pagination */}
             {audits.length > perPage && (
-              <div className="flex items-center justify-between px-4 py-2.5" style={{ borderTop: '1px solid #2A3040' }}>
-                <span className="text-xs" style={{ color: '#8892A5' }}>
+              <div className="flex items-center justify-between px-4 py-2.5" style={{ borderTop: '1px solid var(--border)' }}>
+                <span className="text-xs" style={{ color: 'var(--muted)' }}>
                   Showing {page * perPage + 1}–{Math.min((page + 1) * perPage, audits.length)} of {audits.length}
                 </span>
                 <div className="flex gap-1">

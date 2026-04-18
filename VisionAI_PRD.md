@@ -1,4 +1,4 @@
-# VisionAI — Product Requirements Document
+# VisionAI - Product Requirements Document
 ### Fairness Observability Platform | Google Solutions Challenge 2026
 **Version:** 1.0  
 **Audience:** Coding Agent / Developer  
@@ -18,16 +18,16 @@ Build a clear, accessible solution to thoroughly inspect data sets and software 
 1. [Project Overview](#1-project-overview)
 2. [Architecture Overview](#2-architecture-overview)
 3. [Repository Structure](#3-repository-structure)
-4. [Phase 1 — Frontend Foundation](#4-phase-1--frontend-foundation)
-5. [Phase 2 — Authentication & Project Management](#5-phase-2--authentication--project-management)
-6. [Phase 3 — Data Ingestion & Pre-processing](#6-phase-3--data-ingestion--pre-processing)
-7. [Phase 4 — Analysis Engine](#7-phase-4--analysis-engine)
-8. [Phase 5 — Gemini AI Integration Layer](#8-phase-5--gemini-ai-integration-layer)
-9. [Phase 6 — Outputs & Reporting](#9-phase-6--outputs--reporting)
-10. [Phase 7 — Advanced & Innovative Features](#10-phase-7--advanced--innovative-features)
-11. [Phase 8 — CI/CD Integration & Action Layer](#11-phase-8--cicd-integration--action-layer)
-12. [Phase 9 — Bias Drift Monitor](#12-phase-9--bias-drift-monitor)
-13. [Phase 10 — Infrastructure, Scaling & GCP Config](#13-phase-10--infrastructure-scaling--gcp-config)
+4. [Phase 1 - Frontend Foundation](#4-phase-1--frontend-foundation)
+5. [Phase 2 - Authentication & Project Management](#5-phase-2--authentication--project-management)
+6. [Phase 3 - Data Ingestion & Pre-processing](#6-phase-3--data-ingestion--pre-processing)
+7. [Phase 4 - Analysis Engine](#7-phase-4--analysis-engine)
+8. [Phase 5 - Gemini AI Integration Layer](#8-phase-5--gemini-ai-integration-layer)
+9. [Phase 6 - Outputs & Reporting](#9-phase-6--outputs--reporting)
+10. [Phase 7 - Advanced & Innovative Features](#10-phase-7--advanced--innovative-features)
+11. [Phase 8 - CI/CD Integration & Action Layer](#11-phase-8--cicd-integration--action-layer)
+12. [Phase 9 - Bias Drift Monitor](#12-phase-9--bias-drift-monitor)
+13. [Phase 10 - Infrastructure, Scaling & GCP Config](#13-phase-10--infrastructure-scaling--gcp-config)
 14. [Data Models](#14-data-models)
 15. [API Reference](#15-api-reference)
 16. [Environment Variables](#16-environment-variables)
@@ -37,19 +37,19 @@ Build a clear, accessible solution to thoroughly inspect data sets and software 
 ## 1. Project Overview
 
 ### 1.1 Product Name
-**VisionAI** — AI-powered Fairness Observability Platform
+**VisionAI** - AI-powered Fairness Observability Platform
 
 ### 1.2 Mission Statement
-VisionAI is not a one-shot bias checker. It is a continuous fairness monitoring system — the "Grafana for ML fairness." It audits datasets and models before deployment, tracks fairness drift over time, explains findings to three distinct audience types (technical, executive, legal), and recommends actionable fixes.
+VisionAI is not a one-shot bias checker. It is a continuous fairness monitoring system - the "Grafana for ML fairness." It audits datasets and models before deployment, tracks fairness drift over time, explains findings to three distinct audience types (technical, executive, legal), and recommends actionable fixes.
 
 ### 1.3 Core Problem Statement
 Automated ML models make life-changing decisions (hiring, loans, medical triage). When trained on biased historical data, they encode and amplify discrimination at scale. Organizations lack a unified, accessible platform to inspect, monitor, and remediate bias across their ML pipeline.
 
 ### 1.4 Target Users
-- **ML Engineers** — upload models and datasets, analyze SHAP values, integrate with CI/CD
-- **Compliance Officers** — need regulation-mapped findings and exportable audit trails
-- **Executives / HR leaders** — need plain-English summaries and business risk scores
-- **Individual applicants (future)** — understand why they were rejected by an automated system
+- **ML Engineers** - upload models and datasets, analyze SHAP values, integrate with CI/CD
+- **Compliance Officers** - need regulation-mapped findings and exportable audit trails
+- **Executives / HR leaders** - need plain-English summaries and business risk scores
+- **Individual applicants (future)** - understand why they were rejected by an automated system
 
 ### 1.5 Hackathon Positioning
 - Google Cloud: Cloud Run, Firestore, Cloud Storage, Vertex AI, BigQuery
@@ -202,7 +202,7 @@ visionai/
 
 ---
 
-## 4. Phase 1 — Frontend Foundation
+## 4. Phase 1 - Frontend Foundation
 
 Build the UI shell first. All pages should render with mock/skeleton data before the backend is wired.
 
@@ -218,7 +218,7 @@ npm install recharts d3 @types/d3 framer-motion lucide-react
 npm install firebase
 ```
 
-**Tailwind config** — extend with VisionAI brand colors in `tailwind.config.ts`:
+**Tailwind config** - extend with VisionAI brand colors in `tailwind.config.ts`:
 ```typescript
 theme: {
   extend: {
@@ -262,9 +262,9 @@ Thin top bar showing:
 
 Show the organization's audit history and summary stats.
 
-**Top stats row — 4 cards:**
+**Top stats row - 4 cards:**
 1. Total Audits Run (number)
-2. Average Fairness Score (0-100 with color — green >70, amber 40-70, red <40)
+2. Average Fairness Score (0-100 with color - green >70, amber 40-70, red <40)
 3. Active Alerts (count of audits with severity CRITICAL or HIGH)
 4. Last Audit Date
 
@@ -282,7 +282,7 @@ Large CTA card: "Run your first audit" with a `New Audit` button. Only show if t
 
 Three-step wizard. Use a stepper component at the top showing Step 1 / Step 2 / Step 3.
 
-#### Step 1 — Upload Files
+#### Step 1 - Upload Files
 Two upload zones side by side:
 
 **Dataset Upload Zone (`components/audit/UploadZone.tsx`):**
@@ -294,12 +294,12 @@ Two upload zones side by side:
 
 **Model Upload Zone:**
 - Accept: `.pkl`, `.onnx`, `.joblib`
-- OR: toggle to "Live API Endpoint" — shows a text input for REST URL + optional Bearer token field
-- Model upload is optional — user can audit data only
+- OR: toggle to "Live API Endpoint" - shows a text input for REST URL + optional Bearer token field
+- Model upload is optional - user can audit data only
 
-Below the zones, show a toggle: "I only want to audit my dataset (no model)" — disables the model zone.
+Below the zones, show a toggle: "I only want to audit my dataset (no model)" - disables the model zone.
 
-#### Step 2 — Context Definition (`components/audit/ContextForm.tsx`)
+#### Step 2 - Context Definition (`components/audit/ContextForm.tsx`)
 
 This is the most important form. Build it carefully.
 
@@ -325,7 +325,7 @@ This is the most important form. Build it carefully.
 
 **Protected attributes selector:**
 - Multi-select checkbox list of all dataset columns
-- Pre-selected columns are highlighted in amber with a warning icon — these are VisionAI's auto-detected sensitive columns (populated after Step 1 backend call)
+- Pre-selected columns are highlighted in amber with a warning icon - these are VisionAI's auto-detected sensitive columns (populated after Step 1 backend call)
 - User can check/uncheck any columns
 - Tooltip on each auto-detected column explaining WHY it was flagged
 
@@ -340,7 +340,7 @@ This is the most important form. Build it carefully.
 - Label: "Minimum acceptable Disparate Impact Ratio (0.8 = legal threshold)"
 - Show the 0.8 line prominently on the slider
 
-#### Step 3 — Review & Launch
+#### Step 3 - Review & Launch
 - Summary of all inputs
 - Estimated analysis time (based on file size: rough formula `rows / 10000 * 30` seconds, max 5 min)
 - Big "Launch Audit" button
@@ -371,7 +371,7 @@ Each tab is described in detail in Phase 6 and Phase 7.
 
 ---
 
-## 5. Phase 2 — Authentication & Project Management
+## 5. Phase 2 - Authentication & Project Management
 
 ### 5.1 Firebase Auth Setup
 
@@ -423,7 +423,7 @@ export const googleProvider = new GoogleAuthProvider();
 
 On first login, prompt user to create an Organization:
 - Org name (required)
-- Industry (dropdown — same list as domain selector)
+- Industry (dropdown - same list as domain selector)
 - Team size (optional)
 
 Store in Firestore: `organizations/{orgId}` with `{ name, industry, ownerId, members: [uid], createdAt }`
@@ -432,7 +432,7 @@ Every audit is scoped to an organization. User can only see audits belonging to 
 
 ---
 
-## 6. Phase 3 — Data Ingestion & Pre-processing
+## 6. Phase 3 - Data Ingestion & Pre-processing
 
 ### 6.1 File Upload Flow
 
@@ -447,7 +447,7 @@ Flow:
 4. Frontend reports upload completion to `POST /api/uploads/confirm` with the GCS path
 5. Backend triggers the preprocessing pipeline
 
-**Backend — GCS signed URL generation (`core/gcs.py`):**
+**Backend - GCS signed URL generation (`core/gcs.py`):**
 ```python
 from google.cloud import storage
 from datetime import timedelta
@@ -468,7 +468,7 @@ def generate_upload_signed_url(bucket_name: str, blob_name: str, content_type: s
 **GCS Bucket setup (developer instruction):**
 1. Go to https://console.cloud.google.com/storage
 2. Create bucket: `visionai-uploads-{project-id}`
-3. Region: `asia-south1` (Mumbai — lowest latency for India)
+3. Region: `asia-south1` (Mumbai - lowest latency for India)
 4. Storage class: Standard
 5. Access control: Fine-grained
 6. Enable CORS: create `storage.cors.json`:
@@ -655,7 +655,7 @@ def recommend_smote(group_counts: dict) -> dict:
 
 ---
 
-## 7. Phase 4 — Analysis Engine
+## 7. Phase 4 - Analysis Engine
 
 All analysis modules run as a Cloud Run Job (async), triggered by a Cloud Task after file upload confirmation.
 
@@ -763,9 +763,9 @@ For each group, compute the label distribution as a percentage. Flag groups wher
 **This is the "software model" evaluation the problem statement requires.**
 
 **Supports three model types:**
-1. Pickle/joblib file (scikit-learn compatible) — load with `joblib.load()`
-2. ONNX file — load with `onnxruntime.InferenceSession()`
-3. Live REST API endpoint — call with `httpx.AsyncClient`
+1. Pickle/joblib file (scikit-learn compatible) - load with `joblib.load()`
+2. ONNX file - load with `onnxruntime.InferenceSession()`
+3. Live REST API endpoint - call with `httpx.AsyncClient`
 
 **Strategy: Perturbation Testing at scale**
 
@@ -989,7 +989,7 @@ Cap at 0 minimum.
 
 **This is the most technically sophisticated module.**
 
-**Purpose:** Detect if a protected attribute has been removed from the feature set but can be reconstructed from the remaining features — indicating the model still has access to the protected information indirectly.
+**Purpose:** Detect if a protected attribute has been removed from the feature set but can be reconstructed from the remaining features - indicating the model still has access to the protected information indirectly.
 
 ```python
 from sklearn.ensemble import GradientBoostingClassifier
@@ -1006,7 +1006,7 @@ def detect_feature_laundering(
     """
     For each protected attribute NOT in feature_cols, train a classifier to
     predict it from feature_cols. If accuracy > threshold, the attribute
-    is reconstructable — i.e., it has been laundered, not removed.
+    is reconstructable - i.e., it has been laundered, not removed.
     """
     results = []
     
@@ -1148,14 +1148,14 @@ def compute_flip_sensitivity(model, df: pd.DataFrame, feature_cols: list[str], p
         'explanation': (
             f"{int((df_result['flip_sensitivity'] <= 1).sum())} individuals "
             f"({round(float((df_result['flip_sensitivity'] <= 1).mean() * 100), 1)}% of the dataset) "
-            f"are on the decision boundary — a single feature change flips their outcome."
+            f"are on the decision boundary - a single feature change flips their outcome."
         )
     }
 ```
 
 ---
 
-## 8. Phase 5 — Gemini AI Integration Layer
+## 8. Phase 5 - Gemini AI Integration Layer
 
 ### 8.1 Setup Vertex AI
 
@@ -1282,11 +1282,11 @@ async def detect_blind_spots(
 
 ### 8.4 Stakeholder Mode Formatter
 
-Three separate Gemini calls — one per stakeholder type. Results stored in Firestore under `audits/{id}/narratives/{type}`. Cache all generated narratives — check Firestore before calling Gemini. Use `temperature=0.2` for consistency.
+Three separate Gemini calls - one per stakeholder type. Results stored in Firestore under `audits/{id}/narratives/{type}`. Cache all generated narratives - check Firestore before calling Gemini. Use `temperature=0.2` for consistency.
 
 ---
 
-## 9. Phase 6 — Outputs & Reporting
+## 9. Phase 6 - Outputs & Reporting
 
 ### 9.1 Visual Dashboard Tabs
 
@@ -1317,12 +1317,12 @@ Three separate Gemini calls — one per stakeholder type. Results stored in Fire
 
 #### Tab 3: Model Analysis
 - **Flip rate table:** Per protected attribute, show flip rates for each value-pair transition
-- **Equalized Odds chart:** Grouped bar chart — FPR and FNR side by side per group
+- **Equalized Odds chart:** Grouped bar chart - FPR and FNR side by side per group
 - **Predictive parity chart:** Precision per group
 - **Adversarial Simulator:** (see Phase 7 Section 10.2)
 
 #### Tab 4: Explainability
-- **SHAP Summary Plot:** Recharts horizontal bar chart — mean absolute SHAP per feature, stacked by group
+- **SHAP Summary Plot:** Recharts horizontal bar chart - mean absolute SHAP per feature, stacked by group
 - **Feature Disparity Flags:** Table of features where SHAP disparity ratio > 2x between groups, with plain-English explanation
 - **Feature Laundering Results:** For each protected attribute: reconstruction accuracy, baseline, lift, verdict badge, list of implicated features
 
@@ -1363,41 +1363,41 @@ REGULATION_MAP = {
     'disparate_impact_below_0.8': [
         {
             'regulation': 'US EEOC Uniform Guidelines',
-            'clause': '29 CFR § 1607.4(D) — Four-Fifths Rule',
+            'clause': '29 CFR § 1607.4(D) - Four-Fifths Rule',
             'description': 'A selection rate less than 4/5ths (80%) of the highest group rate is considered evidence of adverse impact.',
-            'liability': 'HIGH — Federal employment discrimination claim risk',
+            'liability': 'HIGH - Federal employment discrimination claim risk',
             'required_action': 'Demonstrate business necessity or eliminate the adverse impact.',
         },
         {
             'regulation': 'EU AI Act (2024)',
-            'clause': 'Article 10 — Data and Data Governance',
+            'clause': 'Article 10 - Data and Data Governance',
             'description': 'High-risk AI systems must use training data free of errors accounting for characteristics that could lead to discrimination.',
-            'liability': 'HIGH — Up to EUR 30M or 6% of global turnover fine',
+            'liability': 'HIGH - Up to EUR 30M or 6% of global turnover fine',
             'required_action': 'Document data governance practices and mitigation measures.',
         },
     ],
     'feature_laundering_detected': [
         {
             'regulation': 'EU AI Act (2024)',
-            'clause': 'Article 13 — Transparency and Provision of Information',
+            'clause': 'Article 13 - Transparency and Provision of Information',
             'description': 'High-risk AI systems shall be designed to allow identification of protected characteristics that may influence outcomes.',
-            'liability': 'CRITICAL — Intentional obfuscation may constitute fraud',
+            'liability': 'CRITICAL - Intentional obfuscation may constitute fraud',
             'required_action': 'Remove all proxy features that reconstruct protected attributes.',
         },
         {
             'regulation': 'US Fair Housing Act',
-            'clause': '42 U.S.C. § 3604 — Prohibited Housing Practices',
+            'clause': '42 U.S.C. § 3604 - Prohibited Housing Practices',
             'description': 'Use of proxies to discriminate constitutes a violation equivalent to direct discrimination.',
-            'liability': 'CRITICAL — Civil penalty up to $100,000 per violation',
+            'liability': 'CRITICAL - Civil penalty up to $100,000 per violation',
             'required_action': 'Immediate remediation required. Consult legal counsel.',
         },
     ],
     'equalized_odds_violation': [
         {
             'regulation': 'EU AI Act (2024)',
-            'clause': 'Article 9 — Risk Management System',
+            'clause': 'Article 9 - Risk Management System',
             'description': 'Providers of high-risk AI systems shall establish a risk management system covering testing for bias and discriminatory outcomes.',
-            'liability': 'MEDIUM — Regulatory scrutiny, audit requirement',
+            'liability': 'MEDIUM - Regulatory scrutiny, audit requirement',
             'required_action': 'Implement ongoing monitoring and bias testing protocols.',
         },
     ],
@@ -1427,7 +1427,7 @@ Use `satori` + `sharp` to render React chart components to PNG for PDF embedding
 
 ---
 
-## 10. Phase 7 — Advanced & Innovative Features
+## 10. Phase 7 - Advanced & Innovative Features
 
 ### 10.1 Stakeholder Mode (`components/audit/StakeholderToggle.tsx`)
 
@@ -1477,7 +1477,7 @@ Backend runs:
 3. Compute fairness metrics for each combination
 4. Return worst-case scenario found
 
-Output: "Worst case found: At threshold 0.52, Black female applicants aged 25-35 face a DI of 0.41 — the most discriminated-against configuration in your model."
+Output: "Worst case found: At threshold 0.52, Black female applicants aged 25-35 face a DI of 0.41 - the most discriminated-against configuration in your model."
 
 Frontend: highlighted "WORST CASE SCENARIO" card with red border at the top of the results page.
 
@@ -1515,7 +1515,7 @@ On audit results page, show benchmarking card:
 
 Query BigQuery on audit completion to compute percentile rank. Only insert rows if org has `settings.benchmarking_opt_in === true`.
 
-### 10.7 Historical Harm Calculator — Frontend
+### 10.7 Historical Harm Calculator - Frontend
 
 In the Overview tab, if deployment duration was provided:
 - Large red-bordered card
@@ -1543,7 +1543,7 @@ These require different fixes and the distinction is shown prominently in the Fi
 
 ---
 
-## 11. Phase 8 — CI/CD Integration & Action Layer
+## 11. Phase 8 - CI/CD Integration & Action Layer
 
 ### 11.1 VisionAI CI/CD API
 
@@ -1611,7 +1611,7 @@ jobs:
 
 ---
 
-## 12. Phase 9 — Bias Drift Monitor
+## 12. Phase 9 - Bias Drift Monitor
 
 ### 12.1 Overview
 
@@ -1662,11 +1662,11 @@ CREATE TABLE visionai_analytics.drift_metrics (
 
 ---
 
-## 13. Phase 10 — Infrastructure, Scaling & GCP Config
+## 13. Phase 10 - Infrastructure, Scaling & GCP Config
 
 ### 13.1 Google Cloud Project Setup
 
-**Developer setup — run these commands in order:**
+**Developer setup - run these commands in order:**
 
 ```bash
 # Install Google Cloud CLI from https://cloud.google.com/sdk/docs/install
@@ -1687,7 +1687,7 @@ gcloud services enable \
   iam.googleapis.com
 ```
 
-### 13.2 Cloud Run — FastAPI Backend
+### 13.2 Cloud Run - FastAPI Backend
 
 **`infra/cloudrun.yaml`:**
 ```yaml
@@ -1725,7 +1725,7 @@ gcloud run deploy visionai-api \
   --service-account visionai-api-sa@visionai-prod.iam.gserviceaccount.com
 ```
 
-### 13.3 Cloud Run Jobs — ML Worker
+### 13.3 Cloud Run Jobs - ML Worker
 
 `worker/Dockerfile`:
 ```dockerfile
@@ -1822,7 +1822,7 @@ service cloud.firestore {
 ```
 
 **API Key security:**
-- Store only SHA-256 hash in Firestore — never plaintext
+- Store only SHA-256 hash in Firestore - never plaintext
 - Keys shown to user only once on creation
 - Prefix: `vai_live_` production, `vai_test_` test
 - Validate: `hashlib.sha256(key.encode()).hexdigest()`
@@ -1999,19 +1999,19 @@ Build in this strict sequence to always have a demoable state at each milestone:
 
 | Step | Feature | Demoable? |
 |------|---------|-----------|
-| 1 | Frontend shell, routing, mock data | Yes — full UI visible |
-| 2 | Firebase Auth + org creation | Yes — auth flow |
-| 3 | GCS upload + schema parser | Yes — show column detection |
-| 4 | Data bias scanner + dashboard wired | **MVP — submit after this** |
+| 1 | Frontend shell, routing, mock data | Yes - full UI visible |
+| 2 | Firebase Auth + org creation | Yes - auth flow |
+| 3 | GCS upload + schema parser | Yes - show column detection |
+| 4 | Data bias scanner + dashboard wired | **MVP - submit after this** |
 | 5 | Proxy detector + network graph | Yes |
 | 6 | Model evaluator (perturbation testing) | Yes |
-| 7 | Gemini narrative + blind spot detection | Yes — impressive demo |
+| 7 | Gemini narrative + blind spot detection | Yes - impressive demo |
 | 8 | Stakeholder mode toggle | Yes |
 | 9 | Intersectional heatmap | Yes |
 | 10 | SHAP + explainability | Yes |
-| 11 | Feature laundering detector | Yes — most impressive |
+| 11 | Feature laundering detector | Yes - most impressive |
 | 12 | Regulation mapper + legal tab | Yes |
-| 13 | Historical harm calculator | Yes — most emotionally impactful |
+| 13 | Historical harm calculator | Yes - most emotionally impactful |
 | 14 | Drift monitor | Yes |
 | 15 | PDF report generation | Yes |
 | 16 | CI/CD API endpoint | Yes |
@@ -2022,4 +2022,4 @@ At step 4, you have a fully functional and demoable MVP for the April 24 submiss
 
 ---
 
-*VisionAI PRD v1.0 — Google Solutions Challenge 2026 — Build with AI*
+*VisionAI PRD v1.0 - Google Solutions Challenge 2026 - Build with AI*

@@ -84,7 +84,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-container">
-      {/* Animated background orbs */}
+      {/* Animated background orbs (visible in dark mode only via CSS) */}
       <div className="login-orb login-orb-1" />
       <div className="login-orb login-orb-2" />
       <div className="login-orb login-orb-3" />
@@ -95,24 +95,24 @@ export default function LoginPage() {
         <div className="flex flex-col items-center mb-6">
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
-            style={{ background: 'linear-gradient(135deg, #3EC1D3, #FF9A00)' }}
+            style={{ background: 'var(--primary)' }}
           >
-            <Eye size={24} color="#0B0E14" strokeWidth={2.5} />
+            <Eye size={24} color="#FFFFFF" strokeWidth={2.5} />
           </div>
           <h1 className="text-xl font-bold tracking-wide">
-            <span style={{ color: '#3EC1D3' }}>Vision</span>
-            <span style={{ color: '#FF9A00' }}>AI</span>
+            <span style={{ color: 'var(--logo-primary)' }}>Vision</span>
+            <span style={{ color: 'var(--logo-secondary)' }}>AI</span>
           </h1>
-          <p className="text-xs mt-1" style={{ color: '#8892A5' }}>
+          <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
             Fairness Observability Platform
           </p>
         </div>
 
         {/* Title */}
-        <h2 className="text-base font-semibold text-center mb-1" style={{ color: '#E8EAED' }}>
+        <h2 className="text-base font-semibold text-center mb-1" style={{ color: 'var(--fg)' }}>
           {isRegister ? 'Create your account' : 'Welcome back'}
         </h2>
-        <p className="text-xs text-center mb-5" style={{ color: '#8892A5' }}>
+        <p className="text-xs text-center mb-5" style={{ color: 'var(--muted)' }}>
           {isRegister ? 'Start auditing AI fairness today' : 'Sign in to continue to your dashboard'}
         </p>
 
@@ -134,11 +134,11 @@ export default function LoginPage() {
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-4">
-          <div className="flex-1 h-px" style={{ background: '#2A3040' }} />
-          <span className="text-[11px] font-medium" style={{ color: '#5A6478' }}>
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+          <span className="text-[11px] font-medium" style={{ color: 'var(--placeholder)' }}>
             or continue with email
           </span>
-          <div className="flex-1 h-px" style={{ background: '#2A3040' }} />
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
         </div>
 
         {/* Form */}
@@ -217,12 +217,12 @@ export default function LoginPage() {
         </form>
 
         {/* Toggle */}
-        <p className="text-center text-xs mt-4" style={{ color: '#8892A5' }}>
+        <p className="text-center text-xs mt-4" style={{ color: 'var(--muted)' }}>
           {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
             onClick={() => { setIsRegister(!isRegister); setError(''); }}
             className="font-semibold transition-colors cursor-pointer"
-            style={{ color: '#3EC1D3' }}
+            style={{ color: 'var(--primary)' }}
             id="auth-toggle-btn"
           >
             {isRegister ? 'Sign in' : 'Create one'}

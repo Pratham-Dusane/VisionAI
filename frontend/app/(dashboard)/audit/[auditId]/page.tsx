@@ -21,15 +21,15 @@ const TABS = [
 ];
 
 function gradeColor(g: string) {
-  const m: Record<string, string> = { A: '#06D6A0', B: '#3EC1D3', C: '#FF9A00', D: '#FF6B35', F: '#FF165D' };
-  return m[g] || '#8892A5';
+  const m: Record<string, string> = { A: 'var(--grade-a)', B: 'var(--grade-b)', C: 'var(--grade-c)', D: 'var(--grade-d)', F: 'var(--grade-f)' };
+  return m[g] || 'var(--muted)';
 }
 function scoreColor(s: number) {
-  if (s >= 80) return '#06D6A0';
-  if (s >= 65) return '#3EC1D3';
-  if (s >= 50) return '#FF9A00';
-  if (s >= 35) return '#FF6B35';
-  return '#FF165D';
+  if (s >= 80) return 'var(--grade-a)';
+  if (s >= 65) return 'var(--grade-b)';
+  if (s >= 50) return 'var(--grade-c)';
+  if (s >= 35) return 'var(--grade-d)';
+  return 'var(--grade-f)';
 }
 function sevBadge(s: string) {
   const m: Record<string, string> = { PASS: 'badge-pass', HIGH: 'badge-high', CRITICAL: 'badge-critical', MEDIUM: 'badge-medium', FAIL: 'badge-critical', LOW_CONFIDENCE: 'badge-neutral' };
@@ -69,7 +69,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
     return () => { cancelled = true; clearTimeout(timer); };
   }, [auditId]);
 
-  // Show processing state — skeleton shimmer layout
+  // Show processing state - skeleton shimmer layout
   if (loading || (audit && audit.status === 'PROCESSING')) {
     const pipeline = audit?.pipeline || {};
     const steps = Object.entries(pipeline);
@@ -102,18 +102,18 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
 
           {/* Pipeline progress overlay */}
           {steps.length > 0 && (
-            <div className="card" style={{ borderColor: 'rgba(62, 193, 211, 0.2)' }}>
+            <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
               <div className="flex items-center gap-2 mb-3">
-                <Loader2 size={14} className="animate-spin" style={{ color: '#3EC1D3' }} />
-                <span className="text-xs font-semibold" style={{ color: '#3EC1D3' }}>Pipeline Progress</span>
+                <Loader2 size={14} className="animate-spin" style={{ color: 'var(--primary)' }} />
+                <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>Pipeline Progress</span>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {steps.map(([step, status]) => (
                   <div key={step} className="flex items-center gap-1.5 text-[10px]">
-                    {status === 'complete' ? <CheckCircle2 size={10} style={{ color: '#06D6A0' }} /> :
-                      status === 'running' ? <Loader2 size={10} className="animate-spin" style={{ color: '#3EC1D3' }} /> :
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#2A3040' }} />}
-                    <span style={{ color: status === 'running' ? '#3EC1D3' : status === 'complete' ? '#06D6A0' : '#5A6478' }}>
+                    {status === 'complete' ? <CheckCircle2 size={10} style={{ color: 'var(--success)' }} /> :
+                      status === 'running' ? <Loader2 size={10} className="animate-spin" style={{ color: 'var(--primary)' }} /> :
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--border)' }} />}
+                    <span style={{ color: status === 'running' ? 'var(--primary)' : status === 'complete' ? 'var(--success)' : 'var(--placeholder)' }}>
                       {step.replace(/_/g, ' ')}
                     </span>
                   </div>
@@ -134,9 +134,9 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Error' }]} />
       <div className="flex-1 flex flex-col items-center justify-center p-8">
-        <XCircle size={40} style={{ color: '#FF165D', marginBottom: 12 }} />
+        <XCircle size={40} style={{ color: 'var(--danger)', marginBottom: 12 }} />
         <h2 className="text-lg font-semibold mb-1">{audit?.status === 'FAILED' ? 'Audit Failed' : 'Audit not found'}</h2>
-        <p className="text-sm" style={{ color: '#8892A5' }}>{audit?.error || error}</p>
+        <p className="text-sm" style={{ color: 'var(--muted)' }}>{audit?.error || error}</p>
       </div>
     </>
   );
@@ -154,7 +154,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
           {/* Score ring */}
           <div className="relative shrink-0">
             <svg width="88" height="88" viewBox="0 0 88 88">
-              <circle cx="44" cy="44" r="38" fill="none" stroke="#1A1F2B" strokeWidth="6" />
+              <circle cx="44" cy="44" r="38" fill="none" stroke="var(--surface-2)" strokeWidth="6" />
               <circle cx="44" cy="44" r="38" fill="none" stroke={scoreColor(score)} strokeWidth="6"
                 strokeDasharray={`${score * 2.39} 239`} strokeLinecap="round" transform="rotate(-90 44 44)" />
             </svg>
@@ -169,14 +169,14 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
               <h1 className="text-lg font-bold">{audit.name}</h1>
               <span className={`badge ${audit.status === 'COMPLETE' ? 'badge-pass' : 'badge-medium'}`}>{audit.status}</span>
             </div>
-            <div className="flex items-center gap-3 text-xs" style={{ color: '#8892A5' }}>
+            <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--muted)' }}>
               <span>{audit.domain}</span><span>•</span>
               <span>{new Date(audit.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
               <span>•</span><span>{audit.rowCount?.toLocaleString()} rows</span>
               <span>•</span><span>{audit.columnCount} cols</span>
             </div>
             {sev.penalties?.length > 0 && (
-              <div className="text-[10px] mt-1" style={{ color: '#5A6478' }}>
+              <div className="text-[10px] mt-1" style={{ color: 'var(--placeholder)' }}>
                 {sev.penalties.length} penalty deductions applied
               </div>
             )}
@@ -238,56 +238,56 @@ function OverviewTab({ audit }: { audit: any }) {
       <div className="grid grid-cols-4 gap-3">
         <Mini label="Fairness Score" value={`${sev.fairness_score ?? 0}`} sub={`Grade: ${sev.letter_grade ?? '?'}`}
           color={scoreColor(sev.fairness_score ?? 0)} />
-        <Mini label="Disparate Impact (worst)" value={worstDI ? worstDI.di.toFixed(2) : '—'}
-          sub={worstDI ? `${worstDI.attr} — ${worstDI.sev}` : 'No violations'} color={worstDI && worstDI.di < 0.8 ? '#FF165D' : '#06D6A0'} />
+        <Mini label="Disparate Impact (worst)" value={worstDI ? worstDI.di.toFixed(2) : '-'}
+          sub={worstDI ? `${worstDI.attr} - ${worstDI.sev}` : 'No violations'} color={worstDI && worstDI.di < 0.8 ? 'var(--danger)' : 'var(--success)'} />
         <Mini label="Proxy Variables" value={String(proxies.length)}
           sub={`${proxies.filter((p: any) => p.risk_level === 'HIGH').length} HIGH risk`}
-          color={proxies.length > 0 ? '#FF9A00' : '#06D6A0'} />
+          color={proxies.length > 0 ? 'var(--accent)' : 'var(--success)'} />
         <Mini label="Feature Laundering" value={String(laundering.filter((l: any) => l.laundering_detected).length)}
           sub={`of ${laundering.length} tested`}
-          color={laundering.some((l: any) => l.laundering_detected) ? '#FF165D' : '#06D6A0'} />
+          color={laundering.some((l: any) => l.laundering_detected) ? 'var(--danger)' : 'var(--success)'} />
       </div>
 
       {/* Blind Spots indicator */}
       {(audit.blindSpots?.length > 0) && (
-        <div className="card" style={{ borderColor: 'rgba(138, 99, 255, 0.2)', background: 'rgba(138, 99, 255, 0.03)' }}>
+        <div className="card" style={{ borderColor: 'var(--primary-dim)', background: 'var(--primary-dim)' }}>
           <div className="flex items-center gap-2">
-            <Sparkles size={16} style={{ color: '#8A63FF' }} />
-            <span className="text-xs font-semibold" style={{ color: '#8A63FF' }}>
+            <Sparkles size={16} style={{ color: 'var(--primary)' }} />
+            <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>
               {audit.blindSpots.length} AI-detected blind spots
             </span>
-            <span className="text-[10px]" style={{ color: '#5A6478' }}>See Data Analysis tab for details</span>
+            <span className="text-[10px]" style={{ color: 'var(--placeholder)' }}>See Data Analysis tab for details</span>
           </div>
         </div>
       )}
 
       {/* Config */}
       <div className="card">
-        <h3 className="text-xs font-semibold mb-3" style={{ color: '#8892A5' }}>Audit Configuration</h3>
+        <h3 className="text-xs font-semibold mb-3" style={{ color: 'var(--muted)' }}>Audit Configuration</h3>
         <div className="grid grid-cols-2 gap-y-2 text-sm">
-          <span style={{ color: '#5A6478' }}>Label Column</span><span>{audit.labelCol}</span>
-          <span style={{ color: '#5A6478' }}>Positive Value</span><span>{audit.positiveLabel}</span>
-          <span style={{ color: '#5A6478' }}>Protected Attributes</span><span>{audit.protectedCols?.join(', ')}</span>
-          <span style={{ color: '#5A6478' }}>Threshold</span><span>{audit.threshold}</span>
-          <span style={{ color: '#5A6478' }}>Data Only</span><span>{audit.dataOnly ? 'Yes' : 'No'}</span>
+          <span style={{ color: 'var(--placeholder)' }}>Label Column</span><span>{audit.labelCol}</span>
+          <span style={{ color: 'var(--placeholder)' }}>Positive Value</span><span>{audit.positiveLabel}</span>
+          <span style={{ color: 'var(--placeholder)' }}>Protected Attributes</span><span>{audit.protectedCols?.join(', ')}</span>
+          <span style={{ color: 'var(--placeholder)' }}>Threshold</span><span>{audit.threshold}</span>
+          <span style={{ color: 'var(--placeholder)' }}>Data Only</span><span>{audit.dataOnly ? 'Yes' : 'No'}</span>
         </div>
       </div>
 
       {/* Auto-binning info */}
       {audit.binning && Object.keys(audit.binning).length > 0 && (
-        <div className="card" style={{ borderColor: 'rgba(62, 193, 211, 0.2)', background: 'rgba(62, 193, 211, 0.03)' }}>
-          <h3 className="text-xs font-semibold mb-2" style={{ color: '#3EC1D3' }}>
+        <div className="card" style={{ borderColor: 'var(--primary-dim)', background: 'var(--primary-dim)' }}>
+          <h3 className="text-xs font-semibold mb-2" style={{ color: 'var(--primary)' }}>
             <Info size={13} className="inline mr-1" />Auto-Binned Attributes
           </h3>
-          <div className="text-[10px] mb-2" style={{ color: '#5A6478' }}>
+          <div className="text-[10px] mb-2" style={{ color: 'var(--placeholder)' }}>
             Continuous columns were binned into groups for meaningful fairness analysis
           </div>
           <div className="space-y-1">
             {Object.entries(audit.binning).map(([col, info]: [string, any]) => (
               <div key={col} className="flex items-center gap-2 text-xs">
-                <span className="font-medium" style={{ color: '#E8EAED' }}>{col}</span>
-                <span style={{ color: '#5A6478' }}>→</span>
-                <span style={{ color: '#3EC1D3' }}>
+                <span className="font-medium" style={{ color: 'var(--fg)' }}>{col}</span>
+                <span style={{ color: 'var(--placeholder)' }}>→</span>
+                <span style={{ color: 'var(--primary)' }}>
                   {info.labels ? info.labels.join(', ') : info.description}
                 </span>
                 <span className="badge badge-pass text-[10px]">{info.n_groups} groups</span>
@@ -299,27 +299,27 @@ function OverviewTab({ audit }: { audit: any }) {
 
       {/* Blind Spots (Phase 5 - AI Detection) */}
       {audit.blindSpots && audit.blindSpots.length > 0 && (
-        <div className="card" style={{ borderColor: 'rgba(255, 154, 0, 0.2)', background: 'rgba(255, 154, 0, 0.03)' }}>
-          <h3 className="text-xs font-semibold mb-2" style={{ color: '#FF9A00' }}>
+        <div className="card" style={{ borderColor: 'var(--accent-dim)', background: 'var(--accent-dim)' }}>
+          <h3 className="text-xs font-semibold mb-2" style={{ color: 'var(--accent)' }}>
             <AlertTriangle size={13} className="inline mr-1" />
             AI-Detected Blind Spots ({audit.blindSpots.length})
           </h3>
-          <div className="text-[10px] mb-2" style={{ color: '#5A6478' }}>
+          <div className="text-[10px] mb-2" style={{ color: 'var(--placeholder)' }}>
             Gemini AI identified potential protected attributes you may have missed
           </div>
           <div className="space-y-2">
             {audit.blindSpots.map((bs: any, i: number) => (
-              <div key={i} className="p-2 rounded-lg" style={{ background: '#1A1F2B', border: '1px solid #2A3040' }}>
+              <div key={i} className="p-2 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-xs" style={{ color: '#E8EAED' }}>{bs.column}</span>
+                  <span className="font-medium text-xs" style={{ color: 'var(--fg)' }}>{bs.column}</span>
                   <span className={`badge ${bs.confidence === 'HIGH' ? 'badge-critical' : bs.confidence === 'MEDIUM' ? 'badge-medium' : 'badge-neutral'} text-[10px]`}>
                     {bs.confidence}
                   </span>
                 </div>
-                <div className="text-[10px] mb-1" style={{ color: '#8892A5' }}>
-                  May encode: <span style={{ color: '#FF9A00', fontWeight: 500 }}>{bs.encodes}</span>
+                <div className="text-[10px] mb-1" style={{ color: 'var(--muted)' }}>
+                  May encode: <span style={{ color: 'var(--accent)', fontWeight: 500 }}>{bs.encodes}</span>
                 </div>
-                <div className="text-[10px]" style={{ color: '#5A6478' }}>{bs.reason}</div>
+                <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{bs.reason}</div>
               </div>
             ))}
           </div>
@@ -328,13 +328,13 @@ function OverviewTab({ audit }: { audit: any }) {
 
       {/* Severity penalties */}
       {sev.penalties?.length > 0 && (
-        <div className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.2)' }}>
-          <h3 className="text-xs font-semibold mb-2" style={{ color: '#FF165D' }}>
+        <div className="card" style={{ borderColor: 'var(--danger-dim)' }}>
+          <h3 className="text-xs font-semibold mb-2" style={{ color: 'var(--danger)' }}>
             <AlertTriangle size={13} className="inline mr-1" />Score Penalties
           </h3>
           <div className="space-y-1">
             {sev.penalties.map((p: string, i: number) => (
-              <div key={i} className="text-xs" style={{ color: '#C8CCD4' }}>• {p}</div>
+              <div key={i} className="text-xs" style={{ color: 'var(--fg)' }}>• {p}</div>
             ))}
           </div>
         </div>
@@ -342,20 +342,20 @@ function OverviewTab({ audit }: { audit: any }) {
 
       {/* Historical harm */}
       {harm.length > 0 && (
-        <div className="card space-y-3" style={{ borderColor: 'rgba(255, 22, 93, 0.2)' }}>
+        <div className="card space-y-3" style={{ borderColor: 'var(--danger-dim)' }}>
           <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle size={16} style={{ color: '#FF165D' }} />
-            <span className="text-sm font-semibold" style={{ color: '#FF165D' }}>Historical Harm Estimates ({harm.length})</span>
+            <AlertTriangle size={16} style={{ color: 'var(--danger)' }} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--danger)' }}>Historical Harm Estimates ({harm.length})</span>
           </div>
           <div className="space-y-3 pr-2" style={{ maxHeight: '420px', overflowY: 'auto' }}>
             {harm.map((h: any, i: number) => (
-              <div key={i} className="p-3 rounded-lg border border-[#2A3040]" style={{ background: 'rgba(255, 22, 93, 0.03)' }}>
-                <div className="text-sm mb-1" style={{ color: '#E8EAED' }}>{h.headline}</div>
-                <div className="text-[10px] mb-2" style={{ color: '#5A6478' }}>{h.disclaimer}</div>
+              <div key={i} className="p-3 rounded-lg border border-[#2A3040]" style={{ background: 'var(--danger-dim)' }}>
+                <div className="text-sm mb-1" style={{ color: 'var(--fg)' }}>{h.headline}</div>
+                <div className="text-[10px] mb-2" style={{ color: 'var(--placeholder)' }}>{h.disclaimer}</div>
                 <div className="flex gap-4 text-xs font-medium">
-                  <span style={{ color: '#8892A5' }}>{h.months_deployed} months</span>
-                  <span style={{ color: '#8892A5' }}>{h.total_decisions?.toLocaleString()} decisions</span>
-                  <span style={{ color: '#FF165D' }}>{h.estimated_individuals_harmed?.toLocaleString()} harmed</span>
+                  <span style={{ color: 'var(--muted)' }}>{h.months_deployed} months</span>
+                  <span style={{ color: 'var(--muted)' }}>{h.total_decisions?.toLocaleString()} decisions</span>
+                  <span style={{ color: 'var(--danger)' }}>{h.estimated_individuals_harmed?.toLocaleString()} harmed</span>
                 </div>
               </div>
             ))}
@@ -365,10 +365,10 @@ function OverviewTab({ audit }: { audit: any }) {
 
       {/* Quick warnings */}
       {imbalanced > 0 && (
-        <div className="card" style={{ borderColor: 'rgba(255, 154, 0, 0.2)', background: 'rgba(255, 154, 0, 0.03)' }}>
+        <div className="card" style={{ borderColor: 'var(--accent-dim)', background: 'var(--accent-dim)' }}>
           <div className="flex items-center gap-2">
-            <Users size={16} style={{ color: '#FF9A00' }} />
-            <span className="text-xs font-semibold" style={{ color: '#FF9A00' }}>{imbalanced} group imbalance warnings detected</span>
+            <Users size={16} style={{ color: 'var(--accent)' }} />
+            <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>{imbalanced} group imbalance warnings detected</span>
           </div>
         </div>
       )}
@@ -387,7 +387,7 @@ function DataTab({ audit }: { audit: any }) {
     <div className="space-y-3">
       {/* Disparate Impact table */}
       <div className="card" style={{ padding: 0 }}>
-        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
+        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
           Disparate Impact Analysis
         </div>
         <table>
@@ -399,9 +399,9 @@ function DataTab({ audit }: { audit: any }) {
               <tr key={b.attribute}>
                 <td className="font-medium">{b.attribute}</td>
                 <td>{b.privileged_group}</td>
-                <td><span style={{ color: b.metrics.disparate_impact < 0.8 ? '#FF165D' : '#06D6A0', fontWeight: 600 }}>
-                  {b.metrics.disparate_impact?.toFixed(2) ?? '—'}</span></td>
-                <td style={{ color: Math.abs(b.metrics.statistical_parity_difference) > 0.1 ? '#FF9A00' : '#8892A5' }}>
+                <td><span style={{ color: b.metrics.disparate_impact < 0.8 ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>
+                  {b.metrics.disparate_impact?.toFixed(2) ?? '-'}</span></td>
+                <td style={{ color: Math.abs(b.metrics.statistical_parity_difference) > 0.1 ? 'var(--accent)' : 'var(--muted)' }}>
                   {b.metrics.statistical_parity_difference?.toFixed(3)}</td>
                 <td>{(b.metrics.positive_rate_privileged * 100).toFixed(1)}%</td>
                 <td>{(b.metrics.positive_rate_unprivileged * 100).toFixed(1)}%</td>
@@ -416,35 +416,35 @@ function DataTab({ audit }: { audit: any }) {
       {profiles.map((p: any, i: number) => (
         <div key={i} className="card space-y-2">
           <div className="flex items-center gap-2">
-            <Users size={14} style={{ color: '#3EC1D3' }} />
+            <Users size={14} style={{ color: 'var(--primary)' }} />
             <span className="text-sm font-semibold">{p.attribute}</span>
             {p.imbalance_warning && <span className="badge badge-high">IMBALANCED ({p.imbalance_ratio}x)</span>}
           </div>
           <div className="flex gap-2 flex-wrap">
             {Object.entries(p.group_counts as Record<string, number>).map(([g, c]) => (
-              <div key={g} className="flex-1 min-w-[100px] p-2 rounded-lg" style={{ background: '#1A1F2B' }}>
-                <div className="text-xs" style={{ color: '#8892A5' }}>{g}</div>
+              <div key={g} className="flex-1 min-w-[100px] p-2 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>{g}</div>
                 <div className="text-sm font-bold">{(c as number).toLocaleString()}</div>
-                <div className="w-full h-1 rounded-full mt-1" style={{ background: '#2A3040' }}>
-                  <div className="h-full rounded-full" style={{ width: `${p.group_percentages[g]}%`, background: '#3EC1D3' }} />
+                <div className="w-full h-1 rounded-full mt-1" style={{ background: 'var(--border)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${p.group_percentages[g]}%`, background: 'var(--primary)' }} />
                 </div>
-                <div className="text-[10px]" style={{ color: '#5A6478' }}>{p.group_percentages[g]}%</div>
+                <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{p.group_percentages[g]}%</div>
               </div>
             ))}
           </div>
           {/* Label rates */}
           {p.label_distribution_per_group && (
             <div className="space-y-1 mt-2">
-              <div className="text-xs font-semibold" style={{ color: '#8892A5' }}>Outcome Rate by Group</div>
+              <div className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Outcome Rate by Group</div>
               {Object.entries(p.label_distribution_per_group as Record<string, any>).map(([g, r]) => (
                 <div key={g} className="flex items-center gap-2">
-                  <span className="text-xs w-20 truncate" style={{ color: '#8892A5' }}>{g}</span>
-                  <div className="flex-1 h-3 rounded-full overflow-hidden flex" style={{ background: '#1A1F2B' }}>
+                  <span className="text-xs w-20 truncate" style={{ color: 'var(--muted)' }}>{g}</span>
+                  <div className="flex-1 h-3 rounded-full overflow-hidden flex" style={{ background: 'var(--surface-2)' }}>
                     <div className="h-full flex items-center justify-center text-[8px] font-bold"
-                      style={{ width: `${(r as any).positive}%`, background: '#06D6A0', color: '#0B0E14' }}>
+                      style={{ width: `${(r as any).positive}%`, background: 'var(--success)', color: '#fff' }}>
                       {(r as any).positive}%</div>
                     <div className="h-full flex items-center justify-center text-[8px] font-bold"
-                      style={{ width: `${(r as any).negative}%`, background: '#FF165D', color: '#fff' }}>
+                      style={{ width: `${(r as any).negative}%`, background: 'var(--danger)', color: '#fff' }}>
                       {(r as any).negative}%</div>
                   </div>
                 </div>
@@ -457,8 +457,8 @@ function DataTab({ audit }: { audit: any }) {
       {/* Proxy table */}
       {proxies.length > 0 && (
         <div className="card" style={{ padding: 0 }}>
-          <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
-            Proxy Variables — {proxies.length} found
+          <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
+            Proxy Variables - {proxies.length} found
           </div>
           <table>
             <thead><tr><th>Proxy Column</th><th>Correlates With</th><th>Score</th><th>Method</th><th>Risk</th></tr></thead>
@@ -467,9 +467,9 @@ function DataTab({ audit }: { audit: any }) {
                 <tr key={i}>
                   <td className="font-medium">{p.proxy_column}</td>
                   <td>{p.protected_column}</td>
-                  <td><span style={{ color: p.association_score >= 0.5 ? '#FF165D' : '#FF9A00' }}>
+                  <td><span style={{ color: p.association_score >= 0.5 ? 'var(--danger)' : 'var(--accent)' }}>
                     {p.association_score.toFixed(2)}</span></td>
-                  <td className="text-xs" style={{ color: '#8892A5' }}>{p.method}</td>
+                  <td className="text-xs" style={{ color: 'var(--muted)' }}>{p.method}</td>
                   <td><span className={`badge ${sevBadge(p.risk_level)}`}>{p.risk_level}</span></td>
                 </tr>
               ))}
@@ -480,27 +480,27 @@ function DataTab({ audit }: { audit: any }) {
 
       {/* Blind Spots (Gemini AI) */}
       {(audit.blindSpots?.length > 0) && (
-        <div className="card" style={{ padding: 0, borderColor: 'rgba(138, 99, 255, 0.25)' }}>
-          <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #2A3040' }}>
-            <Sparkles size={13} style={{ color: '#8A63FF' }} />
-            <span className="text-xs font-semibold" style={{ color: '#8A63FF' }}>AI Blind Spot Detection</span>
-            <span className="text-[10px] ml-auto" style={{ color: '#5A6478' }}>Powered by Gemini</span>
+        <div className="card" style={{ padding: 0, borderColor: 'var(--primary-dim)' }}>
+          <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
+            <Sparkles size={13} style={{ color: 'var(--primary)' }} />
+            <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>AI Blind Spot Detection</span>
+            <span className="text-[10px] ml-auto" style={{ color: 'var(--placeholder)' }}>Powered by Gemini</span>
           </div>
           <div className="p-4 space-y-2">
-            <div className="text-[10px] mb-3" style={{ color: '#5A6478' }}>
+            <div className="text-[10px] mb-3" style={{ color: 'var(--placeholder)' }}>
               Gemini identified columns that may encode protected characteristics not yet flagged in your audit.
             </div>
             {audit.blindSpots.map((bs: any, i: number) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'rgba(138, 99, 255, 0.04)', border: '1px solid rgba(138, 99, 255, 0.12)' }}>
+              <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'var(--primary-dim)', border: '1px solid var(--primary-dim)' }}>
                 <div className="flex-shrink-0 mt-0.5">
                   <span className={`badge ${bs.confidence === 'HIGH' ? 'badge-critical' : bs.confidence === 'MEDIUM' ? 'badge-high' : 'badge-medium'}`}
                     style={{ fontSize: '9px', padding: '1px 6px' }}>{bs.confidence}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold" style={{ color: '#E8EAED' }}>
-                    {bs.column} <span style={{ color: '#8A63FF' }}>may encode</span> {bs.encodes}
+                  <div className="text-sm font-semibold" style={{ color: 'var(--fg)' }}>
+                    {bs.column} <span style={{ color: 'var(--primary)' }}>may encode</span> {bs.encodes}
                   </div>
-                  <div className="text-xs mt-1" style={{ color: '#8892A5' }}>{bs.reason}</div>
+                  <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{bs.reason}</div>
                 </div>
               </div>
             ))}
@@ -511,8 +511,8 @@ function DataTab({ audit }: { audit: any }) {
       {/* Schema table */}
       {schema && (
         <div className="card" style={{ padding: 0 }}>
-          <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
-            Schema — {schema.column_count} columns
+          <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
+            Schema - {schema.column_count} columns
           </div>
           <table>
             <thead><tr><th>Column</th><th>Type</th><th>Unique</th><th>Nulls</th><th>Sensitivity</th><th>Flagged</th></tr></thead>
@@ -520,21 +520,21 @@ function DataTab({ audit }: { audit: any }) {
               {schema.columns?.map((c: any) => (
                 <tr key={c.name}>
                   <td className="font-medium">{c.name}</td>
-                  <td className="text-xs" style={{ color: '#8892A5' }}>{c.dtype}</td>
+                  <td className="text-xs" style={{ color: 'var(--muted)' }}>{c.dtype}</td>
                   <td>{c.unique_count}</td>
-                  <td style={{ color: c.null_count > 0 ? '#FF9A00' : '#5A6478' }}>{c.null_count}</td>
+                  <td style={{ color: c.null_count > 0 ? 'var(--accent)' : 'var(--placeholder)' }}>{c.null_count}</td>
                   <td>
                     <div className="flex items-center gap-1">
-                      <span style={{ color: c.sensitivity_score >= 0.65 ? '#FF165D' : '#5A6478' }}>{c.sensitivity_score.toFixed(2)}</span>
-                      <div className="w-10 h-1 rounded-full" style={{ background: '#1A1F2B' }}>
+                      <span style={{ color: c.sensitivity_score >= 0.65 ? 'var(--danger)' : 'var(--placeholder)' }}>{c.sensitivity_score.toFixed(2)}</span>
+                      <div className="w-10 h-1 rounded-full" style={{ background: 'var(--surface-2)' }}>
                         <div className="h-full rounded-full" style={{
                           width: `${c.sensitivity_score * 100}%`,
-                          background: c.sensitivity_score >= 0.65 ? '#FF165D' : '#353D4F',
+                          background: c.sensitivity_score >= 0.65 ? 'var(--danger)' : 'var(--border-light)',
                         }} />
                       </div>
                     </div>
                   </td>
-                  <td>{c.auto_flagged ? <span className="badge badge-critical">YES</span> : '—'}</td>
+                  <td>{c.auto_flagged ? <span className="badge badge-critical">YES</span> : '-'}</td>
                 </tr>
               ))}
             </tbody>
@@ -561,9 +561,9 @@ function NarrativesTab({ audit }: { audit: any }) {
 
   if (!hasNarratives) return (
     <div className="card text-center py-12">
-      <Sparkles size={28} className="mx-auto mb-3" style={{ color: '#8A63FF', opacity: 0.5 }} />
-      <div className="text-sm font-semibold mb-1" style={{ color: '#8892A5' }}>No AI Narratives Generated</div>
-      <div className="text-xs" style={{ color: '#5A6478' }}>
+      <Sparkles size={28} className="mx-auto mb-3" style={{ color: 'var(--primary)', opacity: 0.5 }} />
+      <div className="text-sm font-semibold mb-1" style={{ color: 'var(--muted)' }}>No AI Narratives Generated</div>
+      <div className="text-xs" style={{ color: 'var(--placeholder)' }}>
         Narratives are generated by Gemini AI during the audit pipeline. Check that your GEMINI_API_KEY is configured.
       </div>
     </div>
@@ -581,8 +581,8 @@ function NarrativesTab({ audit }: { audit: any }) {
         elements.push(
           <ul key={`list-${elements.length}`} className="space-y-1 ml-4 mb-3">
             {listItems.map((item, j) => (
-              <li key={j} className="text-sm flex gap-2" style={{ color: '#C8CCD4' }}>
-                <span style={{ color: '#5A6478' }}>{'\u2022'}</span>
+              <li key={j} className="text-sm flex gap-2" style={{ color: 'var(--fg)' }}>
+                <span style={{ color: 'var(--placeholder)' }}>{'\u2022'}</span>
                 <span dangerouslySetInnerHTML={{ __html: inlineFormat(item) }} />
               </li>
             ))}
@@ -605,16 +605,16 @@ function NarrativesTab({ audit }: { audit: any }) {
 
       if (line.startsWith('# ')) {
         flushList();
-        elements.push(<h2 key={i} className="text-base font-bold mb-2 mt-4" style={{ color: '#E8EAED' }}>{line.slice(2)}</h2>);
+        elements.push(<h2 key={i} className="text-base font-bold mb-2 mt-4" style={{ color: 'var(--fg)' }}>{line.slice(2)}</h2>);
       } else if (line.startsWith('## ')) {
         flushList();
-        elements.push(<h3 key={i} className="text-sm font-bold mb-2 mt-3" style={{ color: '#3EC1D3' }}>{line.slice(3)}</h3>);
+        elements.push(<h3 key={i} className="text-sm font-bold mb-2 mt-3" style={{ color: 'var(--primary)' }}>{line.slice(3)}</h3>);
       } else if (line.startsWith('### ')) {
         flushList();
-        elements.push(<h4 key={i} className="text-xs font-bold mb-1 mt-2" style={{ color: '#8A63FF' }}>{line.slice(4)}</h4>);
+        elements.push(<h4 key={i} className="text-xs font-bold mb-1 mt-2" style={{ color: 'var(--primary)' }}>{line.slice(4)}</h4>);
       } else if (line.startsWith('---')) {
         flushList();
-        elements.push(<hr key={i} className="my-3" style={{ borderColor: '#2A3040' }} />);
+        elements.push(<hr key={i} className="my-3" style={{ borderColor: 'var(--border)' }} />);
       } else if (line.startsWith('- ') || line.startsWith('* ') || /^\d+\.\s/.test(line)) {
         inList = true;
         const content = line.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '');
@@ -624,7 +624,7 @@ function NarrativesTab({ audit }: { audit: any }) {
       } else {
         flushList();
         elements.push(
-          <p key={i} className="text-sm mb-2" style={{ color: '#C8CCD4' }}
+          <p key={i} className="text-sm mb-2" style={{ color: 'var(--fg)' }}
             dangerouslySetInnerHTML={{ __html: inlineFormat(line) }} />
         );
       }
@@ -643,34 +643,34 @@ function NarrativesTab({ audit }: { audit: any }) {
             onClick={() => setMode(m.key)}
             className="flex-1 p-3 rounded-lg text-left transition-all"
             style={{
-              background: mode === m.key ? 'rgba(138, 99, 255, 0.08)' : '#121620',
-              border: `1px solid ${mode === m.key ? 'rgba(138, 99, 255, 0.3)' : '#2A3040'}`,
+              background: mode === m.key ? 'rgba(138, 99, 255, 0.08)' : 'var(--surface-2)',
+              border: `1px solid ${mode === m.key ? 'rgba(138, 99, 255, 0.3)' : 'var(--border)'}`,
               cursor: 'pointer',
             }}
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm">{m.icon}</span>
-              <span className="text-sm font-semibold" style={{ color: mode === m.key ? '#8A63FF' : '#8892A5' }}>
+              <span className="text-sm font-semibold" style={{ color: mode === m.key ? 'var(--primary)' : 'var(--muted)' }}>
                 {m.label}
               </span>
             </div>
-            <div className="text-[10px]" style={{ color: '#5A6478' }}>{m.desc}</div>
+            <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{m.desc}</div>
           </button>
         ))}
       </div>
 
       {/* Narrative content */}
-      <div className="card" style={{ borderColor: 'rgba(138, 99, 255, 0.15)' }}>
-        <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid #2A3040' }}>
-          <Sparkles size={14} style={{ color: '#8A63FF' }} />
-          <span className="text-xs font-semibold" style={{ color: '#8A63FF' }}>
+      <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
+        <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
+          <Sparkles size={14} style={{ color: 'var(--primary)' }} />
+          <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>
             {MODES.find(m => m.key === mode)?.label} Narrative
           </span>
-          <span className="text-[10px] ml-auto" style={{ color: '#5A6478' }}>Generated by Gemini AI</span>
+          <span className="text-[10px] ml-auto" style={{ color: 'var(--placeholder)' }}>Generated by Gemini AI</span>
         </div>
         <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '8px' }}>
           {currentNarrative ? renderMarkdown(currentNarrative) : (
-            <div className="text-sm text-center py-8" style={{ color: '#5A6478' }}>
+            <div className="text-sm text-center py-8" style={{ color: 'var(--placeholder)' }}>
               No narrative available for {mode} mode.
             </div>
           )}
@@ -689,19 +689,19 @@ function EqOddsGroup({ attr, groups }: { attr: string; groups: any }) {
   const fprGap = fprs.length >= 2 ? (Math.max(...fprs) - Math.min(...fprs)) : 0;
 
   return (
-    <div style={{ borderBottom: '1px solid #2A3040' }}>
+    <div style={{ borderBottom: '1px solid var(--border)' }}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-[#1A1F2B] transition-colors"
+        className="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-[var(--surface-2)] transition-colors"
         style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
       >
         <div className="flex items-center gap-3">
-          <span className="text-xs" style={{ color: '#5A6478', transform: open ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▶</span>
+          <span className="text-xs" style={{ color: 'var(--placeholder)', transform: open ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▶</span>
           <span className="text-xs font-semibold">{attr}</span>
-          <span className="text-[10px]" style={{ color: '#5A6478' }}>{entries.length} groups</span>
+          <span className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{entries.length} groups</span>
         </div>
         <div className="flex items-center gap-3 text-[10px]">
-          <span style={{ color: fprGap > 0.1 ? '#FF165D' : '#06D6A0' }}>
+          <span style={{ color: fprGap > 0.1 ? 'var(--danger)' : 'var(--success)' }}>
             FPR gap: {(fprGap * 100).toFixed(1)}%
           </span>
           <span className={`badge ${fprGap > 0.1 ? 'badge-critical' : 'badge-pass'}`} style={{ fontSize: '9px', padding: '1px 6px' }}>
@@ -712,15 +712,15 @@ function EqOddsGroup({ attr, groups }: { attr: string; groups: any }) {
       {open && (
         <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
           <table>
-            <thead className="sticky top-0 sticky-header" style={{ background: '#121620', zIndex: 10 }}>
+            <thead className="sticky top-0 sticky-header" style={{ background: 'var(--surface-2)', zIndex: 10 }}>
               <tr><th>Group</th><th>FPR</th><th>FNR</th><th>Precision</th></tr>
             </thead>
             <tbody>
               {entries.map(([g, m]: [string, any]) => (
                 <tr key={g}>
                   <td className="font-medium">{g}</td>
-                  <td style={{ color: m.fpr > 0.15 ? '#FF165D' : '#8892A5' }}>{(m.fpr * 100).toFixed(1)}%</td>
-                  <td style={{ color: m.fnr > 0.15 ? '#FF9A00' : '#8892A5' }}>{(m.fnr * 100).toFixed(1)}%</td>
+                  <td style={{ color: m.fpr > 0.15 ? 'var(--danger)' : 'var(--muted)' }}>{(m.fpr * 100).toFixed(1)}%</td>
+                  <td style={{ color: m.fnr > 0.15 ? 'var(--accent)' : 'var(--muted)' }}>{(m.fnr * 100).toFixed(1)}%</td>
                   <td>{(m.precision * 100).toFixed(1)}%</td>
                 </tr>
               ))}
@@ -738,11 +738,11 @@ function ModelTab({ audit }: { audit: any }) {
   const flip = audit.flipSensitivity;
 
   if (!modelBias) return (
-    <div className="card flex items-center gap-3 py-8" style={{ background: 'rgba(62, 193, 211, 0.04)', borderColor: 'rgba(62, 193, 211, 0.2)' }}>
-      <Info size={20} style={{ color: '#3EC1D3' }} />
+    <div className="card flex items-center gap-3 py-8" style={{ background: 'var(--primary-dim)', borderColor: 'var(--primary-dim)' }}>
+      <Info size={20} style={{ color: 'var(--primary)' }} />
       <div>
         <div className="text-sm font-medium">No model provided</div>
-        <div className="text-xs" style={{ color: '#8892A5' }}>Upload a model file (.pkl/.joblib) to enable counterfactual testing, equalized odds, and flip sensitivity analysis.</div>
+        <div className="text-xs" style={{ color: 'var(--muted)' }}>Upload a model file (.pkl/.joblib) to enable counterfactual testing, equalized odds, and flip sensitivity analysis.</div>
       </div>
     </div>
   );
@@ -757,10 +757,10 @@ function ModelTab({ audit }: { audit: any }) {
         const totalTested = data.total_transitions_tested || Object.keys(data.flip_rates || {}).length;
         return (
           <div key={attr} className="card" style={{ padding: 0 }}>
-            <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid #2A3040' }}>
+            <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold" style={{ color: '#8892A5' }}>Flip Rates — {attr}</span>
-                <span className="text-[10px]" style={{ color: '#5A6478' }}>
+                <span className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Flip Rates - {attr}</span>
+                <span className="text-[10px]" style={{ color: 'var(--placeholder)' }}>
                   ({flips.length} non-zero of {totalTested} tested)
                 </span>
               </div>
@@ -773,10 +773,10 @@ function ModelTab({ audit }: { audit: any }) {
                   {flips.slice(0, 10).map(([trans, rate]: [string, any]) => (
                     <tr key={trans}>
                       <td className="font-medium">{trans}</td>
-                      <td style={{ color: rate > 0.1 ? '#FF165D' : '#06D6A0' }}>{(rate * 100).toFixed(1)}%</td>
+                      <td style={{ color: rate > 0.1 ? 'var(--danger)' : 'var(--success)' }}>{(rate * 100).toFixed(1)}%</td>
                       <td>
-                        <div className="w-20 h-1.5 rounded-full" style={{ background: '#1A1F2B' }}>
-                          <div className="h-full rounded-full" style={{ width: `${Math.min(rate * 100, 100)}%`, background: rate > 0.1 ? '#FF165D' : '#06D6A0' }} />
+                        <div className="w-20 h-1.5 rounded-full" style={{ background: 'var(--surface-2)' }}>
+                          <div className="h-full rounded-full" style={{ width: `${Math.min(rate * 100, 100)}%`, background: rate > 0.1 ? 'var(--danger)' : 'var(--success)' }} />
                         </div>
                       </td>
                     </tr>
@@ -784,11 +784,11 @@ function ModelTab({ audit }: { audit: any }) {
                 </tbody>
               </table>
             ) : (
-              <div className="px-4 py-3 text-xs" style={{ color: '#5A6478' }}>
-                No prediction flips detected — model treats all {attr} groups equally.
+              <div className="px-4 py-3 text-xs" style={{ color: 'var(--placeholder)' }}>
+                No prediction flips detected - model treats all {attr} groups equally.
               </div>
             )}
-            <div className="px-4 py-2 text-xs" style={{ color: '#5A6478', borderTop: '1px solid #2A3040' }}>
+            <div className="px-4 py-2 text-xs" style={{ color: 'var(--placeholder)', borderTop: '1px solid var(--border)' }}>
               Max: {(data.max_flip_rate * 100).toFixed(1)}% | Mean: {(data.mean_flip_rate * 100).toFixed(1)}%
               {flips.length > 10 && <span> | Showing top 10 of {flips.length}</span>}
             </div>
@@ -796,11 +796,11 @@ function ModelTab({ audit }: { audit: any }) {
         );
       })}
 
-      {/* Equalized Odds — collapsible by attribute */}
+      {/* Equalized Odds - collapsible by attribute */}
       {Object.keys(eqOdds).length > 0 && (
         <div className="card" style={{ padding: 0 }}>
-          <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
-            Equalized Odds — FPR / FNR per Group
+          <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
+            Equalized Odds - FPR / FNR per Group
           </div>
           {Object.entries(eqOdds).map(([attr, groups]: [string, any]) => (
             <EqOddsGroup key={attr} attr={attr} groups={groups} />
@@ -810,16 +810,16 @@ function ModelTab({ audit }: { audit: any }) {
 
       {/* Flip sensitivity */}
       {flip && (
-        <div className="card" style={{ borderColor: 'rgba(255, 154, 0, 0.2)' }}>
+        <div className="card" style={{ borderColor: 'var(--accent-dim)' }}>
           <div className="flex items-center gap-2 mb-2">
-            <Zap size={14} style={{ color: '#FF9A00' }} />
-            <span className="text-xs font-semibold" style={{ color: '#FF9A00' }}>Flip Sensitivity</span>
+            <Zap size={14} style={{ color: 'var(--accent)' }} />
+            <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>Flip Sensitivity</span>
           </div>
           <div className="text-sm mb-2">{flip.explanation}</div>
-          <div className="flex gap-4 text-xs" style={{ color: '#8892A5' }}>
+          <div className="flex gap-4 text-xs" style={{ color: 'var(--muted)' }}>
             <span>Mean: {flip.mean_flip_count}</span>
             <span>Median: {flip.median_flip_count}</span>
-            <span style={{ color: '#FF165D' }}>{flip.most_vulnerable_count} vulnerable ({flip.most_vulnerable_percentage}%)</span>
+            <span style={{ color: 'var(--danger)' }}>{flip.most_vulnerable_count} vulnerable ({flip.most_vulnerable_percentage}%)</span>
           </div>
         </div>
       )}
@@ -834,16 +834,16 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
   const highCount = items.filter((d: any) => d.severity === 'HIGH').length;
   
   return (
-    <div style={{ borderBottom: '1px solid #2A3040' }}>
+    <div style={{ borderBottom: '1px solid var(--border)' }}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-[#1A1F2B] transition-colors"
+        className="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-[var(--surface-2)] transition-colors"
         style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
       >
         <div className="flex items-center gap-3">
-          <span className="text-xs" style={{ color: '#5A6478', transform: open ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▶</span>
+          <span className="text-xs" style={{ color: 'var(--placeholder)', transform: open ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▶</span>
           <span className="text-xs font-semibold">{intersectionKey}</span>
-          <span className="text-[10px]" style={{ color: '#5A6478' }}>{items.length} groups tested</span>
+          <span className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{items.length} groups tested</span>
         </div>
         <div className="flex items-center gap-3 text-[10px]">
           {criticalCount > 0 ? (
@@ -858,7 +858,7 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
       {open && (
         <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
           <table>
-            <thead className="sticky top-0 sticky-header" style={{ background: '#121620', zIndex: 10 }}>
+            <thead className="sticky top-0 sticky-header" style={{ background: 'var(--surface-2)', zIndex: 10 }}>
               <tr><th>Group</th><th>n</th><th>Pos Rate</th><th>DI vs Overall</th><th>Severity</th></tr>
             </thead>
             <tbody>
@@ -874,7 +874,7 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
                   </td>
                   <td>{d.sample_size}</td>
                   <td>{(d.positive_rate * 100).toFixed(1)}%</td>
-                  <td style={{ color: d.di_vs_overall < 0.8 && !d.low_confidence ? '#FF165D' : d.di_vs_overall >= 0.8 ? '#06D6A0' : '#8892A5', fontWeight: 600 }}>
+                  <td style={{ color: d.di_vs_overall < 0.8 && !d.low_confidence ? 'var(--danger)' : d.di_vs_overall >= 0.8 ? 'var(--success)' : 'var(--muted)', fontWeight: 600 }}>
                     {d.di_vs_overall?.toFixed(2)}</td>
                   <td><span className={`badge ${sevBadge(d.severity)}`}>{d.severity}</span></td>
                 </tr>
@@ -892,7 +892,7 @@ function IntersectionalTab({ audit }: { audit: any }) {
   const data = audit.intersectional || [];
 
   if (data.length === 0) return (
-    <div className="card text-center py-8 text-sm" style={{ color: '#5A6478' }}>
+    <div className="card text-center py-8 text-sm" style={{ color: 'var(--placeholder)' }}>
       No intersectional data. Requires 2+ protected attributes.
     </div>
   );
@@ -909,23 +909,23 @@ function IntersectionalTab({ audit }: { audit: any }) {
   return (
     <div className="space-y-3">
       {critical.length > 0 && (
-        <div className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.3)', background: 'rgba(255, 22, 93, 0.03)' }}>
+        <div className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.3)', background: 'var(--danger-dim)' }}>
           <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle size={16} style={{ color: '#FF165D' }} />
-            <span className="text-xs font-semibold" style={{ color: '#FF165D' }}>
+            <AlertTriangle size={16} style={{ color: 'var(--danger)' }} />
+            <span className="text-xs font-semibold" style={{ color: 'var(--danger)' }}>
               {critical.length} CRITICAL intersectional violations
             </span>
           </div>
           {critical.slice(0, 5).map((c: any, i: number) => (
-            <div key={i} className="text-sm mb-1" style={{ color: '#C8CCD4' }}>
-              <strong style={{ color: '#FF9A00' }}>{c.group}</strong> — DI: {c.di_vs_overall?.toFixed(2)}, n={c.sample_size}
+            <div key={i} className="text-sm mb-1" style={{ color: 'var(--fg)' }}>
+              <strong style={{ color: 'var(--accent)' }}>{c.group}</strong> - DI: {c.di_vs_overall?.toFixed(2)}, n={c.sample_size}
             </div>
           ))}
         </div>
       )}
 
       <div className="card" style={{ padding: 0 }}>
-        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
+        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
           Intersectional Groups Analyzed
         </div>
         {Object.entries(groups).map(([key, items]: [string, any[]]) => (
@@ -945,11 +945,11 @@ function ExplainabilityTab({ audit }: { audit: any }) {
     <div className="space-y-3">
       {/* Feature Laundering */}
       <div className="card" style={{ padding: 0 }}>
-        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
+        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
           Feature Laundering Detection
         </div>
         {laundering.length === 0 ? (
-          <div className="px-4 py-6 text-center text-sm" style={{ color: '#5A6478' }}>No laundering analysis available.</div>
+          <div className="px-4 py-6 text-center text-sm" style={{ color: 'var(--placeholder)' }}>No laundering analysis available.</div>
         ) : (
           <table>
             <thead><tr><th>Protected Attribute</th><th>Reconstruction Accuracy</th><th>Baseline</th><th>Lift</th><th>Verdict</th></tr></thead>
@@ -957,10 +957,10 @@ function ExplainabilityTab({ audit }: { audit: any }) {
               {laundering.map((l: any, i: number) => (
                 <tr key={i}>
                   <td className="font-medium">{l.protected_attribute}</td>
-                  <td style={{ color: l.laundering_detected ? '#FF165D' : '#06D6A0' }}>
+                  <td style={{ color: l.laundering_detected ? 'var(--danger)' : 'var(--success)' }}>
                     {(l.reconstruction_accuracy * 100).toFixed(1)}%</td>
                   <td>{(l.baseline_accuracy * 100).toFixed(1)}%</td>
-                  <td style={{ color: l.lift_over_baseline > 0.4 ? '#FF165D' : '#8892A5' }}>
+                  <td style={{ color: l.lift_over_baseline > 0.4 ? 'var(--danger)' : 'var(--muted)' }}>
                     {(l.lift_over_baseline * 100).toFixed(1)}%</td>
                   <td><span className={`badge ${sevBadge(l.severity)}`}>{l.laundering_detected ? 'DETECTED' : 'PASS'}</span></td>
                 </tr>
@@ -972,10 +972,10 @@ function ExplainabilityTab({ audit }: { audit: any }) {
 
       {/* Explanations */}
       {laundering.filter((l: any) => l.laundering_detected).map((l: any, i: number) => (
-        <div key={i} className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.2)', background: 'rgba(255, 22, 93, 0.03)' }}>
+        <div key={i} className="card" style={{ borderColor: 'var(--danger-dim)', background: 'var(--danger-dim)' }}>
           <div className="flex items-start gap-2">
-            <AlertTriangle size={14} style={{ color: '#FF165D', marginTop: 2 }} />
-            <div className="text-sm" style={{ color: '#C8CCD4' }}>{l.explanation}</div>
+            <AlertTriangle size={14} style={{ color: 'var(--danger)', marginTop: 2 }} />
+            <div className="text-sm" style={{ color: 'var(--fg)' }}>{l.explanation}</div>
           </div>
         </div>
       ))}
@@ -987,7 +987,7 @@ function ExplainabilityTab({ audit }: { audit: any }) {
           {Object.values(explainability)[0] && (Object.values(explainability)[0] as any).top_features?.length > 0 && (
             <div className="card space-y-3">
               <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
-                <Zap size={14} style={{ color: '#3EC1D3' }} />
+                <Zap size={14} style={{ color: 'var(--primary)' }} />
                 Global Top Features by Importance
               </h3>
               <div className="space-y-1">
@@ -996,11 +996,11 @@ function ExplainabilityTab({ audit }: { audit: any }) {
                   const pct = (f.importance / maxImp) * 100;
                   return (
                     <div key={f.feature} className="flex items-center gap-2">
-                      <span className="text-xs w-32 truncate" style={{ color: '#8892A5' }}>{f.feature}</span>
-                      <div className="flex-1 h-3 rounded-full" style={{ background: '#1A1F2B' }}>
-                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#3EC1D3' }} />
+                      <span className="text-xs w-32 truncate" style={{ color: 'var(--muted)' }}>{f.feature}</span>
+                      <div className="flex-1 h-3 rounded-full" style={{ background: 'var(--surface-2)' }}>
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--primary)' }} />
                       </div>
-                      <span className="text-[10px] w-12 text-right" style={{ color: '#5A6478' }}>{f.importance.toFixed(4)}</span>
+                      <span className="text-[10px] w-12 text-right" style={{ color: 'var(--placeholder)' }}>{f.importance.toFixed(4)}</span>
                     </div>
                   );
                 })}
@@ -1012,15 +1012,15 @@ function ExplainabilityTab({ audit }: { audit: any }) {
           {Object.entries(explainability).map(([attr, data]: [string, any]) => (
             <div key={attr} className="card space-y-3">
               <h3 className="text-sm font-semibold flex items-center gap-2">
-                <Zap size={14} style={{ color: '#3EC1D3' }} />
-                SHAP Analysis — {attr}
+                <Zap size={14} style={{ color: 'var(--primary)' }} />
+                SHAP Analysis - {attr}
               </h3>
 
               {/* Disparity flags */}
               {data.disparity_flags?.length > 0 ? (
-                <div className="card" style={{ padding: 0, borderColor: 'rgba(255, 154, 0, 0.2)' }}>
-                  <div className="px-4 py-2 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#FF9A00' }}>
-                    SHAP Disparity Flags — {data.disparity_flags.length} features
+                <div className="card" style={{ padding: 0, borderColor: 'var(--accent-dim)' }}>
+                  <div className="px-4 py-2 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--accent)' }}>
+                    SHAP Disparity Flags - {data.disparity_flags.length} features
                   </div>
                   <table>
                     <thead><tr><th>Feature</th><th>Disparity Ratio</th><th>Explanation</th></tr></thead>
@@ -1028,29 +1028,29 @@ function ExplainabilityTab({ audit }: { audit: any }) {
                       {data.disparity_flags.map((f: any, i: number) => (
                         <tr key={i}>
                           <td className="font-medium">{f.feature}</td>
-                          <td style={{ color: '#FF9A00' }}>{f.disparity_ratio}x</td>
-                          <td className="text-xs" style={{ color: '#8892A5' }}>{f.explanation}</td>
+                          <td style={{ color: 'var(--accent)' }}>{f.disparity_ratio}x</td>
+                          <td className="text-xs" style={{ color: 'var(--muted)' }}>{f.explanation}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <div className="text-xs" style={{ color: '#5A6478' }}>No SHAP disparity flags detected for {attr}.</div>
+                <div className="text-xs" style={{ color: 'var(--placeholder)' }}>No SHAP disparity flags detected for {attr}.</div>
               )}
 
               {data.error && (
-                <div className="text-xs" style={{ color: '#FF9A00' }}>⚠ {data.error}</div>
+                <div className="text-xs" style={{ color: 'var(--accent)' }}>⚠ {data.error}</div>
               )}
             </div>
           ))}
         </>
       ) : (
-        <div className="card flex items-center gap-3" style={{ background: 'rgba(62, 193, 211, 0.04)', borderColor: 'rgba(62, 193, 211, 0.2)' }}>
-          <Info size={18} style={{ color: '#3EC1D3' }} />
+        <div className="card flex items-center gap-3" style={{ background: 'var(--primary-dim)', borderColor: 'var(--primary-dim)' }}>
+          <Info size={18} style={{ color: 'var(--primary)' }} />
           <div>
             <div className="text-sm font-medium">SHAP analysis unavailable</div>
-            <div className="text-xs" style={{ color: '#8892A5' }}>
+            <div className="text-xs" style={{ color: 'var(--muted)' }}>
               {audit.dataOnly ? 'Upload a model file to enable SHAP explainability analysis.' : 'SHAP data not generated for this audit.'}
             </div>
           </div>
@@ -1073,7 +1073,7 @@ function FixesTab({ audit }: { audit: any }) {
   Object.values(dataBias).forEach((b: any) => {
     if (b.severity === 'CRITICAL' || b.severity === 'HIGH') {
       fixes.push({
-        title: `Disparate Impact — ${b.attribute}`,
+        title: `Disparate Impact - ${b.attribute}`,
         severity: b.severity,
         technique: 'Reweighting + Threshold Adjustment',
         description: b.explanation,
@@ -1085,7 +1085,7 @@ function FixesTab({ audit }: { audit: any }) {
   // Laundering fixes
   laundering.filter((l: any) => l.laundering_detected).forEach((l: any) => {
     fixes.push({
-      title: `Feature Laundering — ${l.protected_attribute}`,
+      title: `Feature Laundering - ${l.protected_attribute}`,
       severity: l.severity,
       technique: 'Feature Removal / Decorrelation',
       description: l.explanation,
@@ -1096,7 +1096,7 @@ function FixesTab({ audit }: { audit: any }) {
   // Proxy fixes
   proxies.filter((p: any) => p.risk_level === 'HIGH').forEach((p: any) => {
     fixes.push({
-      title: `Proxy Variable — ${p.proxy_column}`,
+      title: `Proxy Variable - ${p.proxy_column}`,
       severity: 'HIGH',
       technique: 'Feature Removal',
       description: p.explanation,
@@ -1107,7 +1107,7 @@ function FixesTab({ audit }: { audit: any }) {
   // Imbalance fixes
   profiles.filter((p: any) => p.imbalance_warning).forEach((p: any) => {
     fixes.push({
-      title: `Group Imbalance — ${p.attribute}`,
+      title: `Group Imbalance - ${p.attribute}`,
       severity: 'MEDIUM',
       technique: 'SMOTE Oversampling',
       description: `Imbalance ratio of ${p.imbalance_ratio}x detected.`,
@@ -1115,13 +1115,13 @@ function FixesTab({ audit }: { audit: any }) {
     });
   });
 
-  // Model bias fixes — flip rates
+  // Model bias fixes - flip rates
   const modelBias = audit.modelBias || {};
   Object.entries(modelBias).forEach(([attr, data]: [string, any]) => {
     if (attr === '_equalized_odds') return;
     if (data.max_flip_rate > 0.10) {
       fixes.push({
-        title: `Counterfactual Sensitivity — ${attr}`,
+        title: `Counterfactual Sensitivity - ${attr}`,
         severity: data.max_flip_rate > 0.25 ? 'CRITICAL' : 'HIGH',
         technique: 'Adversarial Debiasing / Constraint Training',
         description: `Changing '${attr}' flips ${(data.max_flip_rate * 100).toFixed(1)}% of predictions. Model is directly influenced by this protected attribute.`,
@@ -1130,7 +1130,7 @@ function FixesTab({ audit }: { audit: any }) {
     }
   });
 
-  // Model bias fixes — equalized odds gaps
+  // Model bias fixes - equalized odds gaps
   const eqOdds = modelBias._equalized_odds || {};
   Object.entries(eqOdds).forEach(([attr, groups]: [string, any]) => {
     const fprs = Object.values(groups).map((g: any) => g.fpr);
@@ -1139,7 +1139,7 @@ function FixesTab({ audit }: { audit: any }) {
     const fnrGap = fnrs.length >= 2 ? Math.max(...fnrs) - Math.min(...fnrs) : 0;
     if (fprGap > 0.1 || fnrGap > 0.1) {
       fixes.push({
-        title: `Equalized Odds Gap — ${attr}`,
+        title: `Equalized Odds Gap - ${attr}`,
         severity: fprGap > 0.2 || fnrGap > 0.2 ? 'CRITICAL' : 'HIGH',
         technique: 'Post-Processing Calibration',
         description: `FPR gap: ${(fprGap * 100).toFixed(1)}%, FNR gap: ${(fnrGap * 100).toFixed(1)}% across ${attr} groups. Model errors are unevenly distributed.`,
@@ -1150,8 +1150,8 @@ function FixesTab({ audit }: { audit: any }) {
 
   if (fixes.length === 0) return (
     <div className="card flex items-center gap-3 py-8" style={{ background: 'rgba(6, 214, 160, 0.04)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
-      <CheckCircle2 size={20} style={{ color: '#06D6A0' }} />
-      <div className="text-sm font-medium" style={{ color: '#06D6A0' }}>No critical issues requiring fixes.</div>
+      <CheckCircle2 size={20} style={{ color: 'var(--success)' }} />
+      <div className="text-sm font-medium" style={{ color: 'var(--success)' }}>No critical issues requiring fixes.</div>
     </div>
   );
 
@@ -1160,14 +1160,14 @@ function FixesTab({ audit }: { audit: any }) {
       {fixes.map((f, i) => (
         <div key={i} className="card">
           <div className="flex items-center gap-2 mb-2">
-            <Wrench size={14} style={{ color: '#3EC1D3' }} />
+            <Wrench size={14} style={{ color: 'var(--primary)' }} />
             <span className="text-sm font-semibold">{f.title}</span>
             <span className={`badge ${sevBadge(f.severity)}`}>{f.severity}</span>
           </div>
-          <div className="text-sm mb-2" style={{ color: '#C8CCD4' }}>{f.description}</div>
-          <div className="flex items-center gap-4 text-xs" style={{ color: '#8892A5' }}>
-            <span><strong style={{ color: '#3EC1D3' }}>Technique:</strong> {f.technique}</span>
-            <span><strong style={{ color: '#06D6A0' }}>Projected:</strong> {f.projected}</span>
+          <div className="text-sm mb-2" style={{ color: 'var(--fg)' }}>{f.description}</div>
+          <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--muted)' }}>
+            <span><strong style={{ color: 'var(--primary)' }}>Technique:</strong> {f.technique}</span>
+            <span><strong style={{ color: 'var(--success)' }}>Projected:</strong> {f.projected}</span>
           </div>
         </div>
       ))}
@@ -1182,12 +1182,12 @@ function LegalTab({ audit }: { audit: any }) {
   return (
     <div className="space-y-3">
       {/* Disclaimer Banner */}
-      <div className="card" style={{ background: 'rgba(255, 154, 0, 0.05)', borderColor: 'rgba(255, 154, 0, 0.2)' }}>
+      <div className="card" style={{ background: 'rgba(255, 154, 0, 0.05)', borderColor: 'var(--accent-dim)' }}>
         <div className="flex items-start gap-2">
-          <Info size={16} style={{ color: '#FF9A00', marginTop: 2, flexShrink: 0 }} />
+          <Info size={16} style={{ color: 'var(--accent)', marginTop: 2, flexShrink: 0 }} />
           <div>
-            <div className="text-xs font-bold" style={{ color: '#FF9A00' }}>DISCLAIMER: RISK INDICATORS ONLY</div>
-            <div className="text-[10px] mt-1" style={{ color: '#C8CCD4' }}>
+            <div className="text-xs font-bold" style={{ color: 'var(--accent)' }}>DISCLAIMER: RISK INDICATORS ONLY</div>
+            <div className="text-[10px] mt-1" style={{ color: 'var(--fg)' }}>
               This report highlights statistical risks based on fairness metrics and maps them to relevant compliance frameworks for {audit.domain} targeting {audit.jurisdiction}. 
               It does not constitute formal legal advice, nor does it definitively declare legal liability. 
               Consult with legal counsel before making compliance determinations.
@@ -1198,29 +1198,29 @@ function LegalTab({ audit }: { audit: any }) {
 
       {regs.length === 0 ? (
         <div className="card flex items-center gap-3 py-8" style={{ background: 'rgba(6, 214, 160, 0.04)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
-          <CheckCircle2 size={20} style={{ color: '#06D6A0' }} />
-          <div className="text-sm font-medium" style={{ color: '#06D6A0' }}>No regulation risk indicators triggered.</div>
+          <CheckCircle2 size={20} style={{ color: 'var(--success)' }} />
+          <div className="text-sm font-medium" style={{ color: 'var(--success)' }}>No regulation risk indicators triggered.</div>
         </div>
       ) : (
         <>
-          <div className="text-xs flex items-center justify-between" style={{ color: '#8892A5' }}>
+          <div className="text-xs flex items-center justify-between" style={{ color: 'var(--muted)' }}>
             <span>{regs.length} compliance risk mappings triggered</span>
             <span className="badge badge-medium">Jurisdiction: {audit.jurisdiction || 'Global'}</span>
           </div>
           {regs.map((r: any, i: number) => (
             <div key={i} className="card" style={{ borderColor: r.compliance_risk?.includes('CRITICAL') ? 'rgba(255, 22, 93, 0.3)' : 'rgba(255, 154, 0, 0.2)' }}>
               <div className="flex items-start gap-3">
-                <Scale size={16} style={{ color: '#FF9A00', marginTop: 2, flexShrink: 0 }} />
+                <Scale size={16} style={{ color: 'var(--accent)', marginTop: 2, flexShrink: 0 }} />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-semibold">{r.regulation}</span>
                     <span className={`badge ${sevBadge(r.compliance_risk)}`}>{r.compliance_risk} RISK</span>
                   </div>
-                  <div className="text-xs font-medium mb-1" style={{ color: '#3EC1D3' }}>{r.clause}</div>
-                  <div className="text-xs mb-2" style={{ color: '#C8CCD4' }}>{r.indicator_note || r.description}</div>
+                  <div className="text-xs font-medium mb-1" style={{ color: 'var(--primary)' }}>{r.clause}</div>
+                  <div className="text-xs mb-2" style={{ color: 'var(--fg)' }}>{r.indicator_note || r.description}</div>
                   <div className="flex flex-col gap-1 text-xs px-3 py-2 rounded bg-[#1A1F2B]">
-                    <div><span style={{ color: '#8892A5' }}>Triggered by:</span> <strong style={{ color: '#FF165D' }}>{r.triggered_by}</strong></div>
-                    <div><span style={{ color: '#8892A5' }}>Mitigation:</span> <span style={{ color: '#06D6A0' }}>{r.recommended_mitigation}</span></div>
+                    <div><span style={{ color: 'var(--muted)' }}>Triggered by:</span> <strong style={{ color: 'var(--danger)' }}>{r.triggered_by}</strong></div>
+                    <div><span style={{ color: 'var(--muted)' }}>Mitigation:</span> <span style={{ color: 'var(--success)' }}>{r.recommended_mitigation}</span></div>
                   </div>
                 </div>
               </div>
@@ -1236,9 +1236,9 @@ function LegalTab({ audit }: { audit: any }) {
 function Mini({ label, value, sub, color }: { label: string; value: string; sub: string; color: string }) {
   return (
     <div className="card">
-      <div className="text-[11px] font-medium mb-1" style={{ color: '#8892A5' }}>{label}</div>
+      <div className="text-[11px] font-medium mb-1" style={{ color: 'var(--muted)' }}>{label}</div>
       <div className="text-lg font-bold" style={{ color }}>{value}</div>
-      <div className="text-[10px]" style={{ color: '#5A6478' }}>{sub}</div>
+      <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>{sub}</div>
     </div>
   );
 }

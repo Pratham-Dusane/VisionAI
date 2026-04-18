@@ -77,20 +77,20 @@ function CustomDatePicker({ value, onChange }: { value: string, onChange: (v: st
           onChange={(e) => onChange(e.target.value)}
           placeholder="YYYY-MM-DD"
           className="bg-transparent border-none outline-none w-full text-sm"
-          style={{ color: '#E8EAED', outline: 'none', boxShadow: 'none' }}
+          style={{ color: 'var(--fg)', outline: 'none', boxShadow: 'none' }}
         />
-        <button type="button" onClick={() => setOpen(!open)} className="ml-2 flex flex-shrink-0 cursor-pointer" style={{ color: '#8892A5', background: 'transparent', border: 'none' }}>
+        <button type="button" onClick={() => setOpen(!open)} className="ml-2 flex flex-shrink-0 cursor-pointer" style={{ color: 'var(--muted)', background: 'transparent', border: 'none' }}>
           <Calendar size={14} />
         </button>
       </div>
       {open && (
-        <div className="absolute z-50 mt-1 p-3 rounded-lg shadow-xl" style={{ background: '#1A1F2B', border: '1px solid #2A3040', width: '240px' }}>
+        <div className="absolute z-50 mt-1 p-3 rounded-lg shadow-xl" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', width: '240px' }}>
           <div className="flex justify-between items-center mb-3">
-             <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() - 1)))} className="p-1 hover:text-[#3EC1D3]" style={{ color: '#E8EAED', background: 'transparent', border: 'none', cursor: 'pointer' }}>&lt;</button>
-             <span className="text-sm font-semibold" style={{ color: '#E8EAED' }}>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-             <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)))} className="p-1 hover:text-[#3EC1D3]" style={{ color: '#E8EAED', background: 'transparent', border: 'none', cursor: 'pointer' }}>&gt;</button>
+             <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() - 1)))} className="p-1" style={{ color: 'var(--fg)', background: 'transparent', border: 'none', cursor: 'pointer' }}>&lt;</button>
+             <span className="text-sm font-semibold" style={{ color: 'var(--fg)' }}>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+             <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)))} className="p-1" style={{ color: 'var(--fg)', background: 'transparent', border: 'none', cursor: 'pointer' }}>&gt;</button>
           </div>
-          <div className="grid grid-cols-7 gap-1 text-center text-xs mb-1 font-semibold" style={{ color: '#8892A5' }}>
+          <div className="grid grid-cols-7 gap-1 text-center text-xs mb-1 font-semibold" style={{ color: 'var(--muted)' }}>
             {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => <div key={d}>{d}</div>)}
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-sm">
@@ -102,10 +102,10 @@ function CustomDatePicker({ value, onChange }: { value: string, onChange: (v: st
                 <button 
                   key={d} type="button"
                   onClick={() => handleDateClick(d)}
-                  className="p-1 rounded transition-colors text-xs hover:bg-[#2A3040]"
+                  className="p-1 rounded transition-colors text-xs"
                   style={{ 
-                    background: isSelected ? 'rgba(62, 193, 211, 0.2)' : 'transparent', 
-                    color: isSelected ? '#3EC1D3' : '#E8EAED',
+                    background: isSelected ? 'var(--primary-dim)' : 'transparent', 
+                    color: isSelected ? 'var(--primary)' : 'var(--fg)',
                     cursor: 'pointer',
                     border: 'none'
                   }}
@@ -126,7 +126,7 @@ export default function NewAuditPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
 
-  // Step 1 — File state
+  // Step 1 - File state
   const [dataFile, setDataFile] = useState<File | null>(null);
   const [modelFile, setModelFile] = useState<File | null>(null);
   const [dataOnly, setDataOnly] = useState(false);
@@ -281,7 +281,7 @@ export default function NewAuditPage() {
           ))}
         </div>
 
-        {/* Step 1 — Upload */}
+        {/* Step 1 - Upload */}
         {step === 1 && (
           <div className="space-y-4 max-w-4xl mx-auto">
             <div className="grid grid-cols-2 gap-4">
@@ -356,7 +356,7 @@ export default function NewAuditPage() {
                       <Upload size={28} style={{ color: '#3EC1D3', margin: '0 auto 8px' }} />
                       <div className="text-sm font-medium mb-1">Drag & drop your dataset</div>
                       <div className="text-xs" style={{ color: '#5A6478' }}>
-                        .csv, .json, .parquet — up to 500MB
+                        .csv, .json, .parquet - up to 500MB
                       </div>
                     </div>
                   )}
@@ -375,7 +375,7 @@ export default function NewAuditPage() {
                     style={{ opacity: 0.4, cursor: 'default', minHeight: 140 }}
                   >
                     <div className="text-xs" style={{ color: '#5A6478' }}>
-                      Model upload disabled — data-only audit
+                      Model upload disabled - data-only audit
                     </div>
                   </div>
                 ) : useApi ? (
@@ -469,11 +469,11 @@ export default function NewAuditPage() {
               </div>
             </div>
 
-            {/* Preview table — from backend (or client-side CSV fallback) */}
+            {/* Preview table - from backend (or client-side CSV fallback) */}
             {(previewRows.length > 0 || clientPreview.length > 1) && (
               <div className="card" style={{ padding: 0 }}>
                 <div className="px-4 py-2.5 text-xs font-semibold" style={{ color: '#8892A5', borderBottom: '1px solid #2A3040' }}>
-                  Dataset Preview — first 5 rows
+                  Dataset Preview - first 5 rows
                   {rowCount > 0 && (
                     <span className="ml-2 font-normal">({rowCount.toLocaleString()} total)</span>
                   )}
@@ -536,7 +536,7 @@ export default function NewAuditPage() {
           </div>
         )}
 
-        {/* Step 2 — Context Definition */}
+        {/* Step 2 - Context Definition */}
         {step === 2 && (
           <div className="max-w-3xl mx-auto space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -618,7 +618,7 @@ export default function NewAuditPage() {
               </div>
             </div>
 
-            {/* Protected Attributes — from real schema */}
+            {/* Protected Attributes - from real schema */}
             <div className="card">
               <label className="text-xs font-semibold mb-2 block" style={{ color: '#8892A5' }}>
                 Protected Attributes
@@ -757,7 +757,7 @@ export default function NewAuditPage() {
           </div>
         )}
 
-        {/* Step 3 — Review & Launch */}
+        {/* Step 3 - Review & Launch */}
         {step === 3 && (
           <div className="max-w-2xl mx-auto space-y-4">
             <div className="card space-y-3">
@@ -768,17 +768,17 @@ export default function NewAuditPage() {
                 <span style={{ color: '#8892A5' }}>Name</span>
                 <span>{auditName || 'Untitled Audit'}</span>
                 <span style={{ color: '#8892A5' }}>Domain</span>
-                <span>{domain || '—'}</span>
+                <span>{domain || '-'}</span>
                 <span style={{ color: '#8892A5' }}>Dataset</span>
-                <span>{dataFile?.name || '—'} ({rowCount.toLocaleString()} rows)</span>
+                <span>{dataFile?.name || '-'} ({rowCount.toLocaleString()} rows)</span>
                 <span style={{ color: '#8892A5' }}>Model</span>
                 <span>{dataOnly ? 'Data-only' : modelFile?.name || (modelStoragePath ? 'Uploaded' : 'None')}</span>
                 <span style={{ color: '#8892A5' }}>Label Column</span>
-                <span>{labelCol || '—'}</span>
+                <span>{labelCol || '-'}</span>
                 <span style={{ color: '#8892A5' }}>Positive Value</span>
-                <span>{positiveLabel || '—'}</span>
+                <span>{positiveLabel || '-'}</span>
                 <span style={{ color: '#8892A5' }}>Protected Attributes</span>
-                <span>{protectedCols.join(', ') || '—'}</span>
+                <span>{protectedCols.join(', ') || '-'}</span>
                 <span style={{ color: '#8892A5' }}>Jurisdiction</span>
                 <span>{jurisdiction}</span>
                 <span style={{ color: '#8892A5' }}>Fairness Threshold</span>
@@ -786,9 +786,9 @@ export default function NewAuditPage() {
                 {deployed && (
                   <>
                     <span style={{ color: '#8892A5' }}>Deployed Since</span>
-                    <span>{deployedSince || '—'}</span>
+                    <span>{deployedSince || '-'}</span>
                     <span style={{ color: '#8892A5' }}>Monthly Decisions</span>
-                    <span>{decisionsPerMonth || '—'}</span>
+                    <span>{decisionsPerMonth || '-'}</span>
                   </>
                 )}
               </div>

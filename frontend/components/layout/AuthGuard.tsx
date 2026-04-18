@@ -20,10 +20,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   // Show loading state
   if (loading || orgLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: '#0B0E14' }}>
+      <div className="flex items-center justify-center min-h-screen" style={{ background: 'var(--bg)' }}>
         <div className="flex flex-col items-center gap-3">
           <div className="login-spinner" />
-          <span className="text-xs" style={{ color: '#8892A5' }}>Loading...</span>
+          <span className="text-xs" style={{ color: 'var(--muted)' }}>Loading...</span>
         </div>
       </div>
     );

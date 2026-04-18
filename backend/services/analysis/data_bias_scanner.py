@@ -1,5 +1,5 @@
 """
-Data Bias Scanner — PRD §7.2
+Data Bias Scanner - PRD §7.2
 Disparate Impact, Statistical Parity Difference, label skew per group.
 """
 

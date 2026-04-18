@@ -1,5 +1,5 @@
 """
-Audit router — Create, retrieve, list audits.
+Audit router - Create, retrieve, list audits.
 Runs full analysis pipeline (Phase 4) async via BackgroundTasks.
 """
 
@@ -108,7 +108,7 @@ async def create_audit(req: CreateAuditRequest, background_tasks: BackgroundTask
         doc_ref.set(audit_doc)
         audit_id = doc_ref.id
 
-        # Run pipeline async — returns immediately
+        # Run pipeline async - returns immediately
         config = req.model_dump()
         background_tasks.add_task(_run_pipeline_background, config, audit_id, doc_ref)
 

@@ -1,5 +1,5 @@
 """
-Severity Scorer — PRD §7.6
+Severity Scorer - PRD §7.6
 Aggregate all findings → single 0-100 fairness score + letter grade.
 """
 
