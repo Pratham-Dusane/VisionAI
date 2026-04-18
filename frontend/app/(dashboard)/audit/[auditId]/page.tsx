@@ -6,7 +6,7 @@ import { useState, useEffect, use } from 'react';
 import {
   Download, Share2, AlertTriangle, Shield, BarChart3,
   Brain, Wrench, Scale, CheckCircle2, Loader2, XCircle,
-  Zap, Users, Eye, FileText, Layers, Info,
+  Zap, Users, Eye, FileText, Layers, Info, Sparkles,
 } from 'lucide-react';
 
 const TABS = [
@@ -15,6 +15,7 @@ const TABS = [
   { key: 'model', label: 'Model Analysis', icon: Brain },
   { key: 'intersectional', label: 'Intersectional', icon: Layers },
   { key: 'explainability', label: 'Explainability', icon: Zap },
+  { key: 'narratives', label: 'AI Narratives', icon: Sparkles },
   { key: 'fixes', label: 'Fixes', icon: Wrench },
   { key: 'legal', label: 'Legal', icon: Scale },
 ];
@@ -68,32 +69,62 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
     return () => { cancelled = true; clearTimeout(timer); };
   }, [auditId]);
 
-  // Show processing state
+  // Show processing state — skeleton shimmer layout
   if (loading || (audit && audit.status === 'PROCESSING')) {
     const pipeline = audit?.pipeline || {};
     const steps = Object.entries(pipeline);
     return (
       <>
         <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: audit?.name || 'Analyzing...' }]} />
-        <div className="flex-1 flex flex-col items-center justify-center p-8 animate-fade-in">
-          <Loader2 size={32} className="animate-spin mb-4" style={{ color: '#3EC1D3' }} />
-          <h2 className="text-lg font-semibold mb-1">Running analysis pipeline</h2>
-          <p className="text-sm mb-4" style={{ color: '#8892A5' }}>This may take a moment for large datasets…</p>
+        <div className="flex-1 p-4 space-y-3 animate-fade-in">
+          {/* Header skeleton */}
+          <div className="flex items-start gap-4">
+            <div className="skeleton" style={{ width: 88, height: 88, borderRadius: '50%' }} />
+            <div className="flex-1 space-y-2 pt-2">
+              <div className="skeleton" style={{ width: '40%', height: 20 }} />
+              <div className="skeleton" style={{ width: '60%', height: 14 }} />
+            </div>
+          </div>
+
+          {/* Tab bar skeleton */}
+          <div className="flex gap-2">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ width: 90, height: 32 }} />
+            ))}
+          </div>
+
+          {/* Metric cards skeleton */}
+          <div className="grid grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ height: 80 }} />
+            ))}
+          </div>
+
+          {/* Pipeline progress overlay */}
           {steps.length > 0 && (
-            <div className="space-y-1 w-64">
-              {steps.map(([step, status]) => (
-                <div key={step} className="flex items-center gap-2 text-xs">
-                  {status === 'complete' ? <CheckCircle2 size={12} style={{ color: '#06D6A0' }} /> :
-                    status === 'running' ? <Loader2 size={12} className="animate-spin" style={{ color: '#3EC1D3' }} /> :
-                      status === 'skipped' ? <span className="w-3 h-3 rounded-full" style={{ background: '#353D4F' }} /> :
-                        <span className="w-3 h-3 rounded-full" style={{ background: '#2A3040' }} />}
-                  <span style={{ color: status === 'running' ? '#3EC1D3' : status === 'complete' ? '#06D6A0' : '#5A6478' }}>
-                    {step.replace(/_/g, ' ')}
-                  </span>
-                </div>
-              ))}
+            <div className="card" style={{ borderColor: 'rgba(62, 193, 211, 0.2)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Loader2 size={14} className="animate-spin" style={{ color: '#3EC1D3' }} />
+                <span className="text-xs font-semibold" style={{ color: '#3EC1D3' }}>Pipeline Progress</span>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {steps.map(([step, status]) => (
+                  <div key={step} className="flex items-center gap-1.5 text-[10px]">
+                    {status === 'complete' ? <CheckCircle2 size={10} style={{ color: '#06D6A0' }} /> :
+                      status === 'running' ? <Loader2 size={10} className="animate-spin" style={{ color: '#3EC1D3' }} /> :
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#2A3040' }} />}
+                    <span style={{ color: status === 'running' ? '#3EC1D3' : status === 'complete' ? '#06D6A0' : '#5A6478' }}>
+                      {step.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
+
+          {/* Content skeletons */}
+          <div className="skeleton" style={{ height: 120 }} />
+          <div className="skeleton" style={{ height: 200 }} />
         </div>
       </>
     );
@@ -176,6 +207,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
         {tab === 'model' && <ModelTab audit={audit} />}
         {tab === 'intersectional' && <IntersectionalTab audit={audit} />}
         {tab === 'explainability' && <ExplainabilityTab audit={audit} />}
+        {tab === 'narratives' && <NarrativesTab audit={audit} />}
         {tab === 'fixes' && <FixesTab audit={audit} />}
         {tab === 'legal' && <LegalTab audit={audit} />}
       </div>
@@ -216,6 +248,19 @@ function OverviewTab({ audit }: { audit: any }) {
           color={laundering.some((l: any) => l.laundering_detected) ? '#FF165D' : '#06D6A0'} />
       </div>
 
+      {/* Blind Spots indicator */}
+      {(audit.blindSpots?.length > 0) && (
+        <div className="card" style={{ borderColor: 'rgba(138, 99, 255, 0.2)', background: 'rgba(138, 99, 255, 0.03)' }}>
+          <div className="flex items-center gap-2">
+            <Sparkles size={16} style={{ color: '#8A63FF' }} />
+            <span className="text-xs font-semibold" style={{ color: '#8A63FF' }}>
+              {audit.blindSpots.length} AI-detected blind spots
+            </span>
+            <span className="text-[10px]" style={{ color: '#5A6478' }}>See Data Analysis tab for details</span>
+          </div>
+        </div>
+      )}
+
       {/* Config */}
       <div className="card">
         <h3 className="text-xs font-semibold mb-3" style={{ color: '#8892A5' }}>Audit Configuration</h3>
@@ -246,6 +291,35 @@ function OverviewTab({ audit }: { audit: any }) {
                   {info.labels ? info.labels.join(', ') : info.description}
                 </span>
                 <span className="badge badge-pass text-[10px]">{info.n_groups} groups</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Blind Spots (Phase 5 - AI Detection) */}
+      {audit.blindSpots && audit.blindSpots.length > 0 && (
+        <div className="card" style={{ borderColor: 'rgba(255, 154, 0, 0.2)', background: 'rgba(255, 154, 0, 0.03)' }}>
+          <h3 className="text-xs font-semibold mb-2" style={{ color: '#FF9A00' }}>
+            <AlertTriangle size={13} className="inline mr-1" />
+            AI-Detected Blind Spots ({audit.blindSpots.length})
+          </h3>
+          <div className="text-[10px] mb-2" style={{ color: '#5A6478' }}>
+            Gemini AI identified potential protected attributes you may have missed
+          </div>
+          <div className="space-y-2">
+            {audit.blindSpots.map((bs: any, i: number) => (
+              <div key={i} className="p-2 rounded-lg" style={{ background: '#1A1F2B', border: '1px solid #2A3040' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-xs" style={{ color: '#E8EAED' }}>{bs.column}</span>
+                  <span className={`badge ${bs.confidence === 'HIGH' ? 'badge-critical' : bs.confidence === 'MEDIUM' ? 'badge-medium' : 'badge-neutral'} text-[10px]`}>
+                    {bs.confidence}
+                  </span>
+                </div>
+                <div className="text-[10px] mb-1" style={{ color: '#8892A5' }}>
+                  May encode: <span style={{ color: '#FF9A00', fontWeight: 500 }}>{bs.encodes}</span>
+                </div>
+                <div className="text-[10px]" style={{ color: '#5A6478' }}>{bs.reason}</div>
               </div>
             ))}
           </div>
@@ -404,6 +478,36 @@ function DataTab({ audit }: { audit: any }) {
         </div>
       )}
 
+      {/* Blind Spots (Gemini AI) */}
+      {(audit.blindSpots?.length > 0) && (
+        <div className="card" style={{ padding: 0, borderColor: 'rgba(138, 99, 255, 0.25)' }}>
+          <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #2A3040' }}>
+            <Sparkles size={13} style={{ color: '#8A63FF' }} />
+            <span className="text-xs font-semibold" style={{ color: '#8A63FF' }}>AI Blind Spot Detection</span>
+            <span className="text-[10px] ml-auto" style={{ color: '#5A6478' }}>Powered by Gemini</span>
+          </div>
+          <div className="p-4 space-y-2">
+            <div className="text-[10px] mb-3" style={{ color: '#5A6478' }}>
+              Gemini identified columns that may encode protected characteristics not yet flagged in your audit.
+            </div>
+            {audit.blindSpots.map((bs: any, i: number) => (
+              <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'rgba(138, 99, 255, 0.04)', border: '1px solid rgba(138, 99, 255, 0.12)' }}>
+                <div className="flex-shrink-0 mt-0.5">
+                  <span className={`badge ${bs.confidence === 'HIGH' ? 'badge-critical' : bs.confidence === 'MEDIUM' ? 'badge-high' : 'badge-medium'}`}
+                    style={{ fontSize: '9px', padding: '1px 6px' }}>{bs.confidence}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold" style={{ color: '#E8EAED' }}>
+                    {bs.column} <span style={{ color: '#8A63FF' }}>may encode</span> {bs.encodes}
+                  </div>
+                  <div className="text-xs mt-1" style={{ color: '#8892A5' }}>{bs.reason}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Schema table */}
       {schema && (
         <div className="card" style={{ padding: 0 }}>
@@ -437,6 +541,141 @@ function DataTab({ audit }: { audit: any }) {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ==================== AI NARRATIVES ==================== */
+function NarrativesTab({ audit }: { audit: any }) {
+  const [mode, setMode] = useState<'technical' | 'executive' | 'legal'>('executive');
+  const narratives = audit.narratives || {};
+
+  const MODES = [
+    { key: 'executive' as const, label: 'Executive', desc: 'Board-ready summary', icon: '\uD83D\uDCCA' },
+    { key: 'technical' as const, label: 'Technical', desc: 'ML engineer deep-dive', icon: '\uD83D\uDD27' },
+    { key: 'legal' as const, label: 'Legal', desc: 'Compliance assessment', icon: '\u2696\uFE0F' },
+  ];
+
+  const currentNarrative = narratives[mode] || '';
+  const hasNarratives = Object.keys(narratives).length > 0 && Object.values(narratives).some((v: any) => v && v.length > 0);
+
+  if (!hasNarratives) return (
+    <div className="card text-center py-12">
+      <Sparkles size={28} className="mx-auto mb-3" style={{ color: '#8A63FF', opacity: 0.5 }} />
+      <div className="text-sm font-semibold mb-1" style={{ color: '#8892A5' }}>No AI Narratives Generated</div>
+      <div className="text-xs" style={{ color: '#5A6478' }}>
+        Narratives are generated by Gemini AI during the audit pipeline. Check that your GEMINI_API_KEY is configured.
+      </div>
+    </div>
+  );
+
+  // Simple markdown renderer
+  const renderMarkdown = (md: string) => {
+    const lines = md.split('\n');
+    const elements: any[] = [];
+    let inList = false;
+    let listItems: string[] = [];
+
+    const flushList = () => {
+      if (listItems.length > 0) {
+        elements.push(
+          <ul key={`list-${elements.length}`} className="space-y-1 ml-4 mb-3">
+            {listItems.map((item, j) => (
+              <li key={j} className="text-sm flex gap-2" style={{ color: '#C8CCD4' }}>
+                <span style={{ color: '#5A6478' }}>{'\u2022'}</span>
+                <span dangerouslySetInnerHTML={{ __html: inlineFormat(item) }} />
+              </li>
+            ))}
+          </ul>
+        );
+        listItems = [];
+      }
+      inList = false;
+    };
+
+    const inlineFormat = (text: string) => {
+      return text
+        .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#E8EAED">$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code style="background:#1A1F2B;padding:1px 4px;border-radius:3px;font-size:11px;color:#3EC1D3">$1</code>');
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      if (line.startsWith('# ')) {
+        flushList();
+        elements.push(<h2 key={i} className="text-base font-bold mb-2 mt-4" style={{ color: '#E8EAED' }}>{line.slice(2)}</h2>);
+      } else if (line.startsWith('## ')) {
+        flushList();
+        elements.push(<h3 key={i} className="text-sm font-bold mb-2 mt-3" style={{ color: '#3EC1D3' }}>{line.slice(3)}</h3>);
+      } else if (line.startsWith('### ')) {
+        flushList();
+        elements.push(<h4 key={i} className="text-xs font-bold mb-1 mt-2" style={{ color: '#8A63FF' }}>{line.slice(4)}</h4>);
+      } else if (line.startsWith('---')) {
+        flushList();
+        elements.push(<hr key={i} className="my-3" style={{ borderColor: '#2A3040' }} />);
+      } else if (line.startsWith('- ') || line.startsWith('* ') || /^\d+\.\s/.test(line)) {
+        inList = true;
+        const content = line.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '');
+        listItems.push(content);
+      } else if (line === '') {
+        flushList();
+      } else {
+        flushList();
+        elements.push(
+          <p key={i} className="text-sm mb-2" style={{ color: '#C8CCD4' }}
+            dangerouslySetInnerHTML={{ __html: inlineFormat(line) }} />
+        );
+      }
+    }
+    flushList();
+    return elements;
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Stakeholder toggle */}
+      <div className="flex gap-2">
+        {MODES.map((m) => (
+          <button
+            key={m.key}
+            onClick={() => setMode(m.key)}
+            className="flex-1 p-3 rounded-lg text-left transition-all"
+            style={{
+              background: mode === m.key ? 'rgba(138, 99, 255, 0.08)' : '#121620',
+              border: `1px solid ${mode === m.key ? 'rgba(138, 99, 255, 0.3)' : '#2A3040'}`,
+              cursor: 'pointer',
+            }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm">{m.icon}</span>
+              <span className="text-sm font-semibold" style={{ color: mode === m.key ? '#8A63FF' : '#8892A5' }}>
+                {m.label}
+              </span>
+            </div>
+            <div className="text-[10px]" style={{ color: '#5A6478' }}>{m.desc}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Narrative content */}
+      <div className="card" style={{ borderColor: 'rgba(138, 99, 255, 0.15)' }}>
+        <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid #2A3040' }}>
+          <Sparkles size={14} style={{ color: '#8A63FF' }} />
+          <span className="text-xs font-semibold" style={{ color: '#8A63FF' }}>
+            {MODES.find(m => m.key === mode)?.label} Narrative
+          </span>
+          <span className="text-[10px] ml-auto" style={{ color: '#5A6478' }}>Generated by Gemini AI</span>
+        </div>
+        <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '8px' }}>
+          {currentNarrative ? renderMarkdown(currentNarrative) : (
+            <div className="text-sm text-center py-8" style={{ color: '#5A6478' }}>
+              No narrative available for {mode} mode.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -588,6 +827,66 @@ function ModelTab({ audit }: { audit: any }) {
   );
 }
 
+/* Collapsible Intersection group */
+function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string; items: any[] }) {
+  const [open, setOpen] = useState(false);
+  const criticalCount = items.filter((d: any) => d.severity === 'CRITICAL').length;
+  const highCount = items.filter((d: any) => d.severity === 'HIGH').length;
+  
+  return (
+    <div style={{ borderBottom: '1px solid #2A3040' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-[#1A1F2B] transition-colors"
+        style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-xs" style={{ color: '#5A6478', transform: open ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▶</span>
+          <span className="text-xs font-semibold">{intersectionKey}</span>
+          <span className="text-[10px]" style={{ color: '#5A6478' }}>{items.length} groups tested</span>
+        </div>
+        <div className="flex items-center gap-3 text-[10px]">
+          {criticalCount > 0 ? (
+            <span className="badge badge-critical" style={{ fontSize: '9px', padding: '1px 6px' }}>{criticalCount} CRITICAL</span>
+          ) : highCount > 0 ? (
+            <span className="badge badge-high" style={{ fontSize: '9px', padding: '1px 6px' }}>{highCount} HIGH</span>
+          ) : (
+            <span className="badge badge-pass" style={{ fontSize: '9px', padding: '1px 6px' }}>PASS</span>
+          )}
+        </div>
+      </button>
+      {open && (
+        <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
+          <table>
+            <thead className="sticky top-0 sticky-header" style={{ background: '#121620', zIndex: 10 }}>
+              <tr><th>Group</th><th>n</th><th>Pos Rate</th><th>DI vs Overall</th><th>Severity</th></tr>
+            </thead>
+            <tbody>
+              {items.map((d: any, i: number) => (
+                <tr key={i}>
+                  <td className="font-medium text-xs">
+                    {d.group}
+                    {d.low_confidence && (
+                      <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-[#2A3040] text-[#5A6478]" title={d.statistical_note}>
+                        n&lt;30
+                      </span>
+                    )}
+                  </td>
+                  <td>{d.sample_size}</td>
+                  <td>{(d.positive_rate * 100).toFixed(1)}%</td>
+                  <td style={{ color: d.di_vs_overall < 0.8 && !d.low_confidence ? '#FF165D' : d.di_vs_overall >= 0.8 ? '#06D6A0' : '#8892A5', fontWeight: 600 }}>
+                    {d.di_vs_overall?.toFixed(2)}</td>
+                  <td><span className={`badge ${sevBadge(d.severity)}`}>{d.severity}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ==================== INTERSECTIONAL ==================== */
 function IntersectionalTab({ audit }: { audit: any }) {
   const data = audit.intersectional || [];
@@ -599,7 +898,13 @@ function IntersectionalTab({ audit }: { audit: any }) {
   );
 
   const critical = data.filter((d: any) => d.severity === 'CRITICAL');
-  const high = data.filter((d: any) => d.severity === 'HIGH');
+
+  const groups: Record<string, any[]> = {};
+  data.forEach((d: any) => {
+    const key = `${d.col_a} × ${d.col_b}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(d);
+  });
 
   return (
     <div className="space-y-3">
@@ -621,30 +926,11 @@ function IntersectionalTab({ audit }: { audit: any }) {
 
       <div className="card" style={{ padding: 0 }}>
         <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#8892A5' }}>
-          All Intersections — {data.length} groups analyzed
+          Intersectional Groups Analyzed
         </div>
-        <table>
-          <thead><tr><th>Group</th><th>n</th><th>Pos Rate</th><th>DI vs Overall</th><th>Severity</th></tr></thead>
-          <tbody>
-            {data.slice(0, 50).map((d: any, i: number) => (
-              <tr key={i}>
-                <td className="font-medium text-xs">
-                  {d.group}
-                  {d.low_confidence && (
-                    <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-[#2A3040] text-[#5A6478]" title={d.statistical_note}>
-                      n&lt;30
-                    </span>
-                  )}
-                </td>
-                <td>{d.sample_size}</td>
-                <td>{(d.positive_rate * 100).toFixed(1)}%</td>
-                <td style={{ color: d.di_vs_overall < 0.8 && !d.low_confidence ? '#FF165D' : d.di_vs_overall >= 0.8 ? '#06D6A0' : '#8892A5', fontWeight: 600 }}>
-                  {d.di_vs_overall?.toFixed(2)}</td>
-                <td><span className={`badge ${sevBadge(d.severity)}`}>{d.severity}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {Object.entries(groups).map(([key, items]: [string, any[]]) => (
+          <IntersectionGroup key={key} intersectionKey={key} items={items} />
+        ))}
       </div>
     </div>
   );
@@ -696,61 +982,69 @@ function ExplainabilityTab({ audit }: { audit: any }) {
 
       {/* SHAP Analysis */}
       {explainability && Object.keys(explainability).length > 0 ? (
-        Object.entries(explainability).map(([attr, data]: [string, any]) => (
-          <div key={attr} className="card space-y-3">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <Zap size={14} style={{ color: '#3EC1D3' }} />
-              SHAP Analysis — {attr}
-            </h3>
-
-            {/* Top features */}
-            {data.top_features?.length > 0 && (
-              <div>
-                <div className="text-xs font-semibold mb-2" style={{ color: '#8892A5' }}>Top Features by Importance</div>
-                <div className="space-y-1">
-                  {data.top_features.slice(0, 10).map((f: any) => {
-                    const maxImp = data.top_features[0]?.importance || 1;
-                    const pct = (f.importance / maxImp) * 100;
-                    return (
-                      <div key={f.feature} className="flex items-center gap-2">
-                        <span className="text-xs w-32 truncate" style={{ color: '#8892A5' }}>{f.feature}</span>
-                        <div className="flex-1 h-3 rounded-full" style={{ background: '#1A1F2B' }}>
-                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#3EC1D3' }} />
-                        </div>
-                        <span className="text-[10px] w-12 text-right" style={{ color: '#5A6478' }}>{f.importance.toFixed(4)}</span>
+        <>
+          {/* Global Top Features */}
+          {Object.values(explainability)[0] && (Object.values(explainability)[0] as any).top_features?.length > 0 && (
+            <div className="card space-y-3">
+              <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
+                <Zap size={14} style={{ color: '#3EC1D3' }} />
+                Global Top Features by Importance
+              </h3>
+              <div className="space-y-1">
+                {(Object.values(explainability)[0] as any).top_features.slice(0, 10).map((f: any) => {
+                  const maxImp = (Object.values(explainability)[0] as any).top_features[0]?.importance || 1;
+                  const pct = (f.importance / maxImp) * 100;
+                  return (
+                    <div key={f.feature} className="flex items-center gap-2">
+                      <span className="text-xs w-32 truncate" style={{ color: '#8892A5' }}>{f.feature}</span>
+                      <div className="flex-1 h-3 rounded-full" style={{ background: '#1A1F2B' }}>
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#3EC1D3' }} />
                       </div>
-                    );
-                  })}
-                </div>
+                      <span className="text-[10px] w-12 text-right" style={{ color: '#5A6478' }}>{f.importance.toFixed(4)}</span>
+                    </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Disparity flags */}
-            {data.disparity_flags?.length > 0 && (
-              <div className="card" style={{ padding: 0, borderColor: 'rgba(255, 154, 0, 0.2)' }}>
-                <div className="px-4 py-2 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#FF9A00' }}>
-                  SHAP Disparity Flags — {data.disparity_flags.length} features
+          {/* Per-attribute SHAP Disparities */}
+          {Object.entries(explainability).map(([attr, data]: [string, any]) => (
+            <div key={attr} className="card space-y-3">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Zap size={14} style={{ color: '#3EC1D3' }} />
+                SHAP Analysis — {attr}
+              </h3>
+
+              {/* Disparity flags */}
+              {data.disparity_flags?.length > 0 ? (
+                <div className="card" style={{ padding: 0, borderColor: 'rgba(255, 154, 0, 0.2)' }}>
+                  <div className="px-4 py-2 text-xs font-semibold" style={{ borderBottom: '1px solid #2A3040', color: '#FF9A00' }}>
+                    SHAP Disparity Flags — {data.disparity_flags.length} features
+                  </div>
+                  <table>
+                    <thead><tr><th>Feature</th><th>Disparity Ratio</th><th>Explanation</th></tr></thead>
+                    <tbody>
+                      {data.disparity_flags.map((f: any, i: number) => (
+                        <tr key={i}>
+                          <td className="font-medium">{f.feature}</td>
+                          <td style={{ color: '#FF9A00' }}>{f.disparity_ratio}x</td>
+                          <td className="text-xs" style={{ color: '#8892A5' }}>{f.explanation}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <table>
-                  <thead><tr><th>Feature</th><th>Disparity Ratio</th><th>Explanation</th></tr></thead>
-                  <tbody>
-                    {data.disparity_flags.map((f: any, i: number) => (
-                      <tr key={i}>
-                        <td className="font-medium">{f.feature}</td>
-                        <td style={{ color: '#FF9A00' }}>{f.disparity_ratio}x</td>
-                        <td className="text-xs" style={{ color: '#8892A5' }}>{f.explanation}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+              ) : (
+                <div className="text-xs" style={{ color: '#5A6478' }}>No SHAP disparity flags detected for {attr}.</div>
+              )}
 
-            {data.error && (
-              <div className="text-xs" style={{ color: '#FF9A00' }}>⚠ {data.error}</div>
-            )}
-          </div>
-        ))
+              {data.error && (
+                <div className="text-xs" style={{ color: '#FF9A00' }}>⚠ {data.error}</div>
+              )}
+            </div>
+          ))}
+        </>
       ) : (
         <div className="card flex items-center gap-3" style={{ background: 'rgba(62, 193, 211, 0.04)', borderColor: 'rgba(62, 193, 211, 0.2)' }}>
           <Info size={18} style={{ color: '#3EC1D3' }} />

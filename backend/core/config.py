@@ -16,6 +16,9 @@ TEMP_UPLOAD_DIR.mkdir(exist_ok=True)
 # Firebase Storage bucket (from .env)
 FIREBASE_STORAGE_BUCKET = os.getenv("FIREBASE_STORAGE_BUCKET", "")
 
+# GCP Project ID for Vertex AI (from .env)
+GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID", "")
+
 # Upload limits
 MAX_FILE_SIZE_MB = 500
 ALLOWED_DATASET_EXTENSIONS = {".csv", ".json", ".parquet"}

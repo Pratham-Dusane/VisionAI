@@ -144,6 +144,19 @@ body {
 .badge-medium { background: rgba(255, 209, 102, 0.15); color: #FFD166; }
 .badge-low { background: rgba(62, 193, 211, 0.15); color: #3EC1D3; }
 .badge-pass { background: rgba(6, 214, 160, 0.15); color: #06D6A0; }
+.badge-neutral { background: rgba(90, 100, 120, 0.15); color: #8892A5; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #1A1F2B 25%, #252C3A 50%, #1A1F2B 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+}
 .badge-processing {
   background: rgba(255, 154, 0, 0.15);
   color: #FF9A00;
