@@ -148,7 +148,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   return (
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: audit.name }]} />
-      <div className="flex-1 p-4 space-y-3 animate-fade-in">
+      <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex items-start gap-4">
           {/* Score ring */}
@@ -235,7 +235,7 @@ function OverviewTab({ audit }: { audit: any }) {
   return (
     <div className="space-y-3">
       {/* Metric cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 gap-6">
         <Mini label="Fairness Score" value={`${sev.fairness_score ?? 0}`} sub={`Grade: ${sev.letter_grade ?? '?'}`}
           color={scoreColor(sev.fairness_score ?? 0)} />
         <Mini label="Disparate Impact (worst)" value={worstDI ? worstDI.di.toFixed(2) : '-'}

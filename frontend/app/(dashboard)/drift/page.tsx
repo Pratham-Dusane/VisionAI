@@ -28,7 +28,7 @@ export default function DriftPage() {
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Drift Monitor' }]} />
 
-      <div className="flex-1 p-5 space-y-3 animate-fade-in">
+      <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         {/* Alert Banner */}
         {latest.diRace < 0.8 && (
           <div
@@ -54,7 +54,7 @@ export default function DriftPage() {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 gap-6">
           <div className="card">
             <div className="text-[11px] font-medium" style={{ color: 'var(--muted)' }}>Current Score</div>
             <div className="text-xl font-bold" style={{ color: getScoreColor(latest.fairnessScore) }}>{latest.fairnessScore}</div>

@@ -12,10 +12,10 @@ export default function SettingsPage() {
   return (
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Settings' }]} />
-      <div className="flex-1 p-5 space-y-3 animate-fade-in">
+      <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         <h1 className="text-lg font-bold">Settings</h1>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-6">
           {/* Organization */}
           <div className="card space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold">

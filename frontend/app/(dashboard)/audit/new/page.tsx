@@ -257,7 +257,7 @@ export default function NewAuditPage() {
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'New Audit' }]} />
 
-      <div className="flex-1 p-4 animate-fade-in">
+      <div className="flex-1 p-6 max-w-7xl mx-auto w-full animate-fade-in">
         {/* Stepper */}
         <div className="flex items-center gap-0 mb-6 max-w-lg mx-auto">
           {[1, 2, 3].map((s) => (

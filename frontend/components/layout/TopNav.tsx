@@ -11,7 +11,7 @@ interface BreadcrumbItem {
 export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] }) {
   return (
     <header
-      className="h-[52px] flex items-center justify-between px-5 shrink-0 sticky top-0 z-40"
+      className="h-[64px] flex items-center justify-between px-6 shrink-0 sticky top-0 z-40"
       style={{
         background: 'var(--topnav-bg)',
         backdropFilter: 'blur(12px)',
