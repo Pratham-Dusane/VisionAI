@@ -9,6 +9,7 @@ from datetime import datetime
 import traceback
 
 from services.analysis.pipeline import run_full_pipeline
+from services.gemini.stakeholder_formatter import get_cached_narrative_sync
 
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
@@ -57,6 +58,8 @@ def _run_pipeline_background(config: dict, audit_id: str, doc_ref):
             "severity": results.get("severity"),
             "fairnessScore": results.get("severity", {}).get("fairness_score", 0),
             "letterGrade": results.get("severity", {}).get("letter_grade", "?"),
+            "blindSpots": results.get("blindSpots", []),
+            "narratives": results.get("narratives", {}),
             "modelError": results.get("modelError"),
             "explainabilityError": results.get("explainabilityError"),
         }
@@ -152,5 +155,54 @@ async def list_audits(orgId: str):
             audits.append(data)
         audits.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
         return audits
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{audit_id}/narrative/{stakeholder_type}")
+async def get_narrative(audit_id: str, stakeholder_type: str):
+    """
+    Retrieve narrative for a specific stakeholder type.
+    stakeholder_type: one of "technical", "executive", "legal"
+    """
+    if stakeholder_type not in ["technical", "executive", "legal"]:
+        raise HTTPException(
+            status_code=400,
+            detail="stakeholder_type must be one of: technical, executive, legal"
+        )
+    
+    try:
+        # Check if audit exists
+        db = firestore.client()
+        audit_doc = db.collection("audits").document(audit_id).get()
+        if not audit_doc.exists:
+            raise HTTPException(status_code=404, detail="Audit not found")
+        
+        # Try to get cached narrative
+        narrative = get_cached_narrative_sync(audit_id, stakeholder_type)
+        
+        if narrative:
+            return {
+                "auditId": audit_id,
+                "stakeholderType": stakeholder_type,
+                "narrative": narrative,
+            }
+        else:
+            # Check if audit is complete
+            audit_data = audit_doc.to_dict()
+            if audit_data.get("status") != "COMPLETE":
+                raise HTTPException(
+                    status_code=400,
+                    detail="Audit is not complete yet. Narratives are generated after analysis completes."
+                )
+            
+            # Narrative should exist but doesn't - return error
+            raise HTTPException(
+                status_code=404,
+                detail=f"Narrative for {stakeholder_type} not found. It may not have been generated yet."
+            )
+    
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

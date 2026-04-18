@@ -25,6 +25,8 @@ from services.analysis.model_bias_evaluator import evaluate_model_bias, load_mod
 from services.analysis.flip_sensitivity import compute_flip_sensitivity
 from services.analysis.explainability import compute_explainability_all
 from services.compliance.regulation_mapper import map_regulations
+from services.gemini.blind_spot_detector import detect_blind_spots_sync
+from services.gemini.stakeholder_formatter import generate_all_stakeholder_narratives_sync
 from core.firebase_init import download_from_storage, cleanup_temp_file
 
 
@@ -224,6 +226,47 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
         )
         results["severity"] = severity
         _update_progress(db, audit_id, "severity_scoring", "complete")
+
+        # --- Step 12: Blind spot detection (Gemini AI) ---
+        _update_progress(db, audit_id, "blind_spot_detection", "running")
+        try:
+            # Extract sample values from schema
+            sample_values_per_col = {}
+            if "schema" in results and "columns" in results["schema"]:
+                for col_info in results["schema"]["columns"]:
+                    sample_values_per_col[col_info["name"]] = col_info.get("sample_values", [])
+            
+            blind_spots = detect_blind_spots_sync(
+                column_names=list(df.columns),
+                domain=config.get("domain", "Other"),
+                already_flagged=config["protectedCols"],
+                sample_values_per_col=sample_values_per_col,
+            )
+            results["blindSpots"] = blind_spots
+            logger.info(f"[PIPELINE] Detected {len(blind_spots)} blind spots")
+        except Exception as e:
+            results["blindSpots"] = []
+            logger.error(f"[PIPELINE] Blind spot detection error: {e}")
+            import traceback
+            traceback.print_exc()
+        _update_progress(db, audit_id, "blind_spot_detection", "complete")
+
+        # --- Step 13: Narrative generation (Gemini AI) ---
+        _update_progress(db, audit_id, "narrative_generation", "running")
+        try:
+            narratives = generate_all_stakeholder_narratives_sync(
+                audit_id=audit_id,
+                audit_results=results,
+                domain=config.get("domain", "Other"),
+            )
+            results["narratives"] = narratives
+            logger.info(f"[PIPELINE] Generated narratives for {len(narratives)} stakeholder types")
+        except Exception as e:
+            results["narratives"] = {}
+            logger.error(f"[PIPELINE] Narrative generation error: {e}")
+            import traceback
+            traceback.print_exc()
+        _update_progress(db, audit_id, "narrative_generation", "complete")
 
         return results
 
