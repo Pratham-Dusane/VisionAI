@@ -125,54 +125,120 @@ export default function DashboardPage() {
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard' }]} />
 
-      <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-8 animate-fade-in">
+      <div className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-8 animate-fade-in">
         
         {/* Top Section: Health Indicators & Secondary Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Critical Health Indicators */}
-          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <HealthIndicatorCard 
-              title="System Fairness" 
-              value={avgScore} 
-              suffix="/100" 
-              status={fairnessStatus} 
-              trend={fairnessTrend} 
-              icon={ActivitySquare}
-            />
-            <HealthIndicatorCard 
-              title="Active Proxy Alerts" 
-              value={alertCount} 
-              status={proxyStatus} 
-              trend={proxyTrend} 
-              icon={ShieldAlert}
-            />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:grid-rows-[auto_auto_auto]">
+          <HealthIndicatorCard
+            title="System Fairness"
+            value={avgScore}
+            suffix="/100"
+            status={fairnessStatus}
+            trend={fairnessTrend}
+            icon={ActivitySquare}
+            className="lg:row-span-2"
+          />
+
+          <HealthIndicatorCard
+            title="Active Proxy Alerts"
+            value={alertCount}
+            status={proxyStatus}
+            trend={proxyTrend}
+            icon={ShieldAlert}
+            className="lg:row-span-2"
+          />
+
+          <div className="card border-none shadow-sm flex items-center justify-between p-6 h-full rounded-3xl" style={{ background: 'var(--surface)' }}>
+            <div>
+              <div className="text-xs font-semibold tracking-wider uppercase mb-1" style={{ color: 'var(--muted)' }}>Total Audits</div>
+              <div className="text-3xl font-bold" style={{ color: 'var(--fg)' }}>{audits.length}</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--surface-2)]">
+              <BarChart3 size={24} style={{ color: 'var(--muted)' }} />
+            </div>
           </div>
 
-          {/* Secondary Stats */}
-          <div className="grid grid-rows-2 gap-6">
-            <div className="card border-none shadow-sm flex items-center justify-between p-6 h-full rounded-3xl" style={{ background: 'var(--surface)' }}>
-              <div>
-                <div className="text-xs font-semibold tracking-wider uppercase mb-1" style={{ color: 'var(--muted)' }}>Total Audits</div>
-                <div className="text-3xl font-bold" style={{ color: 'var(--fg)' }}>{audits.length}</div>
-              </div>
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--surface-2)]">
-                <BarChart3 size={24} style={{ color: 'var(--muted)' }} />
+          <div className="card border-none shadow-sm flex items-center justify-between p-6 h-full rounded-3xl lg:col-start-3 lg:row-start-2" style={{ background: 'var(--surface)' }}>
+            <div>
+              <div className="text-xs font-semibold tracking-wider uppercase mb-1" style={{ color: 'var(--muted)' }}>Last Audit</div>
+              <div className="text-2xl font-bold" style={{ color: 'var(--fg)' }}>
+                {lastAudit ? new Date(lastAudit).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
               </div>
             </div>
-            
-            <div className="card border-none shadow-sm flex items-center justify-between p-6 h-full rounded-3xl" style={{ background: 'var(--surface)' }}>
-              <div>
-                <div className="text-xs font-semibold tracking-wider uppercase mb-1" style={{ color: 'var(--muted)' }}>Last Audit</div>
-                <div className="text-2xl font-bold" style={{ color: 'var(--fg)' }}>
-                  {lastAudit ? new Date(lastAudit).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
-                </div>
-              </div>
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--surface-2)]">
-                <Calendar size={24} style={{ color: 'var(--muted)' }} />
-              </div>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--surface-2)]">
+              <Calendar size={24} style={{ color: 'var(--muted)' }} />
             </div>
           </div>
+
+          <div className="lg:col-start-1 lg:row-start-3 flex items-start">
+            <p
+              className="w-full text-base sm:text-[2rem] font-extrabold leading-tight"
+              style={{
+                fontFamily: 'Poppins, ui-sans-serif, system-ui, sans-serif',
+                background: 'linear-gradient(90deg, #4285F4 0%, #7B61FF 28%, #DB4437 52%, #F4B400 76%, #0F9D58 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+              }}
+            >
+              Fairness is not just a score. Pressure-test every decision with our evaluator.
+            </p>
+          </div>
+
+          {!loading && audits.length > 0 && (
+            <div className="card border-none shadow-sm rounded-3xl flex flex-col gap-4 p-6 lg:col-start-2 lg:col-span-2 lg:row-start-3" style={{ background: 'var(--surface)' }}>
+              <div>
+                <div className="text-sm font-semibold mb-1" style={{ color: 'var(--fg)' }}>Model Comparison Mode</div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>
+                  Compare the most recent audit against a matching domain baseline.
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="label-text block mb-1" style={{ color: 'var(--muted)' }}>Audit A</label>
+                  <select className="select w-full" value={compareAId} onChange={(e) => setCompareAId(e.target.value)}>
+                    {completedAudits.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name} ({a.domain})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label-text block mb-1" style={{ color: 'var(--muted)' }}>Audit B</label>
+                  <select className="select w-full" value={compareB?.id || ''} onChange={(e) => setCompareBId(e.target.value)}>
+                    {compareOptionsB.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name} ({a.domain})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {compareA && compareB && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+                    <div className="text-xs" style={{ color: 'var(--muted)' }}>Fairness Score</div>
+                    <div className="text-sm mt-1" style={{ color: 'var(--fg)' }}>{compareA.fairnessScore} {'->'} <strong>{compareB.fairnessScore}</strong></div>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+                    <div className="text-xs" style={{ color: 'var(--muted)' }}>Worst DI Ratio</div>
+                    <div className="text-sm mt-1" style={{ color: diDelta >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                      {worstDI(compareA).toFixed(2)} {'->'} <strong>{worstDI(compareB).toFixed(2)}</strong>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+                    <div className="text-xs" style={{ color: 'var(--muted)' }}>Equalized Odds Attributes</div>
+                    <div className="text-sm mt-1" style={{ color: 'var(--fg)' }}>
+                      {Object.keys(compareA.modelBias?._equalized_odds || {}).length} {'->'} <strong>{Object.keys(compareB.modelBias?._equalized_odds || {}).length}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {compareSummary && (
+                <div className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>{compareSummary}</div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Loading */}
@@ -205,55 +271,6 @@ export default function DashboardPage() {
 
         {/* Audits Table */}
         {!loading && audits.length > 0 && (
-          <div className="card rounded-3xl" style={{ borderColor: 'var(--primary-dim)' }}>
-            <div className="text-sm font-semibold mb-3">Model Comparison Mode</div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label-text block mb-1" style={{ color: 'var(--muted)' }}>Audit A</label>
-                <select className="select w-full" value={compareAId} onChange={(e) => setCompareAId(e.target.value)}>
-                  {completedAudits.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name} ({a.domain})</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="label-text block mb-1" style={{ color: 'var(--muted)' }}>Audit B</label>
-                <select className="select w-full" value={compareB?.id || ''} onChange={(e) => setCompareBId(e.target.value)}>
-                  {compareOptionsB.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name} ({a.domain})</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {compareA && compareB && (
-              <div className="mt-3 grid grid-cols-3 gap-3">
-                <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
-                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Fairness Score</div>
-                  <div className="text-sm mt-1" style={{ color: 'var(--fg)' }}>{compareA.fairnessScore} {'->'} <strong>{compareB.fairnessScore}</strong></div>
-                </div>
-                <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
-                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Worst DI Ratio</div>
-                  <div className="text-sm mt-1" style={{ color: diDelta >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-                    {worstDI(compareA).toFixed(2)} {'->'} <strong>{worstDI(compareB).toFixed(2)}</strong>
-                  </div>
-                </div>
-                <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
-                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Equalized Odds Attributes</div>
-                  <div className="text-sm mt-1" style={{ color: 'var(--fg)' }}>
-                    {Object.keys(compareA.modelBias?._equalized_odds || {}).length} {'->'} <strong>{Object.keys(compareB.modelBias?._equalized_odds || {}).length}</strong>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {compareSummary && (
-              <div className="text-xs mt-3" style={{ color: 'var(--muted)' }}>{compareSummary}</div>
-            )}
-          </div>
-        )}
-
-        {!loading && audits.length > 0 && (
           <div className="card rounded-3xl overflow-hidden" style={{ padding: 0 }}>
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
               <h2 className="text-[15px] font-semibold">Recent Audits</h2>
@@ -262,7 +279,7 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="table-wrap" style={{ border: 'none', borderRadius: 0 }}>
+            <div className="table-wrap" style={{ border: 'none', borderRadius: 0, overflowX: 'auto' }}>
               <table>
                 <thead>
                   <tr>
@@ -334,7 +351,7 @@ export default function DashboardPage() {
 
             {/* Pagination */}
             {audits.length > perPage && (
-              <div className="flex items-center justify-between px-6 py-4" style={{ borderTop: '1px solid var(--border)' }}>
+              <div className="flex items-center justify-between gap-3 px-6 py-4 flex-wrap" style={{ borderTop: '1px solid var(--border)' }}>
                 <span className="text-sm font-medium" style={{ color: 'var(--muted)' }}>
                   Showing {page * perPage + 1}–{Math.min((page + 1) * perPage, audits.length)} of {audits.length}
                 </span>
@@ -373,7 +390,7 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`badge ${info.cls}`}>{info.label}</span>;
 }
 
-function HealthIndicatorCard({ title, value, suffix, status, trend, icon: Icon }: any) {
+function HealthIndicatorCard({ title, value, suffix, status, trend, icon: Icon, className = '' }: any) {
   let bg = 'var(--surface-2)';
   let fg = 'var(--fg)';
   
@@ -393,7 +410,7 @@ function HealthIndicatorCard({ title, value, suffix, status, trend, icon: Icon }
   else if (trend.val < 0) TrendIcon = TrendingDown;
 
   return (
-    <div className="flex flex-col p-6 rounded-[28px] relative transition-transform hover:-translate-y-0.5 duration-300" style={{ background: bg }}>
+    <div className={`flex flex-col p-6 rounded-[28px] relative transition-transform hover:-translate-y-0.5 duration-300 h-full ${className}`} style={{ background: bg }}>
       <div className="flex justify-between items-start mb-6">
         <div className="flex items-center gap-2" style={{ color: fg }}>
           <Icon size={22} strokeWidth={2.5} />
@@ -412,6 +429,7 @@ function HealthIndicatorCard({ title, value, suffix, status, trend, icon: Icon }
         </div>
         <span>{trend.label}</span>
       </div>
+
     </div>
   );
 }
