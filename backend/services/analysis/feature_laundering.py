@@ -52,8 +52,16 @@ def detect_feature_laundering(
             clf = GradientBoostingClassifier(
                 n_estimators=50, max_depth=3, random_state=42
             )
+
+            # Keep folds <= minority class count to avoid stratified split warnings.
+            class_counts = np.bincount(y_enc)
+            minority_count = int(class_counts.min()) if len(class_counts) > 0 else 0
+            cv_folds = min(5, minority_count)
+            if cv_folds < 2:
+                continue
+
             scores = cross_val_score(
-                clf, X, y_enc, cv=min(5, len(y) // 5 or 2), scoring="accuracy"
+                clf, X, y_enc, cv=cv_folds, scoring="accuracy"
             )
             mean_acc = float(scores.mean())
 

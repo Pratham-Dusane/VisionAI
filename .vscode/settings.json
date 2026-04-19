@@ -1,3 +1,9 @@
 {
-    "kiroAgent.configureMCP": "Disabled"
+    "kiroAgent.configureMCP": "Disabled",
+    "chat.tools.terminal.autoApprove": {
+        "/^cd \\.\\.; cd backend; python -m py_compile main\\.py routers\\\\audits\\.py services\\\\analysis\\\\pipeline\\.py services\\\\reporting\\\\audit_serializer\\.py services\\\\reporting\\\\pdf_generator\\.py$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }

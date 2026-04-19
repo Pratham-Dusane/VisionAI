@@ -2,14 +2,66 @@
 
 import TopNav from '@/components/layout/TopNav';
 import { Settings as SettingsIcon, User, Building2, Key, Bell, ToggleLeft, ToggleRight, Shield, Globe, Moon, Sun, LayoutTemplate, Rows3 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTheme } from '@/lib/theme-context';
+import { useAuth } from '@/lib/auth-context';
+import { getOrgSettings, updateOrgSettings } from '@/lib/api';
 
 export default function SettingsPage() {
   const { theme, toggleTheme, density, toggleDensity } = useTheme();
+  const { org, orgLoading } = useAuth();
   const [benchOptIn, setBenchOptIn] = useState(false);
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [explainMode, setExplainMode] = useState(false);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+  const [saveMessage, setSaveMessage] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSettings() {
+      if (!org || orgLoading) {
+        setLoadingSettings(false);
+        return;
+      }
+
+      try {
+        const data = await getOrgSettings(org.id);
+        if (!cancelled) {
+          setBenchOptIn(Boolean(data.settings.benchmarking_opt_in));
+          setEmailNotifs(Boolean(data.settings.email_notifications));
+          setExplainMode(Boolean(data.settings.explain_rejection_enabled));
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setSaveMessage('Unable to fetch settings from API, using local defaults.');
+        }
+      } finally {
+        if (!cancelled) setLoadingSettings(false);
+      }
+    }
+
+    loadSettings();
+    return () => { cancelled = true; };
+  }, [org, orgLoading]);
+
+  async function savePreferences() {
+    if (!org) return;
+    try {
+      await updateOrgSettings(org.id, {
+        benchmarking_opt_in: benchOptIn,
+        email_notifications: emailNotifs,
+        explain_rejection_enabled: explainMode,
+      });
+      setSaveMessage('Preferences saved.');
+    } catch (e: any) {
+      setSaveMessage(e?.message || 'Failed to save preferences.');
+    }
+  }
+
+  const explainTemplate = typeof window !== 'undefined'
+    ? `${window.location.origin}/explain/{auditId}/{rowIndex}`
+    : '/explain/{auditId}/{rowIndex}';
 
   return (
     <>
@@ -25,7 +77,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>Name</label>
-              <input className="input" defaultValue="VisionAI Org" />
+              <input className="input" defaultValue={org?.name || 'VisionAI Org'} />
             </div>
             <div>
               <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>Industry</label>
@@ -80,9 +132,23 @@ export default function SettingsPage() {
             <div className="card-title flex items-center gap-2 mb-4">
               <SettingsIcon size={14} style={{ color: 'var(--primary)' }} /> Preferences
             </div>
-            <Toggle label="Sector Benchmarking" sub="Share anonymized scores" icon={Globe} on={benchOptIn} onToggle={() => setBenchOptIn(!benchOptIn)} />
-            <Toggle label="Email Notifications" sub="Get alerts on drift" icon={Bell} on={emailNotifs} onToggle={() => setEmailNotifs(!emailNotifs)} />
-            <Toggle label="Explain My Rejection" sub="Enable public explanation URLs" icon={Shield} on={explainMode} onToggle={() => setExplainMode(!explainMode)} />
+            {loadingSettings ? (
+              <div className="text-xs" style={{ color: 'var(--muted)' }}>Loading preferences...</div>
+            ) : (
+              <>
+                <Toggle label="Sector Benchmarking" sub="Share anonymized scores" icon={Globe} on={benchOptIn} onToggle={() => setBenchOptIn(!benchOptIn)} />
+                <Toggle label="Email Notifications" sub="Get alerts on drift" icon={Bell} on={emailNotifs} onToggle={() => setEmailNotifs(!emailNotifs)} />
+                <Toggle label="Explain My Rejection" sub="Enable public explanation URLs" icon={Shield} on={explainMode} onToggle={() => setExplainMode(!explainMode)} />
+                <button className="btn btn-primary btn-sm" onClick={savePreferences} disabled={!org}>Save Preferences</button>
+                {saveMessage && <div className="text-xs" style={{ color: 'var(--muted)' }}>{saveMessage}</div>}
+              </>
+            )}
+            {explainMode && (
+              <div className="p-2 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+                <div className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>Shareable Explanation URL Template</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{explainTemplate}</div>
+              </div>
+            )}
           </div>
         </div>
       </div>

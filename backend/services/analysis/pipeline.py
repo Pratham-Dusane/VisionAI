@@ -4,6 +4,7 @@ Runs all analysis steps, updates Firestore progress.
 """
 
 import pandas as pd
+import numpy as np
 from pathlib import Path
 from datetime import datetime
 import logging
@@ -49,6 +50,81 @@ def _update_progress(db, audit_id: str, step: str, status: str):
         f"pipelineMeta.{step}.updatedAt": ts,
         "updatedAt": ts,
     })
+
+
+def _predict_scores_from_model(model, X: pd.DataFrame) -> np.ndarray:
+    if hasattr(model, "predict_proba"):
+        probs = model.predict_proba(X)
+        probs = np.asarray(probs)
+        if probs.ndim == 1:
+            return probs
+        if probs.shape[1] == 1:
+            return probs[:, 0]
+        return probs[:, -1]
+
+    if hasattr(model, "decision_function"):
+        raw = np.asarray(model.decision_function(X), dtype=float)
+        if raw.ndim > 1:
+            raw = raw[:, -1]
+        min_v = float(np.min(raw))
+        max_v = float(np.max(raw))
+        if max_v - min_v <= 1e-9:
+            return np.full(len(raw), 0.5)
+        return (raw - min_v) / (max_v - min_v)
+
+    pred = model.predict(X)
+    try:
+        return np.asarray(pred, dtype=float)
+    except Exception:
+        pred_series = pd.Series(pred).astype(str).str.lower()
+        return np.where(
+            pred_series.isin(["1", "true", "yes", "approved", "positive"]),
+            1.0,
+            0.0,
+        )
+
+
+def _build_bias_origin_tracer(
+    data_bias: dict,
+    model_decision_bias: dict,
+) -> list[dict]:
+    origin = []
+
+    for attr, data_result in data_bias.items():
+        model_result = model_decision_bias.get(attr)
+        if not model_result:
+            continue
+
+        data_di = data_result.get("metrics", {}).get("disparate_impact")
+        model_di = model_result.get("metrics", {}).get("disparate_impact")
+        if not isinstance(data_di, (int, float)) or not isinstance(model_di, (int, float)):
+            continue
+
+        if model_di < data_di - 0.03:
+            origin_label = "AMPLIFIED_BY_MODEL"
+            summary = (
+                "Bias appears to be amplified by the model architecture beyond what existed "
+                "in the training data."
+            )
+        elif model_di > data_di + 0.03:
+            origin_label = "MITIGATED_BY_MODEL"
+            summary = (
+                "Bias appears to be reduced by the model relative to training data patterns, "
+                "but residual disparity remains."
+            )
+        else:
+            origin_label = "LEARNED_FROM_DATA"
+            summary = "Bias was present in training data and the model largely learned it as-is."
+
+        origin.append({
+            "attribute": attr,
+            "dataDI": round(float(data_di), 4),
+            "modelDI": round(float(model_di), 4),
+            "origin": origin_label,
+            "summary": summary,
+        })
+
+    return origin
 
 
 def run_full_pipeline(config: dict, audit_id: str) -> dict:
@@ -137,8 +213,29 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
                         model, df_raw, raw_feature_cols, config["protectedCols"],
                     )
                     results["flipSensitivity"] = flip_sens
+
+                    model_features = pd.get_dummies(df_raw[raw_feature_cols], drop_first=True).fillna(0)
+                    if hasattr(model, "feature_names_in_"):
+                        model_features = model_features.reindex(columns=list(model.feature_names_in_), fill_value=0)
+
+                    scores = _predict_scores_from_model(model, model_features)
+                    threshold = float(config.get("threshold", 0.5))
+                    model_preds = (scores >= threshold).astype(int)
+
+                    pred_df = df.copy()
+                    pred_df["__model_pred__"] = model_preds
+                    model_decision_bias = scan_data_bias(
+                        pred_df,
+                        "__model_pred__",
+                        1,
+                        config["protectedCols"],
+                    )
+                    results["modelDecisionBias"] = model_decision_bias
+                    results["biasOriginTracer"] = _build_bias_origin_tracer(data_bias, model_decision_bias)
             except Exception as e:
                 results["modelBias"] = None
+                results["modelDecisionBias"] = {}
+                results["biasOriginTracer"] = []
                 results["modelError"] = str(e)
                 logger.error(f"Model evaluation error: {e}")
                 print(f"[PIPELINE] Model evaluation ERROR: {e}")
@@ -146,6 +243,8 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
             _update_progress(db, audit_id, "model_evaluation", "complete")
         else:
             results["modelBias"] = None
+            results["modelDecisionBias"] = {}
+            results["biasOriginTracer"] = []
             print(f"[PIPELINE] Model evaluation SKIPPED -- dataOnly={config.get('dataOnly')}, modelPath={config.get('modelStoragePath')}")
             _update_progress(db, audit_id, "model_evaluation", "skipped")
 

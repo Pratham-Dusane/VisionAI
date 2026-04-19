@@ -3,6 +3,7 @@ import subprocess
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from services.reporting.audit_serializer import serialize_anonymized_export
 
 
 NODE_PROJECT_DIR = Path(__file__).resolve().parent / "node_pdf"
@@ -80,13 +81,11 @@ def _build_pdf_payload(audit_id: str, audit: dict) -> dict:
     }
 
 
-def generate_audit_pdf_bytes(audit_id: str, audit: dict) -> bytes:
+def _run_node_pdf(payload: dict) -> bytes:
     if not NODE_SCRIPT_PATH.exists():
         raise RuntimeError(
             "Puppeteer PDF script not found. Expected at services/reporting/node_pdf/pdf_export.js"
         )
-
-    payload = _build_pdf_payload(audit_id, audit)
 
     with tempfile.TemporaryDirectory(prefix="visionai_pdf_") as tmp_dir:
         tmp_path = Path(tmp_dir)
@@ -121,3 +120,13 @@ def generate_audit_pdf_bytes(audit_id: str, audit: dict) -> bytes:
             raise RuntimeError("Puppeteer PDF generation completed without producing output file")
 
         return output_path.read_bytes()
+
+
+def generate_audit_pdf_bytes(audit_id: str, audit: dict) -> bytes:
+    payload = _build_pdf_payload(audit_id, audit)
+    return _run_node_pdf(payload)
+
+
+def generate_anonymized_audit_pdf_bytes(audit_id: str, audit: dict) -> bytes:
+    payload = serialize_anonymized_export(audit_id, audit)
+    return _run_node_pdf(payload)
