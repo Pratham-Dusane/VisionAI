@@ -42,6 +42,7 @@ npm run dev
 - `/dashboard`: audit summary and recent runs
 - `/audit/new`: 3-step audit launch flow
 - `/audit/[auditId]`: audit results tabs and reporting outputs
+- `/explain/[auditId]/[rowIndex]`: public explain-my-rejection page (when enabled)
 - `/reports`: reporting overview
 - `/settings`: organization and configuration settings
 
@@ -63,7 +64,28 @@ npm run dev
   - Fairness vs accuracy Pareto frontier
 - Legal outputs:
   - Compliance export trigger (JSON)
+  - Anonymized whistleblower report export (PDF)
   - Audit trail timeline rendering
+
+## Phase 7 Outputs Included
+
+- Stakeholder mode toggle at top of audit results:
+  - Technical mode
+  - Executive mode (hides Explainability tab and shows one-pager framing)
+  - Legal mode
+- Adversarial Applicant Simulator in Model Analysis:
+  - Sample-row form prefill
+  - Decision check API trigger
+  - Minimum-flip counterfactual search with side-by-side profile diff
+- Bias Red Team mode:
+  - Header trigger button
+  - Worst-case scenario card rendering
+- Explain My Rejection:
+  - Public explanation route
+  - Controlled by org settings toggle
+- Sector benchmarking card in Overview
+- Model comparison mode on Dashboard
+- Bias origin tracer in Fixes tab
 
 ## API Expectations
 
@@ -74,6 +96,18 @@ Frontend expects the backend to expose:
 - `GET /api/audits/{id}/export/pdf`
 - `GET /api/audits/{id}/export/legal`
 - `GET /api/audits/{id}/export/anon`
+- `GET /api/audits/{id}/sample-row`
+- `POST /api/audits/{id}/predict`
+- `POST /api/audits/{id}/minimum-flip`
+- `POST /api/audits/{id}/red-team`
+- `GET /api/audits/{id}/explain/{rowIndex}`
+- `GET /api/benchmarks/{domain}`
+- `GET /api/orgs/{orgId}/settings`
+- `PUT /api/orgs/{orgId}/settings`
+
+Settings payload compatibility:
+- Backend accepts both `explain_rejection_enabled` and `explain_my_rejection_enabled` on update.
+- Backend returns `explain_my_rejection_enabled` for compatibility while persisting canonical `explain_rejection_enabled`.
 
 ## Notes
 

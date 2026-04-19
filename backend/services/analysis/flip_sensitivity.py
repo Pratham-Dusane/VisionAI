@@ -51,7 +51,9 @@ def compute_flip_sensitivity(
                     perturbed = X_numeric.iloc[i].copy()
                     if feat in perturbed.index:
                         perturbed[feat] = perturbed[feat] + delta
-                    pred = model.predict(perturbed.values.reshape(1, -1))[0]
+                    # Keep column names to avoid sklearn feature-name mismatch warnings.
+                    pred_input = perturbed.to_frame().T
+                    pred = model.predict(pred_input)[0]
                     if pred != base_preds[i]:
                         row_flips += 1
                         break

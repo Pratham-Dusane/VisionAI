@@ -27,6 +27,8 @@ export default function DashboardPage() {
   const [page, setPage] = useState(0);
   const [audits, setAudits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [compareAId, setCompareAId] = useState('');
+  const [compareBId, setCompareBId] = useState('');
   const perPage = 10;
 
   useEffect(() => {
@@ -88,6 +90,36 @@ export default function DashboardPage() {
   const proxyStatus = alertCount === 0 ? 'pass' : alertCount < 3 ? 'warning' : 'critical';
 
   const paged = audits.slice(page * perPage, (page + 1) * perPage);
+
+  useEffect(() => {
+    if (completedAudits.length >= 2 && !compareAId) {
+      setCompareAId(completedAudits[0].id);
+      const second = completedAudits.find((a) => a.id !== completedAudits[0].id);
+      if (second) setCompareBId(second.id);
+    }
+  }, [completedAudits, compareAId]);
+
+  const compareA = completedAudits.find((a) => a.id === compareAId) || null;
+  const compareOptionsB = compareA
+    ? completedAudits.filter((a) => a.id !== compareA.id && a.domain === compareA.domain)
+    : completedAudits;
+  const compareB = compareOptionsB.find((a) => a.id === compareBId) || compareOptionsB[0] || null;
+
+  const worstDI = (audit: any) => {
+    const dataBias = audit?.dataBias || {};
+    let worst = 1;
+    Object.values(dataBias).forEach((entry: any) => {
+      const di = entry?.metrics?.disparate_impact;
+      if (typeof di === 'number') worst = Math.min(worst, di);
+    });
+    return worst;
+  };
+
+  const scoreDelta = compareA && compareB ? (compareB.fairnessScore || 0) - (compareA.fairnessScore || 0) : 0;
+  const diDelta = compareA && compareB ? worstDI(compareB) - worstDI(compareA) : 0;
+  const compareSummary = compareA && compareB
+    ? `Switching from ${compareA.name} to ${compareB.name} ${scoreDelta >= 0 ? 'improved' : 'reduced'} fairness by ${Math.abs(scoreDelta)} points and ${diDelta >= 0 ? 'improved' : 'worsened'} worst DI by ${Math.abs(diDelta).toFixed(2)}.`
+    : '';
 
   return (
     <>
@@ -172,6 +204,55 @@ export default function DashboardPage() {
         )}
 
         {/* Audits Table */}
+        {!loading && audits.length > 0 && (
+          <div className="card rounded-3xl" style={{ borderColor: 'var(--primary-dim)' }}>
+            <div className="text-sm font-semibold mb-3">Model Comparison Mode</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label-text block mb-1" style={{ color: 'var(--muted)' }}>Audit A</label>
+                <select className="select w-full" value={compareAId} onChange={(e) => setCompareAId(e.target.value)}>
+                  {completedAudits.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name} ({a.domain})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label-text block mb-1" style={{ color: 'var(--muted)' }}>Audit B</label>
+                <select className="select w-full" value={compareB?.id || ''} onChange={(e) => setCompareBId(e.target.value)}>
+                  {compareOptionsB.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name} ({a.domain})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {compareA && compareB && (
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Fairness Score</div>
+                  <div className="text-sm mt-1" style={{ color: 'var(--fg)' }}>{compareA.fairnessScore} {'->'} <strong>{compareB.fairnessScore}</strong></div>
+                </div>
+                <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Worst DI Ratio</div>
+                  <div className="text-sm mt-1" style={{ color: diDelta >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                    {worstDI(compareA).toFixed(2)} {'->'} <strong>{worstDI(compareB).toFixed(2)}</strong>
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Equalized Odds Attributes</div>
+                  <div className="text-sm mt-1" style={{ color: 'var(--fg)' }}>
+                    {Object.keys(compareA.modelBias?._equalized_odds || {}).length} {'->'} <strong>{Object.keys(compareB.modelBias?._equalized_odds || {}).length}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {compareSummary && (
+              <div className="text-xs mt-3" style={{ color: 'var(--muted)' }}>{compareSummary}</div>
+            )}
+          </div>
+        )}
+
         {!loading && audits.length > 0 && (
           <div className="card rounded-3xl overflow-hidden" style={{ padding: 0 }}>
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>

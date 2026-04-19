@@ -33,12 +33,18 @@ interface ProxyNetworkGraphProps {
 export default function ProxyNetworkGraph({ proxies, protectedCols, allColumns }: ProxyNetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const MAX_RENDERED_EDGES = 120;
+  const renderProxies = proxies
+    .slice()
+    .sort((a, b) => b.association_score - a.association_score)
+    .slice(0, MAX_RENDERED_EDGES);
+  const wasTrimmed = proxies.length > renderProxies.length;
   const [tooltip, setTooltip] = useState<{
     x: number; y: number; content: string; title: string; risk: string;
   } | null>(null);
 
   useEffect(() => {
-    if (!svgRef.current || !containerRef.current || proxies.length === 0) return;
+    if (!svgRef.current || !containerRef.current || renderProxies.length === 0) return;
 
     const width = containerRef.current.clientWidth;
     const height = 380;
@@ -47,7 +53,7 @@ export default function ProxyNetworkGraph({ proxies, protectedCols, allColumns }
     const nodeSet = new Set<string>();
     const links: ProxyLink[] = [];
 
-    proxies.forEach((p) => {
+    renderProxies.forEach((p) => {
       nodeSet.add(p.protected_column);
       nodeSet.add(p.proxy_column);
       links.push({
@@ -61,11 +67,11 @@ export default function ProxyNetworkGraph({ proxies, protectedCols, allColumns }
 
     const nodes: (ProxyNode & { x?: number; y?: number; fx?: number | null; fy?: number | null })[] = Array.from(nodeSet).map((id) => {
       const isProtected = protectedCols.includes(id);
-      const isProxy = proxies.some((p) => p.proxy_column === id);
+      const isProxy = renderProxies.some((p) => p.proxy_column === id);
       return {
         id,
         type: isProtected ? 'protected' : isProxy ? 'proxy' : 'safe',
-        explanation: proxies.find((p) => p.proxy_column === id)?.explanation,
+        explanation: renderProxies.find((p) => p.proxy_column === id)?.explanation,
       };
     });
 
@@ -158,7 +164,7 @@ export default function ProxyNetworkGraph({ proxies, protectedCols, allColumns }
     // Node click handler
     node.on('click', (event, d: any) => {
       const svgRect = svgRef.current!.getBoundingClientRect();
-      const proxy = proxies.find((p) => p.proxy_column === d.id || p.protected_column === d.id);
+      const proxy = renderProxies.find((p) => p.proxy_column === d.id || p.protected_column === d.id);
       setTooltip({
         x: event.clientX - svgRect.left,
         y: event.clientY - svgRect.top,
@@ -186,9 +192,9 @@ export default function ProxyNetworkGraph({ proxies, protectedCols, allColumns }
     });
 
     return () => { simulation.stop(); };
-  }, [proxies, protectedCols]);
+  }, [renderProxies, protectedCols]);
 
-  if (proxies.length === 0) return null;
+  if (renderProxies.length === 0) return null;
 
   return (
     <div className="card" style={{ padding: '16px 12px', position: 'relative' }}>
@@ -211,6 +217,11 @@ export default function ProxyNetworkGraph({ proxies, protectedCols, allColumns }
           </span>
         </div>
       </div>
+      {wasTrimmed && (
+        <div className="text-xs px-2 mb-1" style={{ color: 'var(--accent)' }}>
+          Showing top {renderProxies.length} strongest proxy links (of {proxies.length}) for smoother rendering.
+        </div>
+      )}
       <div ref={containerRef} style={{ position: 'relative' }}>
         <svg ref={svgRef} style={{ width: '100%', display: 'block' }} />
 
