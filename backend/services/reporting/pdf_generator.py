@@ -10,7 +10,7 @@ NODE_PROJECT_DIR = Path(__file__).resolve().parent / "node_pdf"
 NODE_SCRIPT_PATH = NODE_PROJECT_DIR / "pdf_export.js"
 
 
-def _build_pdf_payload(audit_id: str, audit: dict) -> dict:
+def _build_pdf_payload(audit_id: str, audit: dict, branding: dict | None = None) -> dict:
     severity = audit.get("severity", {})
     data_bias = audit.get("dataBias", {})
     model_bias = audit.get("modelBias", {}) or {}
@@ -43,9 +43,17 @@ def _build_pdf_payload(audit_id: str, audit: dict) -> dict:
             "severity": "PASS",
         })
 
+    branding_payload = {
+        "orgName": (branding or {}).get("orgName") or "Organization",
+        "orgLogoUrl": (branding or {}).get("orgLogoUrl") or "",
+        "stakeholder": (branding or {}).get("stakeholder") or "Technical Stakeholder",
+        "productName": "VisionAI",
+    }
+
     return {
         "auditId": audit_id,
         "generatedAt": datetime.utcnow().isoformat(),
+        "branding": branding_payload,
         "cover": {
             "auditName": audit.get("name", "-"),
             "domain": audit.get("domain", "-"),
@@ -122,11 +130,17 @@ def _run_node_pdf(payload: dict) -> bytes:
         return output_path.read_bytes()
 
 
-def generate_audit_pdf_bytes(audit_id: str, audit: dict) -> bytes:
-    payload = _build_pdf_payload(audit_id, audit)
+def generate_audit_pdf_bytes(audit_id: str, audit: dict, branding: dict | None = None) -> bytes:
+    payload = _build_pdf_payload(audit_id, audit, branding=branding)
     return _run_node_pdf(payload)
 
 
-def generate_anonymized_audit_pdf_bytes(audit_id: str, audit: dict) -> bytes:
+def generate_anonymized_audit_pdf_bytes(audit_id: str, audit: dict, branding: dict | None = None) -> bytes:
     payload = serialize_anonymized_export(audit_id, audit)
+    payload["branding"] = {
+        "orgName": (branding or {}).get("orgName") or "Organization",
+        "orgLogoUrl": (branding or {}).get("orgLogoUrl") or "",
+        "stakeholder": (branding or {}).get("stakeholder") or "Whistleblower Stakeholder",
+        "productName": "VisionAI",
+    }
     return _run_node_pdf(payload)
