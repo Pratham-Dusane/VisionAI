@@ -183,6 +183,7 @@ function renderLogoMarkup(logoSrc, orgName) {
 async function resolveLogoDataUri(rawUrl) {
   const url = String(rawUrl || '').trim();
   if (!url) return '';
+  if (url.startsWith('data:image/')) return url;
 
   try {
     const response = await fetch(url, { redirect: 'follow' });
