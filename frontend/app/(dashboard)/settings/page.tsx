@@ -20,8 +20,10 @@ export default function SettingsPage() {
   const [benchOptIn, setBenchOptIn] = useState(false);
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [explainMode, setExplainMode] = useState(false);
+  const [orgLogoUrl, setOrgLogoUrl] = useState('');
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
+  const [orgMessage, setOrgMessage] = useState('');
   const [apiKeys, setApiKeys] = useState<OrgApiKey[]>([]);
   const [loadingApiKeys, setLoadingApiKeys] = useState(true);
   const [apiKeyLabel, setApiKeyLabel] = useState('CI/CD Key');
@@ -56,6 +58,7 @@ export default function SettingsPage() {
           setBenchOptIn(Boolean(data.settings.benchmarking_opt_in));
           setEmailNotifs(Boolean(data.settings.email_notifications));
           setExplainMode(Boolean(data.settings.explain_rejection_enabled));
+          setOrgLogoUrl(data.settings.org_logo_url || '');
           await loadApiKeys(org.id);
         }
       } catch {
@@ -82,6 +85,18 @@ export default function SettingsPage() {
       setSaveMessage('Preferences saved.');
     } catch (error: unknown) {
       setSaveMessage(getErrorMessage(error, 'Failed to save preferences.'));
+    }
+  }
+
+  async function saveOrganizationBranding() {
+    if (!org) return;
+    try {
+      await updateOrgSettings(org.id, {
+        org_logo_url: orgLogoUrl.trim(),
+      });
+      setOrgMessage('Organization branding saved.');
+    } catch (error: unknown) {
+      setOrgMessage(getErrorMessage(error, 'Failed to save organization branding.'));
     }
   }
 
@@ -157,7 +172,32 @@ export default function SettingsPage() {
                 <option>Government</option>
               </select>
             </div>
-            <button className="btn btn-primary btn-sm">Save Changes</button>
+            <div>
+              <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>Organization Logo URL (optional)</label>
+              <input
+                className="input"
+                value={orgLogoUrl}
+                onChange={(e) => setOrgLogoUrl(e.target.value)}
+                placeholder="https://example.com/logo.png"
+              />
+            </div>
+            {orgLogoUrl && (
+              <div className="p-3 rounded-lg flex items-center gap-3" style={{ background: 'var(--surface-2)' }}>
+                <img
+                  src={orgLogoUrl}
+                  alt="Organization logo preview"
+                  className="w-10 h-10 rounded object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>
+                  Logo preview for reports and exports.
+                </div>
+              </div>
+            )}
+            <button className="btn btn-primary btn-sm" onClick={saveOrganizationBranding} disabled={!org}>Save Changes</button>
+            {orgMessage && <div className="text-xs" style={{ color: 'var(--muted)' }}>{orgMessage}</div>}
           </div>
 
           {/* Profile */}

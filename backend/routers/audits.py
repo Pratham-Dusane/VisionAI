@@ -38,6 +38,27 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 router = APIRouter()
 
 
+def _build_pdf_branding(db, audit: dict) -> dict:
+    org_name = "Organization"
+    org_logo_url = ""
+    org_id = audit.get("orgId")
+
+    if org_id:
+        org_doc = db.collection("organizations").document(org_id).get()
+        if org_doc.exists:
+            org_data = org_doc.to_dict() or {}
+            org_name = org_data.get("name") or org_name
+            settings = org_data.get("settings", {}) or {}
+            org_logo_url = str(settings.get("org_logo_url") or "").strip()
+
+    stakeholder = str(audit.get("stakeholder") or "Technical Stakeholder")
+    return {
+        "orgName": org_name,
+        "orgLogoUrl": org_logo_url,
+        "stakeholder": stakeholder,
+    }
+
+
 class CreateAuditRequest(BaseModel):
     orgId: str
     name: str
@@ -956,7 +977,8 @@ async def export_pdf_report(audit_id: str):
             raise HTTPException(status_code=404, detail="Audit not found")
 
         audit = doc.to_dict()
-        pdf_bytes = generate_audit_pdf_bytes(audit_id, audit)
+        branding = _build_pdf_branding(db, audit)
+        pdf_bytes = generate_audit_pdf_bytes(audit_id, audit, branding=branding)
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
@@ -980,7 +1002,8 @@ async def export_anonymized_report(audit_id: str):
             raise HTTPException(status_code=404, detail="Audit not found")
 
         audit = doc.to_dict()
-        pdf_bytes = generate_anonymized_audit_pdf_bytes(audit_id, audit)
+        branding = _build_pdf_branding(db, audit)
+        pdf_bytes = generate_anonymized_audit_pdf_bytes(audit_id, audit, branding=branding)
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
