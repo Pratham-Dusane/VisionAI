@@ -1,3 +1,5 @@
+import type { DriftBatch } from './types';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 /**
@@ -342,5 +344,86 @@ export async function revokeOrgApiKey(orgId: string, keyId: string) {
     orgId: string;
     keyId: string;
     revoked: boolean;
+  }>;
+}
+
+export async function getDriftHistory(orgId: string) {
+  const res = await fetch(`${API_BASE}/api/drift/${orgId}`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to load drift history (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    orgId: string;
+    batches: DriftBatch[];
+    latestAlert: boolean;
+    notificationCount: number;
+  }>;
+}
+
+export async function uploadDriftBatch(params: {
+  orgId: string;
+  file: File;
+  batchDate: string;
+  labelCol: string;
+  positiveLabel: string;
+  protectedCols: string[];
+  notes?: string;
+  auditId?: string;
+  predictionCol?: string;
+}) {
+  const formData = new FormData();
+  formData.append('orgId', params.orgId);
+  formData.append('file', params.file);
+  formData.append('batchDate', params.batchDate);
+  formData.append('labelCol', params.labelCol);
+  formData.append('positiveLabel', params.positiveLabel);
+  formData.append('protectedCols', JSON.stringify(params.protectedCols));
+  formData.append('notes', params.notes || '');
+
+  if (params.auditId) {
+    formData.append('auditId', params.auditId);
+  }
+  if (params.predictionCol) {
+    formData.append('predictionCol', params.predictionCol);
+  }
+
+  const res = await fetch(`${API_BASE}/api/drift/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to upload drift batch (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    orgId: string;
+    batchId: string;
+    summary: {
+      fairnessScore: number;
+      letterGrade: string;
+      worstDi: number;
+      rowCount: number;
+      alertTriggered: boolean;
+    };
+    batch: DriftBatch;
+  }>;
+}
+
+export async function getDriftNotificationCount(orgId: string) {
+  const res = await fetch(`${API_BASE}/api/drift/${orgId}/notifications/count`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to load drift notifications (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    orgId: string;
+    unread: number;
   }>;
 }
