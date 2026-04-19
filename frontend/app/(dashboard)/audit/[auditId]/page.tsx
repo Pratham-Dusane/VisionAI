@@ -3,7 +3,7 @@
 import TopNav from '@/components/layout/TopNav';
 import {
   getAudit,
-  getOrgSettings,
+  listAudits,
   exportPDF,
   exportLegalJSON,
   exportAnonJSON,
@@ -69,6 +69,34 @@ function riskLevelFromScore(score: number) {
   return 'HIGH';
 }
 
+function hasCriticalLegalTrigger(regs: any[]) {
+  return regs.some((r: any) => {
+    const complianceRisk = String(r?.compliance_risk || '').toUpperCase();
+    const liability = String(r?.liability || '').toUpperCase();
+    return complianceRisk.includes('CRITICAL') || liability.includes('CRITICAL');
+  });
+}
+
+function estimateInrFineBand(score: number, threshold: number, criticalLegal: boolean) {
+  if (criticalLegal) {
+    return { min: 25000000, max: 50000000, rationale: 'Critical compliance trigger active' };
+  }
+  if (score < threshold * 100) {
+    return { min: 10000000, max: 25000000, rationale: 'Fairness below deployment threshold' };
+  }
+  if (score < 60) {
+    return { min: 3000000, max: 10000000, rationale: 'Elevated fairness risk band' };
+  }
+  if (score < 80) {
+    return { min: 1000000, max: 3000000, rationale: 'Moderate fairness risk band' };
+  }
+  return { min: 0, max: 1000000, rationale: 'Low fairness risk band' };
+}
+
+function formatInr(value: number) {
+  return `INR ${new Intl.NumberFormat('en-IN').format(value)}`;
+}
+
 function isIdentifierField(fieldName: string) {
   const normalized = fieldName.toLowerCase();
   return normalized === 'id'
@@ -95,6 +123,26 @@ function narrativeToPlainText(markdown: string) {
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+function extractNarrativeTldr(markdown: string, maxChars = 320) {
+  const plain = narrativeToPlainText(markdown || '');
+  if (!plain) return 'Narrative summary is not available yet.';
+
+  const lines = plain
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith('•'));
+
+  const source = lines.join(' ');
+  if (source.length <= maxChars) return source;
+
+  const clipped = source.slice(0, maxChars);
+  const lastSentence = clipped.lastIndexOf('. ');
+  if (lastSentence > 120) {
+    return `${clipped.slice(0, lastSentence + 1)}`;
+  }
+  return `${clipped.trim()}...`;
 }
 
 function asciiOnly(text: string) {
@@ -404,6 +452,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
             const Icon = t.icon;
             return (
               <button key={t.key} onClick={() => setTab(t.key)}
+                data-tab-key={t.key}
                 className={`tab-item flex items-center gap-1.5 ${tab === t.key ? 'active' : ''}`}>
                 <Icon size={13} /> {t.label}
               </button>
@@ -434,8 +483,11 @@ function OverviewTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: 
   const harm = audit.historicalHarm || [];
   const profiles = audit.profiles || [];
   const regs = audit.regulationMap || [];
+  const modelBias = audit.modelBias || {};
   const benchmarking = audit.benchmarking;
   const imbalanced = profiles.filter((p: any) => p.imbalance_warning).length;
+  const [sameDomainDelta, setSameDomainDelta] = useState<number | null>(null);
+  const [deltaLoading, setDeltaLoading] = useState(false);
 
   let worstDI: any = null;
   Object.values(dataBias).forEach((v: any) => {
@@ -451,6 +503,211 @@ function OverviewTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: 
   const topHarm = harm.length > 0
     ? [...harm].sort((a: any, b: any) => (b.estimated_individuals_harmed || 0) - (a.estimated_individuals_harmed || 0))[0]
     : null;
+
+  const threshold = Number(audit.threshold ?? 0.8);
+  const legalCritical = hasCriticalLegalTrigger(regs);
+  const deploymentNoGo = fairnessScore < threshold * 100 || legalCritical;
+  const deploymentDecision = deploymentNoGo ? 'NO-GO' : 'GO';
+  const inrBand = estimateInrFineBand(fairnessScore, threshold, legalCritical);
+  const businessRiskExample = topHarm
+    ? `${Number(topHarm.estimated_individuals_harmed || 0).toLocaleString()} people may be impacted over ${topHarm.months_deployed || 0} months if current behavior persists.`
+    : worstDI
+      ? `Decisions in ${worstDI.attr} show the widest fairness gap and can raise escalation risk.`
+      : 'No major fairness hotspots are currently detected.';
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSameDomainDelta() {
+      if (stakeholderMode !== 'executive' || !audit?.orgId || !audit?.domain || !audit?.id) {
+        setSameDomainDelta(null);
+        return;
+      }
+      try {
+        setDeltaLoading(true);
+        const audits = await listAudits(audit.orgId);
+        if (cancelled) return;
+
+        const previous = (audits || [])
+          .filter((a: any) => a.id !== audit.id && a.status === 'COMPLETE' && a.domain === audit.domain)
+          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+        const currentScore = Number(sev.fairness_score ?? audit.fairnessScore ?? 0);
+        const prevScore = Number(previous?.fairnessScore ?? previous?.severity?.fairness_score);
+
+        if (previous && Number.isFinite(prevScore)) {
+          setSameDomainDelta(currentScore - prevScore);
+        } else {
+          setSameDomainDelta(null);
+        }
+      } catch {
+        if (!cancelled) setSameDomainDelta(null);
+      } finally {
+        if (!cancelled) setDeltaLoading(false);
+      }
+    }
+
+    loadSameDomainDelta();
+    return () => {
+      cancelled = true;
+    };
+  }, [audit?.domain, audit?.id, audit?.orgId, audit?.fairnessScore, sev.fairness_score, stakeholderMode]);
+
+  if (stakeholderMode === 'executive') {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+          <Mini
+            label="Fairness Score"
+            value={`${fairnessScore}`}
+            sub={`Threshold ${Math.round(threshold * 100)}/100`}
+            color={scoreColor(fairnessScore)}
+          />
+          <Mini
+            label="Delta vs Last Audit"
+            value={deltaLoading ? '...' : sameDomainDelta == null ? 'N/A' : `${sameDomainDelta > 0 ? '+' : ''}${sameDomainDelta.toFixed(1)}`}
+            sub="Same domain comparison"
+            color={sameDomainDelta == null ? 'var(--muted)' : sameDomainDelta >= 0 ? 'var(--success)' : 'var(--danger)'}
+          />
+          <Mini
+            label="Business Risk"
+            value={fairnessRisk}
+            sub="Operational exposure level"
+            color={fairnessRisk === 'HIGH' ? 'var(--danger)' : fairnessRisk === 'MEDIUM' ? 'var(--status-warning)' : 'var(--success)'}
+          />
+          <Mini
+            label="Potential Fine Band"
+            value={`${formatInr(inrBand.min)} - ${formatInr(inrBand.max)}`}
+            sub={inrBand.rationale}
+            color={inrBand.max >= 10000000 ? 'var(--danger)' : inrBand.max >= 3000000 ? 'var(--status-warning)' : 'var(--success)'}
+          />
+          <Mini
+            label="Deployment Recommendation"
+            value={deploymentDecision}
+            sub={deploymentNoGo ? 'Hold deployment until risks are addressed' : 'Within current policy limits'}
+            color={deploymentNoGo ? 'var(--danger)' : 'var(--success)'}
+          />
+        </div>
+
+        <div className="card" style={{ borderColor: deploymentNoGo ? 'var(--danger-dim)' : 'var(--success-dim)' }}>
+          <div className="text-xs font-semibold mb-2" style={{ color: deploymentNoGo ? 'var(--danger)' : 'var(--success)' }}>
+            Executive TLDR
+          </div>
+          <div className="text-sm" style={{ color: 'var(--fg)' }}>
+            Current fairness score is <strong>{fairnessScore}</strong> against threshold <strong>{Math.round(threshold * 100)}</strong>. 
+            Recommendation is <strong>{deploymentDecision}</strong> because {legalCritical ? 'a critical legal trigger is active' : fairnessScore < threshold * 100 ? 'fairness is below threshold' : 'risk is within allowed bounds'}.
+          </div>
+          <div className="text-xs mt-2" style={{ color: 'var(--muted)' }}>
+            Business risk example: {businessRiskExample}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (stakeholderMode === 'technical') {
+    const flipRates = Object.entries(modelBias)
+      .filter(([attr]) => attr !== '_equalized_odds')
+      .map(([, data]: [string, any]) => Number(data?.max_flip_rate || 0));
+    const maxFlipRate = flipRates.length > 0 ? Math.max(...flipRates) : 0;
+    const criticalFindings = Object.values(dataBias).filter((v: any) => v?.severity === 'CRITICAL' || v?.severity === 'HIGH').length
+      + laundering.filter((l: any) => l?.laundering_detected).length
+      + proxies.filter((p: any) => p?.risk_level === 'HIGH').length;
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <Mini
+            label="Fairness Score"
+            value={`${fairnessScore}`}
+            sub={`Grade ${sev.letter_grade ?? '?'}`}
+            color={scoreColor(fairnessScore)}
+          />
+          <Mini
+            label="Worst Disparate Impact"
+            value={worstDI ? worstDI.di.toFixed(2) : '-'}
+            sub={worstDI ? `${worstDI.attr} is most affected` : 'No DI hotspot found'}
+            color={worstDI && worstDI.di < 0.8 ? 'var(--danger)' : 'var(--success)'}
+          />
+          <Mini
+            label="Max Feature Flip Rate"
+            value={`${(maxFlipRate * 100).toFixed(1)}%`}
+            sub="Prediction sensitivity to protected changes"
+            color={maxFlipRate > 0.1 ? 'var(--danger)' : 'var(--success)'}
+          />
+          <Mini
+            label="Critical Technical Findings"
+            value={String(criticalFindings)}
+            sub="High-impact diagnostics requiring action"
+            color={criticalFindings > 0 ? 'var(--danger)' : 'var(--success)'}
+          />
+        </div>
+
+        <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
+          <div className="text-xs font-semibold mb-2" style={{ color: 'var(--primary)' }}>Technical TLDR</div>
+          <div className="text-sm" style={{ color: 'var(--fg)' }}>
+            Primary model risk is {worstDI ? <strong>{`${worstDI.attr} DI ${worstDI.di.toFixed(2)}`}</strong> : <strong>no major DI hotspot</strong>}.
+            Maximum protected-attribute flip sensitivity is <strong>{(maxFlipRate * 100).toFixed(1)}%</strong>.
+            Use the workbench below for adversarial simulation, detailed flip analysis, and Pareto remediation planning.
+          </div>
+        </div>
+
+        <div className="card" style={{ borderColor: 'var(--primary-dim)', background: 'var(--primary-dim)' }}>
+          <div className="text-xs font-semibold mb-3" style={{ color: 'var(--primary)' }}>Technical Workbench</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button
+              type="button"
+              className="p-3 rounded-lg text-left"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer' }}
+              onClick={() => {
+                const modelTab = document.querySelector('[data-tab-key="model"]') as HTMLButtonElement | null;
+                modelTab?.click();
+              }}
+            >
+              <div className="text-xs font-semibold" style={{ color: 'var(--fg)' }}>Adversarial Applicant Simulator</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>Run counterfactual profiles and inspect decision boundary behavior.</div>
+            </button>
+
+            <button
+              type="button"
+              className="p-3 rounded-lg text-left"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer' }}
+              onClick={() => {
+                const modelTab = document.querySelector('[data-tab-key="model"]') as HTMLButtonElement | null;
+                modelTab?.click();
+              }}
+            >
+              <div className="text-xs font-semibold" style={{ color: 'var(--fg)' }}>Feature Flipping Rates</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>Inspect protected-attribute perturbation sensitivity and hotspots.</div>
+            </button>
+
+            <button
+              type="button"
+              className="p-3 rounded-lg text-left"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer' }}
+              onClick={() => {
+                const fixesTab = document.querySelector('[data-tab-key="fixes"]') as HTMLButtonElement | null;
+                fixesTab?.click();
+              }}
+            >
+              <div className="text-xs font-semibold" style={{ color: 'var(--fg)' }}>Pareto Frontier Remediation</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>Review fairness-accuracy trade-offs and rank mitigation candidates.</div>
+            </button>
+          </div>
+        </div>
+
+        {benchmarking?.message && (
+          <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
+            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--primary)' }}>Sector Benchmarking</div>
+            <div className="text-sm" style={{ color: 'var(--fg)' }}>{benchmarking.message}</div>
+            <div className="text-xs mt-1" style={{ color: 'var(--placeholder)' }}>
+              Peer sample size: {benchmarking.peerCount ?? 0}{benchmarking.optedIn ? '' : ' • Enable benchmarking opt-in in Settings to contribute anonymized scores.'}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const primaryMetricLabel = stakeholderMode === 'executive'
     ? 'Fairness Risk'
@@ -638,107 +895,148 @@ function DataTab({ audit }: { audit: any }) {
   const schema = audit.schema;
   const proxies = audit.proxies || [];
   const profiles = audit.profiles || [];
+  const blindSpots = audit.blindSpots || [];
+  const [activePanel, setActivePanel] = useState<'disparate' | 'distribution' | 'proxy' | 'schema' | 'blindspots'>('disparate');
+
+  const diRows = Object.values(dataBias) as any[];
+  const worstDi = diRows.length > 0
+    ? Math.min(...diRows.map((b: any) => Number(b?.metrics?.disparate_impact ?? 1)).filter((n: number) => Number.isFinite(n)))
+    : null;
+  const imbalancedCount = profiles.filter((p: any) => p.imbalance_warning).length;
+  const highProxyCount = proxies.filter((p: any) => p.risk_level === 'HIGH').length;
+  const flaggedSchemaCount = (schema?.columns || []).filter((c: any) => c.auto_flagged).length;
+
+  const kpiCards = [
+    {
+      key: 'disparate' as const,
+      label: 'Disparate Impact',
+      value: worstDi == null ? '-' : worstDi.toFixed(2),
+      sub: 'Click to expand DI analysis table',
+      color: worstDi != null && worstDi < 0.8 ? 'var(--danger)' : 'var(--success)',
+    },
+    {
+      key: 'distribution' as const,
+      label: 'Group Distribution',
+      value: `${imbalancedCount}`,
+      sub: 'Click to inspect group composition charts',
+      color: imbalancedCount > 0 ? 'var(--status-warning)' : 'var(--success)',
+    },
+    {
+      key: 'proxy' as const,
+      label: 'Proxy Variables',
+      value: `${proxies.length}`,
+      sub: 'Click to open proxy network + risk table',
+      color: highProxyCount > 0 ? 'var(--danger)' : 'var(--success)',
+    },
+    {
+      key: 'schema' as const,
+      label: 'Schema Sensitivity',
+      value: `${flaggedSchemaCount}`,
+      sub: 'Click to review column sensitivity',
+      color: flaggedSchemaCount > 0 ? 'var(--status-warning)' : 'var(--success)',
+    },
+    {
+      key: 'blindspots' as const,
+      label: 'AI Blind Spots',
+      value: `${blindSpots.length}`,
+      sub: 'Click to review hidden risk signals',
+      color: blindSpots.length > 0 ? 'var(--status-warning)' : 'var(--success)',
+    },
+  ];
 
   return (
-    <div className="space-y-3">
-      {/* Visual Charts */}
-      <GroupDistributionChart profiles={profiles} />
-      <LabelDistributionChart profiles={profiles} />
-
-      {/* Proxy Network Graph */}
-      {proxies.length > 0 && (
-        <ProxyNetworkGraph
-          proxies={proxies}
-          protectedCols={audit.protectedCols || []}
-        />
-      )}
-
-      {/* Disparate Impact table */}
-      <div className="card" style={{ padding: 0 }}>
-        <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
-          Disparate Impact Analysis
-        </div>
-        <table>
-          <thead><tr>
-            <th>Attribute</th><th>Privileged Group</th><th>DI Ratio</th><th>SPD</th><th>Pos Rate (Priv)</th><th>Pos Rate (Unpriv)</th><th>Verdict</th>
-          </tr></thead>
-          <tbody>
-            {Object.values(dataBias).map((b: any) => (
-              <tr key={b.attribute}>
-                <td className="font-medium">{b.attribute}</td>
-                <td>{b.privileged_group}</td>
-                <td><span style={{ color: b.metrics.disparate_impact < 0.8 ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>
-                  {b.metrics.disparate_impact?.toFixed(2) ?? '-'}</span></td>
-                <td style={{ color: Math.abs(b.metrics.statistical_parity_difference) > 0.1 ? 'var(--accent)' : 'var(--muted)' }}>
-                  {b.metrics.statistical_parity_difference?.toFixed(3)}</td>
-                <td>{(b.metrics.positive_rate_privileged * 100).toFixed(1)}%</td>
-                <td>{(b.metrics.positive_rate_unprivileged * 100).toFixed(1)}%</td>
-                <td><span className={`badge ${sevBadge(b.severity)}`}>{b.verdict}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+        {kpiCards.map((card) => {
+          const active = activePanel === card.key;
+          return (
+            <button
+              key={card.key}
+              type="button"
+              onClick={() => setActivePanel(card.key)}
+              className="card text-left"
+              style={{
+                borderColor: active ? 'var(--primary)' : 'var(--border)',
+                boxShadow: active ? '0 0 0 1px var(--primary-dim)' : undefined,
+                cursor: 'pointer',
+              }}
+            >
+              <div className="text-xs font-medium mb-1" style={{ color: 'var(--muted)' }}>{card.label}</div>
+              <div className="page-title" style={{ color: card.color }}>{card.value}</div>
+              <div className="text-xs" style={{ color: 'var(--placeholder)' }}>{card.sub}</div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Group profiles */}
-      {profiles.map((p: any, i: number) => (
-        <div key={i} className="card space-y-2">
-          <div className="flex items-center gap-2">
-            <Users size={14} style={{ color: 'var(--primary)' }} />
-            <span className="text-sm font-semibold">{p.attribute}</span>
-            {p.imbalance_warning && <span className="badge badge-high">IMBALANCED ({p.imbalance_ratio}x)</span>}
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {Object.entries(p.group_counts as Record<string, number>).map(([g, c]) => (
-              <div key={g} className="flex-1 min-w-[100px] p-2 rounded-lg" style={{ background: 'var(--surface-2)' }}>
-                <div className="text-xs" style={{ color: 'var(--muted)' }}>{g}</div>
-                <div className="text-sm font-bold">{(c as number).toLocaleString()}</div>
-                <div className="w-full h-1 rounded-full mt-1" style={{ background: 'var(--border)' }}>
-                  <div className="h-full rounded-full" style={{ width: `${p.group_percentages[g]}%`, background: 'var(--primary)' }} />
-                </div>
-                <div className="text-xs" style={{ color: 'var(--placeholder)' }}>{p.group_percentages[g]}%</div>
-              </div>
-            ))}
-          </div>
-          {/* Label rates */}
-          {p.label_distribution_per_group && (
-            <div className="space-y-1 mt-2">
-              <div className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Outcome Rate by Group</div>
-              {Object.entries(p.label_distribution_per_group as Record<string, any>).map(([g, r]) => (
-                <div key={g} className="flex items-center gap-2">
-                  <span className="text-xs w-20 truncate" style={{ color: 'var(--muted)' }}>{g}</span>
-                  <div className="flex-1 h-3 rounded-full overflow-hidden flex" style={{ background: 'var(--surface-2)' }}>
-                    <div className="h-full flex items-center justify-center text-[8px] font-bold"
-                      style={{ width: `${(r as any).positive}%`, background: 'var(--success)', color: '#fff' }}>
-                      {(r as any).positive}%</div>
-                    <div className="h-full flex items-center justify-center text-[8px] font-bold"
-                      style={{ width: `${(r as any).negative}%`, background: 'var(--danger)', color: '#fff' }}>
-                      {(r as any).negative}%</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
+      {activePanel === 'distribution' && (
+        <>
+          <GroupDistributionChart profiles={profiles} />
+          <LabelDistributionChart profiles={profiles} />
 
-      {/* Proxy table */}
-      {proxies.length > 0 && (
+          {profiles.map((p: any, i: number) => (
+            <div key={i} className="card space-y-2">
+              <div className="flex items-center gap-2">
+                <Users size={14} style={{ color: 'var(--primary)' }} />
+                <span className="text-sm font-semibold">{p.attribute}</span>
+                {p.imbalance_warning && <span className="badge badge-high">IMBALANCED ({p.imbalance_ratio}x)</span>}
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {Object.entries(p.group_counts as Record<string, number>).map(([g, c]) => (
+                  <div key={g} className="flex-1 min-w-[100px] p-2 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+                    <div className="text-xs" style={{ color: 'var(--muted)' }}>{g}</div>
+                    <div className="text-sm font-bold">{(c as number).toLocaleString()}</div>
+                    <div className="w-full h-1 rounded-full mt-1" style={{ background: 'var(--border)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${p.group_percentages[g]}%`, background: 'var(--primary)' }} />
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--placeholder)' }}>{p.group_percentages[g]}%</div>
+                  </div>
+                ))}
+              </div>
+              {p.label_distribution_per_group && (
+                <div className="space-y-1 mt-2">
+                  <div className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Outcome Rate by Group</div>
+                  {Object.entries(p.label_distribution_per_group as Record<string, any>).map(([g, r]) => (
+                    <div key={g} className="flex items-center gap-2">
+                      <span className="text-xs w-20 truncate" style={{ color: 'var(--muted)' }}>{g}</span>
+                      <div className="flex-1 h-3 rounded-full overflow-hidden flex" style={{ background: 'var(--surface-2)' }}>
+                        <div className="h-full flex items-center justify-center text-[8px] font-bold"
+                          style={{ width: `${(r as any).positive}%`, background: 'var(--success)', color: '#fff' }}>
+                          {(r as any).positive}%</div>
+                        <div className="h-full flex items-center justify-center text-[8px] font-bold"
+                          style={{ width: `${(r as any).negative}%`, background: 'var(--danger)', color: '#fff' }}>
+                          {(r as any).negative}%</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+
+      {activePanel === 'disparate' && (
         <div className="card" style={{ padding: 0 }}>
           <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
-            Proxy Variables - {proxies.length} found
+            Disparate Impact Analysis
           </div>
           <table>
-            <thead><tr><th>Proxy Column</th><th>Correlates With</th><th>Score</th><th>Method</th><th>Risk</th></tr></thead>
+            <thead><tr>
+              <th>Attribute</th><th>Privileged Group</th><th>DI Ratio</th><th>SPD</th><th>Pos Rate (Priv)</th><th>Pos Rate (Unpriv)</th><th>Verdict</th>
+            </tr></thead>
             <tbody>
-              {proxies.map((p: any, i: number) => (
-                <tr key={i}>
-                  <td className="font-medium">{p.proxy_column}</td>
-                  <td>{p.protected_column}</td>
-                  <td><span style={{ color: p.association_score >= 0.5 ? 'var(--danger)' : 'var(--accent)' }}>
-                    {p.association_score.toFixed(2)}</span></td>
-                  <td className="text-xs" style={{ color: 'var(--muted)' }}>{p.method}</td>
-                  <td><span className={`badge ${sevBadge(p.risk_level)}`}>{p.risk_level}</span></td>
+              {Object.values(dataBias).map((b: any) => (
+                <tr key={b.attribute}>
+                  <td className="font-medium">{b.attribute}</td>
+                  <td>{b.privileged_group}</td>
+                  <td><span style={{ color: b.metrics.disparate_impact < 0.8 ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>
+                    {b.metrics.disparate_impact?.toFixed(2) ?? '-'}</span></td>
+                  <td style={{ color: Math.abs(b.metrics.statistical_parity_difference) > 0.1 ? 'var(--status-warning)' : 'var(--muted)' }}>
+                    {b.metrics.statistical_parity_difference?.toFixed(3)}</td>
+                  <td>{(b.metrics.positive_rate_privileged * 100).toFixed(1)}%</td>
+                  <td>{(b.metrics.positive_rate_unprivileged * 100).toFixed(1)}%</td>
+                  <td><span className={`badge ${sevBadge(b.severity)}`}>{b.verdict}</span></td>
                 </tr>
               ))}
             </tbody>
@@ -746,8 +1044,41 @@ function DataTab({ audit }: { audit: any }) {
         </div>
       )}
 
-      {/* Blind Spots (Gemini AI) */}
-      {(audit.blindSpots?.length > 0) && (
+      {activePanel === 'proxy' && (
+        <>
+          {proxies.length > 0 && (
+            <ProxyNetworkGraph
+              proxies={proxies}
+              protectedCols={audit.protectedCols || []}
+            />
+          )}
+
+          {proxies.length > 0 && (
+            <div className="card" style={{ padding: 0 }}>
+              <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
+                Proxy Variables - {proxies.length} found
+              </div>
+              <table>
+                <thead><tr><th>Proxy Column</th><th>Correlates With</th><th>Score</th><th>Method</th><th>Risk</th></tr></thead>
+                <tbody>
+                  {proxies.map((p: any, i: number) => (
+                    <tr key={i}>
+                      <td className="font-medium">{p.proxy_column}</td>
+                      <td>{p.protected_column}</td>
+                      <td><span style={{ color: p.association_score >= 0.5 ? 'var(--danger)' : 'var(--status-warning)' }}>
+                        {p.association_score.toFixed(2)}</span></td>
+                      <td className="text-xs" style={{ color: 'var(--muted)' }}>{p.method}</td>
+                      <td><span className={`badge ${sevBadge(p.risk_level)}`}>{p.risk_level}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {activePanel === 'blindspots' && blindSpots.length > 0 && (
         <div className="card" style={{ padding: 0, borderColor: 'var(--primary-dim)' }}>
           <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
             <Sparkles size={13} style={{ color: 'var(--primary)' }} />
@@ -758,7 +1089,7 @@ function DataTab({ audit }: { audit: any }) {
             <div className="text-xs mb-3" style={{ color: 'var(--placeholder)' }}>
               Gemini identified columns that may encode protected characteristics not yet flagged in your audit.
             </div>
-            {audit.blindSpots.map((bs: any, i: number) => (
+            {blindSpots.map((bs: any, i: number) => (
               <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'var(--primary-dim)', border: '1px solid var(--primary-dim)' }}>
                 <div className="flex-shrink-0 mt-0.5">
                   <span className={`badge ${bs.confidence === 'HIGH' ? 'badge-critical' : bs.confidence === 'MEDIUM' ? 'badge-high' : 'badge-medium'}`}
@@ -776,8 +1107,7 @@ function DataTab({ audit }: { audit: any }) {
         </div>
       )}
 
-      {/* Schema table */}
-      {schema && (
+      {activePanel === 'schema' && schema && (
         <div className="card" style={{ padding: 0 }}>
           <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
             Schema - {schema.column_count} columns
@@ -790,7 +1120,7 @@ function DataTab({ audit }: { audit: any }) {
                   <td className="font-medium">{c.name}</td>
                   <td className="text-xs" style={{ color: 'var(--muted)' }}>{c.dtype}</td>
                   <td>{c.unique_count}</td>
-                  <td style={{ color: c.null_count > 0 ? 'var(--accent)' : 'var(--placeholder)' }}>{c.null_count}</td>
+                  <td style={{ color: c.null_count > 0 ? 'var(--status-warning)' : 'var(--placeholder)' }}>{c.null_count}</td>
                   <td>
                     <div className="flex items-center gap-1">
                       <span style={{ color: c.sensitivity_score >= 0.65 ? 'var(--danger)' : 'var(--placeholder)' }}>{c.sensitivity_score.toFixed(2)}</span>
@@ -816,6 +1146,7 @@ function DataTab({ audit }: { audit: any }) {
 /* ==================== AI NARRATIVES ==================== */
 function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
   const narratives = audit.narratives || {};
+  const [fullNarrativeOpen, setFullNarrativeOpen] = useState(false);
 
   const MODES = {
     executive: { label: 'Executive', desc: 'Board-ready summary' },
@@ -824,6 +1155,7 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
   } as const;
 
   const currentNarrative = narratives[mode] || '';
+  const tldr = extractNarrativeTldr(currentNarrative || '');
   const hasNarratives = Object.keys(narratives).length > 0 && Object.values(narratives).some((v: any) => v && v.length > 0);
 
   if (!hasNarratives) return (
@@ -909,50 +1241,88 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
         <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{MODES[mode].desc}</div>
       </div>
 
-      {/* Narrative content */}
       <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
         <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
           <Sparkles size={14} style={{ color: 'var(--primary)' }} />
           <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>
-            {MODES[mode].label} Narrative
+            TLDR
           </span>
           <span className="text-xs ml-auto" style={{ color: 'var(--placeholder)' }}>Generated by Gemini AI</span>
         </div>
-        <div className="flex items-center gap-2 mb-3">
-          <button
-            className="btn btn-outline btn-sm"
-            disabled={!currentNarrative}
-            onClick={() => navigator.clipboard.writeText(narrativeToPlainText(currentNarrative || ''))}
-          >
-            Copy narrative
-          </button>
-          <button
-            className="btn btn-outline btn-sm"
-            disabled={!currentNarrative}
-            onClick={() => {
-              const plainText = narrativeToPlainText(currentNarrative || '');
-              const blob = buildSimplePdf(plainText, `${MODES[mode].label} Narrative`);
-              const url = window.URL.createObjectURL(blob);
-              const anchor = document.createElement('a');
-              anchor.href = url;
-              anchor.download = `visionai-${mode}-narrative.pdf`;
-              document.body.appendChild(anchor);
-              anchor.click();
-              anchor.remove();
-              window.URL.revokeObjectURL(url);
-            }}
-          >
-            Download narrative
-          </button>
+        <div className="text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>
+          {tldr}
         </div>
-        <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '8px' }}>
-          {currentNarrative ? renderMarkdown(currentNarrative) : (
-            <div className="text-sm text-center py-8" style={{ color: 'var(--placeholder)' }}>
-              No narrative available for {mode} mode.
-            </div>
-          )}
+        <div className="mt-3">
+          <button className="btn btn-outline btn-sm" disabled={!currentNarrative} onClick={() => setFullNarrativeOpen(true)}>
+            View Full Audit Narrative
+          </button>
         </div>
       </div>
+
+      {fullNarrativeOpen && (
+        <>
+          <div
+            onClick={() => setFullNarrativeOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 70 }}
+          />
+          <aside
+            style={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              width: 'min(720px, 100vw)',
+              height: '100vh',
+              background: 'var(--surface)',
+              borderLeft: '1px solid var(--border)',
+              zIndex: 71,
+              padding: '20px 20px 28px 20px',
+              overflowY: 'auto',
+            }}
+          >
+            <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
+              <Sparkles size={14} style={{ color: 'var(--primary)' }} />
+              <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>
+                {MODES[mode].label} Full Narrative
+              </span>
+              <button className="btn btn-outline btn-sm ml-auto" onClick={() => setFullNarrativeOpen(false)}>Close</button>
+            </div>
+            <div className="flex items-center gap-2 mb-3">
+              <button
+                className="btn btn-outline btn-sm"
+                disabled={!currentNarrative}
+                onClick={() => navigator.clipboard.writeText(narrativeToPlainText(currentNarrative || ''))}
+              >
+                Copy narrative
+              </button>
+              <button
+                className="btn btn-outline btn-sm"
+                disabled={!currentNarrative}
+                onClick={() => {
+                  const plainText = narrativeToPlainText(currentNarrative || '');
+                  const blob = buildSimplePdf(plainText, `${MODES[mode].label} Narrative`);
+                  const url = window.URL.createObjectURL(blob);
+                  const anchor = document.createElement('a');
+                  anchor.href = url;
+                  anchor.download = `visionai-${mode}-narrative.pdf`;
+                  document.body.appendChild(anchor);
+                  anchor.click();
+                  anchor.remove();
+                  window.URL.revokeObjectURL(url);
+                }}
+              >
+                Download narrative
+              </button>
+            </div>
+            <div>
+              {currentNarrative ? renderMarkdown(currentNarrative) : (
+                <div className="text-sm text-center py-8" style={{ color: 'var(--placeholder)' }}>
+                  No narrative available for {mode} mode.
+                </div>
+              )}
+            </div>
+          </aside>
+        </>
+      )}
     </div>
   );
 }
@@ -1835,9 +2205,57 @@ function BiasOriginTracerCard({ items }: { items: any[] }) {
 /* ==================== LEGAL ==================== */
 function LegalTab({ audit }: { audit: any }) {
   const regs = audit.regulationMap || [];
+  const criticalCount = regs.filter((r: any) => String(r.compliance_risk || '').includes('CRITICAL')).length;
+  const highCount = regs.filter((r: any) => String(r.compliance_risk || '').includes('HIGH')).length;
+  const mitigations = regs.filter((r: any) => Boolean(r.recommended_mitigation)).length;
+
+  const downloadComplianceSheet = () => {
+    const pipeline = audit.pipeline || {};
+    const timeline = Object.entries(pipeline)
+      .map(([step, status]) => `- ${step.replace(/_/g, ' ')}: ${String(status).toUpperCase()}`)
+      .join('\n');
+
+    const mappings = regs.map((r: any, idx: number) => {
+      return `${idx + 1}. Framework: ${r.regulation || 'N/A'}\n   Clause: ${r.clause || 'N/A'}\n   Risk: ${r.compliance_risk || 'N/A'}\n   Trigger: ${r.triggered_by || r.indicator_note || r.description || 'N/A'}\n   Mitigation: ${r.recommended_mitigation || 'N/A'}`;
+    }).join('\n\n');
+
+    const legalText = [
+      `Compliance Sheet - ${audit.name || 'Audit'}`,
+      `Domain: ${audit.domain || 'N/A'}`,
+      `Jurisdiction: ${audit.jurisdiction || 'Global'}`,
+      `Generated: ${new Date().toLocaleString()}`,
+      '',
+      `Critical mappings: ${criticalCount}`,
+      `High mappings: ${highCount}`,
+      `Total mappings: ${regs.length}`,
+      '',
+      'Framework Mapping',
+      mappings || 'No mappings available.',
+      '',
+      'Audit Trail Snapshot',
+      timeline || 'No pipeline timeline available.',
+    ].join('\n');
+
+    const blob = buildSimplePdf(legalText, `${audit.name || 'Audit'} Compliance Sheet`);
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `audit-${audit.id}-compliance-sheet.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <Mini label="Framework Mappings" value={`${regs.length}`} sub="Total compliance links" color={regs.length > 0 ? 'var(--status-warning)' : 'var(--success)'} />
+        <Mini label="Critical Risks" value={`${criticalCount}`} sub="Immediate legal escalation" color={criticalCount > 0 ? 'var(--danger)' : 'var(--success)'} />
+        <Mini label="High Risks" value={`${highCount}`} sub="Priority legal remediation" color={highCount > 0 ? 'var(--status-warning)' : 'var(--success)'} />
+        <Mini label="Mitigation Coverage" value={`${mitigations}/${regs.length || 0}`} sub="Findings with recommended action" color={mitigations === regs.length && regs.length > 0 ? 'var(--success)' : 'var(--status-warning)'} />
+      </div>
+
       <div className="card flex items-center justify-between" style={{ borderColor: 'var(--primary-dim)' }}>
         <div>
           <div className="text-sm font-semibold" style={{ color: 'var(--fg)' }}>Compliance Exports</div>
@@ -1851,6 +2269,9 @@ function LegalTab({ audit }: { audit: any }) {
           </button>
           <button className="btn btn-outline btn-sm" disabled={!audit.id} onClick={() => exportAnonJSON(audit.id)}>
             <FileText size={13} /> Export Anonymized Report
+          </button>
+          <button className="btn btn-outline btn-sm" disabled={!audit.id} onClick={downloadComplianceSheet}>
+            <Download size={13} /> Compliance Sheet PDF
           </button>
         </div>
       </div>
@@ -1877,6 +2298,34 @@ function LegalTab({ audit }: { audit: any }) {
         </div>
       ) : (
         <>
+          <div className="card" style={{ padding: 0 }}>
+            <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
+              Framework Mapping Sheet
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Framework</th>
+                  <th>Clause</th>
+                  <th>Risk</th>
+                  <th>Triggered By</th>
+                  <th>Mitigation</th>
+                </tr>
+              </thead>
+              <tbody>
+                {regs.map((r: any, i: number) => (
+                  <tr key={i}>
+                    <td className="font-medium">{r.regulation}</td>
+                    <td>{r.clause}</td>
+                    <td><span className={`badge ${sevBadge(r.compliance_risk)}`}>{r.compliance_risk || 'N/A'}</span></td>
+                    <td>{r.triggered_by || r.indicator_note || '-'}</td>
+                    <td>{r.recommended_mitigation || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
           <div className="text-xs flex items-center justify-between" style={{ color: 'var(--muted)' }}>
             <span>{regs.length} compliance risk mappings triggered</span>
             <span className="badge badge-medium">Jurisdiction: {audit.jurisdiction || 'Global'}</span>

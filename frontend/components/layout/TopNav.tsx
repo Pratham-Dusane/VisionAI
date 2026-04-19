@@ -98,7 +98,7 @@ export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbI
 
   return (
     <header
-      className="h-[64px] flex items-center justify-between px-6 shrink-0 sticky top-0 z-40"
+      className="h-[72px] flex items-center justify-between px-6 md:px-8 shrink-0 sticky top-0 z-40"
       style={{
         background: 'var(--topnav-bg)',
         backdropFilter: 'blur(12px)',
@@ -122,7 +122,7 @@ export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbI
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {/* Search */}
         <div className="relative">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--placeholder)' }} />
@@ -130,7 +130,7 @@ export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbI
             type="text"
             placeholder="Search audits..."
             className="input pl-8 text-xs"
-            style={{ width: 180, padding: '6px 10px 6px 30px', background: 'var(--surface-2)' }}
+            style={{ width: 220, padding: '8px 10px 8px 30px', background: 'var(--surface-2)' }}
           />
         </div>
 
@@ -145,7 +145,7 @@ export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbI
             {notificationCount > 0 && (
               <span
                 className="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-1 rounded-full text-[8px] font-bold flex items-center justify-center"
-                style={{ background: 'var(--danger)', color: '#fff' }}
+                style={{ background: 'var(--status-warning)', color: '#fff' }}
               >
                 {notificationCount > 99 ? '99+' : notificationCount}
               </span>
