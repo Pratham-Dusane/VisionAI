@@ -100,6 +100,24 @@ export default function SettingsPage() {
     }
   }
 
+  function onLogoFileSelected(file: File | null) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setOrgMessage('Please choose an image file for logo.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      setOrgLogoUrl(result);
+      setOrgMessage('Logo image loaded. Click Save Changes to persist.');
+    };
+    reader.onerror = () => {
+      setOrgMessage('Failed to read logo file. Try another image.');
+    };
+    reader.readAsDataURL(file);
+  }
+
   async function generateApiKey() {
     if (!org || keyActionInFlight) return;
     setKeyActionInFlight(true);
@@ -180,6 +198,18 @@ export default function SettingsPage() {
                 onChange={(e) => setOrgLogoUrl(e.target.value)}
                 placeholder="https://example.com/logo.png"
               />
+            </div>
+            <div>
+              <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>Or Upload Logo File</label>
+              <input
+                className="input"
+                type="file"
+                accept="image/*"
+                onChange={(e) => onLogoFileSelected(e.target.files?.[0] || null)}
+              />
+              <div className="text-xs mt-1" style={{ color: 'var(--placeholder)' }}>
+                Use this when external image URLs are blocked by hotlink protection.
+              </div>
             </div>
             {orgLogoUrl && (
               <div className="p-3 rounded-lg flex items-center gap-3" style={{ background: 'var(--surface-2)' }}>
