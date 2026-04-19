@@ -127,6 +127,25 @@ def _count_unread_notifications(db, org_id: str) -> int:
     return unread
 
 
+def _list_org_drift_notifications(db, org_id: str) -> list[dict]:
+    docs = (
+        db.collection("notifications")
+        .where(filter=FieldFilter("orgId", "==", org_id))
+        .stream()
+    )
+
+    items = []
+    for doc in docs:
+        payload = doc.to_dict() or {}
+        if payload.get("type") != "DRIFT_ALERT":
+            continue
+        payload["id"] = doc.id
+        items.append(payload)
+
+    items.sort(key=lambda item: item.get("createdAt") or "", reverse=True)
+    return items
+
+
 def _persist_bigquery_rows(rows: list[dict]) -> None:
     if not rows or bigquery is None:
         return
@@ -344,3 +363,71 @@ async def get_drift_notification_count(org_id: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to load notification count: {str(e)}")
+
+
+@router.get("/{org_id}/notifications")
+async def list_drift_notifications(org_id: str):
+    try:
+        db = firestore.client()
+        notifications = _list_org_drift_notifications(db, org_id)
+        return {
+            "orgId": org_id,
+            "notifications": notifications,
+            "unread": sum(1 for item in notifications if not bool(item.get("read", False))),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load notifications: {str(e)}")
+
+
+@router.post("/{org_id}/notifications/{notification_id}/read")
+async def mark_drift_notification_read(org_id: str, notification_id: str):
+    try:
+        db = firestore.client()
+        ref = db.collection("notifications").document(notification_id)
+        doc = ref.get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Notification not found")
+
+        payload = doc.to_dict() or {}
+        if payload.get("orgId") != org_id:
+            raise HTTPException(status_code=403, detail="Notification does not belong to organization")
+
+        ref.update({
+            "read": True,
+            "readAt": datetime.utcnow().isoformat(),
+        })
+
+        return {
+            "orgId": org_id,
+            "notificationId": notification_id,
+            "read": True,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update notification: {str(e)}")
+
+
+@router.post("/{org_id}/notifications/read-all")
+async def mark_all_drift_notifications_read(org_id: str):
+    try:
+        db = firestore.client()
+        notifications = _list_org_drift_notifications(db, org_id)
+        updated = 0
+        now = datetime.utcnow().isoformat()
+
+        for item in notifications:
+            if bool(item.get("read", False)):
+                continue
+            db.collection("notifications").document(item["id"]).update({
+                "read": True,
+                "readAt": now,
+            })
+            updated += 1
+
+        return {
+            "orgId": org_id,
+            "updated": updated,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update notifications: {str(e)}")
