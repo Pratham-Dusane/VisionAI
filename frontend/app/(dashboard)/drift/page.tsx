@@ -1,36 +1,189 @@
 'use client';
 
+import DriftTimeline from '@/components/charts/DriftTimeline';
 import TopNav from '@/components/layout/TopNav';
-import { MOCK_DRIFT_DATA, getScoreColor } from '@/lib/mock-data';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-  Area,
-  ComposedChart,
-} from 'recharts';
-import { Upload, AlertTriangle, TrendingDown, Calendar, Database, ArrowRight } from 'lucide-react';
-import { useState } from 'react';
+import { getDriftHistory, uploadDriftBatch } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
+import { getScoreColor } from '@/lib/mock-data';
+import type { DriftBatch } from '@/lib/types';
+import { AlertTriangle, ArrowRight, Calendar, Database, Loader2, Upload } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+  return fallback;
+}
 
 export default function DriftPage() {
+  const router = useRouter();
+  const { org, orgLoading } = useAuth();
+
+  const [batches, setBatches] = useState<DriftBatch[]>([]);
   const [showUpload, setShowUpload] = useState(false);
-  const data = MOCK_DRIFT_DATA;
-  const latest = data[data.length - 1];
-  const previous = data[data.length - 2];
-  const scoreDelta = latest.fairnessScore - previous.fairnessScore;
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const [file, setFile] = useState<File | null>(null);
+  const [batchDate, setBatchDate] = useState('');
+  const [notes, setNotes] = useState('');
+  const [labelCol, setLabelCol] = useState('approved');
+  const [positiveLabel, setPositiveLabel] = useState('1');
+  const [protectedCols, setProtectedCols] = useState('gender,race');
+  const [formStatus, setFormStatus] = useState<{ kind: 'error' | 'success'; message: string } | null>(null);
+
+  useEffect(() => {
+    if (!batchDate) {
+      const today = new Date().toISOString().slice(0, 10);
+      setBatchDate(today);
+    }
+  }, [batchDate]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHistory() {
+      if (orgLoading) {
+        return;
+      }
+      if (!org?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError('');
+        const payload = await getDriftHistory(org.id);
+        if (!cancelled) {
+          setBatches(payload.batches || []);
+        }
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setError(getErrorMessage(e, 'Failed to load drift history.'));
+          setBatches([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadHistory();
+    return () => {
+      cancelled = true;
+    };
+  }, [org?.id, orgLoading]);
+
+  const latest = useMemo(() => batches[batches.length - 1], [batches]);
+  const previous = useMemo(() => batches[batches.length - 2], [batches]);
+  const scoreDelta = useMemo(() => {
+    if (!latest || !previous) {
+      return 0;
+    }
+    return Number((latest.fairnessScore - previous.fairnessScore).toFixed(1));
+  }, [latest, previous]);
+
+  const latestBreachMetric = useMemo(() => {
+    if (!latest) {
+      return null;
+    }
+    return (latest.metrics || []).find((metric) => (metric.diRatio ?? 1) < 0.8) || null;
+  }, [latest]);
+
+  async function refreshHistory() {
+    if (!org?.id) return;
+    const payload = await getDriftHistory(org.id);
+    setBatches(payload.batches || []);
+  }
+
+  async function submitBatch() {
+    setFormStatus(null);
+
+    if (!org?.id) {
+      const message = 'Please sign in and select an organization first.';
+      setError(message);
+      setFormStatus({ kind: 'error', message });
+      return;
+    }
+    if (!file) {
+      const message = 'Please select a dataset file before submitting.';
+      setError(message);
+      setFormStatus({ kind: 'error', message });
+      return;
+    }
+    if (!batchDate) {
+      const message = 'Please select the data collection date.';
+      setError(message);
+      setFormStatus({ kind: 'error', message });
+      return;
+    }
+
+    const parsedProtectedCols = protectedCols
+      .split(',')
+      .map((col) => col.trim())
+      .filter(Boolean);
+
+    if (parsedProtectedCols.length === 0) {
+      const message = 'Please provide at least one protected attribute column.';
+      setError(message);
+      setFormStatus({ kind: 'error', message });
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+
+    try {
+      await uploadDriftBatch({
+        orgId: org.id,
+        file,
+        batchDate,
+        labelCol,
+        positiveLabel,
+        protectedCols: parsedProtectedCols,
+        notes,
+      });
+
+      await refreshHistory();
+      setShowUpload(false);
+      setFile(null);
+      setNotes('');
+      setFormStatus({ kind: 'success', message: 'Batch uploaded successfully and timeline refreshed.' });
+    } catch (e: unknown) {
+      const message = getErrorMessage(e, 'Failed to upload drift batch.');
+      setError(message);
+      setFormStatus({ kind: 'error', message });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function openBatchAudit(batchId: string) {
+    const target = batches.find((item) => item.id === batchId);
+    if (target?.auditId) {
+      router.push(`/audit/${target.auditId}`);
+    }
+  }
 
   return (
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Drift Monitor' }]} />
 
       <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
+        {error && (
+          <div className="card" style={{ borderColor: 'color-mix(in srgb, var(--danger) 45%, transparent)', background: 'var(--danger-dim)' }}>
+            <div className="text-sm" style={{ color: 'var(--danger)' }}>{error}</div>
+          </div>
+        )}
+
         {/* Alert Banner */}
-        {latest.diRace < 0.8 && (
+        {latest && latestBreachMetric && (
           <div
             className="card flex items-center gap-3"
             style={{ background: 'var(--danger-dim)', borderColor: 'color-mix(in srgb, var(--danger) 30%, transparent)' }}
@@ -41,12 +194,16 @@ export default function DriftPage() {
                 Fairness Drift Alert
               </div>
               <div className="text-xs" style={{ color: 'var(--muted)' }}>
-                Race DI ratio dropped to {latest.diRace.toFixed(2)} - below 0.80 legal threshold. Score dropped {Math.abs(scoreDelta)} points since last batch.
+                {latestBreachMetric.protectedAttribute} DI ratio dropped to {(latestBreachMetric.diRatio ?? 0).toFixed(2)}. Score changed by {Math.abs(scoreDelta)} points since last batch.
               </div>
             </div>
             <button
               className="btn btn-danger btn-sm"
-              onClick={() => (window.location.href = '/audit/aud-001')}
+              onClick={() => {
+                if (latest.auditId) {
+                  router.push(`/audit/${latest.auditId}`);
+                }
+              }}
             >
               View Audit <ArrowRight size={12} />
             </button>
@@ -57,115 +214,110 @@ export default function DriftPage() {
         <div className="grid grid-cols-4 gap-6">
           <div className="card">
             <div className="label-text mb-2" style={{ color: 'var(--muted)' }}>Current Score</div>
-            <div className="text-xl font-bold" style={{ color: getScoreColor(latest.fairnessScore) }}>{latest.fairnessScore}</div>
+            <div className="text-xl font-bold" style={{ color: latest ? getScoreColor(latest.fairnessScore) : 'var(--muted)' }}>
+              {latest ? latest.fairnessScore : '--'}
+            </div>
           </div>
           <div className="card">
             <div className="label-text mb-2" style={{ color: 'var(--muted)' }}>Change</div>
             <div className="flex items-center gap-1.5">
-              <TrendingDown size={16} style={{ color: 'var(--danger)' }} />
-              <span className="text-xl font-bold" style={{ color: 'var(--danger)' }}>{scoreDelta}</span>
+              <span className="text-xl font-bold" style={{ color: scoreDelta < 0 ? 'var(--danger)' : 'var(--success)' }}>
+                {latest && previous ? scoreDelta : '--'}
+              </span>
             </div>
           </div>
           <div className="card">
             <div className="label-text mb-2" style={{ color: 'var(--muted)' }}>Batches</div>
-            <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{data.length}</div>
+            <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{batches.length}</div>
           </div>
           <div className="card">
             <div className="label-text mb-2" style={{ color: 'var(--muted)' }}>Latest Batch</div>
-            <div className="text-xl font-bold">{latest.date}</div>
+            <div className="text-xl font-bold">{latest ? latest.batchDate.slice(0, 10) : '--'}</div>
           </div>
         </div>
 
         {/* Chart */}
-        <div className="card" style={{ padding: '16px 12px' }}>
+        <div>
           <div className="flex items-center justify-between mb-4 px-2">
             <h2 className="card-title">Fairness Score & DI Ratio Over Time</h2>
             <button className="btn btn-primary btn-sm" onClick={() => setShowUpload(!showUpload)}>
               <Upload size={13} /> Upload New Batch
             </button>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis
-                dataKey="date"
-                tick={{ fill: 'var(--muted)', fontSize: 11 }}
-                axisLine={{ stroke: 'var(--border)' }}
-                tickLine={false}
-              />
-              <YAxis
-                yAxisId="score"
-                domain={[0, 100]}
-                tick={{ fill: 'var(--muted)', fontSize: 11 }}
-                axisLine={{ stroke: 'var(--border)' }}
-                tickLine={false}
-                label={{ value: 'Score', angle: -90, position: 'insideLeft', fill: 'var(--placeholder)', fontSize: 10 }}
-              />
-              <YAxis
-                yAxisId="di"
-                orientation="right"
-                domain={[0, 1.2]}
-                tick={{ fill: 'var(--muted)', fontSize: 11 }}
-                axisLine={{ stroke: 'var(--border)' }}
-                tickLine={false}
-                label={{ value: 'DI Ratio', angle: 90, position: 'insideRight', fill: 'var(--placeholder)', fontSize: 10 }}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  fontSize: 12,
-                  color: 'var(--fg)',
-                }}
-                itemStyle={{ color: 'var(--fg)' }}
-              />
-              <ReferenceLine yAxisId="di" y={0.8} stroke="var(--accent)" strokeDasharray="6 3" strokeWidth={1.5} label={{ value: '0.80 threshold', fill: 'var(--accent)', fontSize: 10, position: 'right' }} />
-              <Area yAxisId="score" type="monotone" dataKey="fairnessScore" fill="var(--primary-dim)" stroke="none" />
-              <Line yAxisId="score" type="monotone" dataKey="fairnessScore" stroke="var(--primary)" strokeWidth={2.5} dot={{ r: 4, fill: 'var(--primary)', stroke: 'var(--surface)', strokeWidth: 2 }} activeDot={{ r: 6 }} name="Fairness Score" />
-              <Line yAxisId="di" type="monotone" dataKey="diGender" stroke="var(--accent)" strokeWidth={2} dot={{ r: 3, fill: 'var(--accent)' }} name="DI - Gender" />
-              <Line yAxisId="di" type="monotone" dataKey="diRace" stroke="var(--danger)" strokeWidth={2} dot={{ r: 3, fill: 'var(--danger)' }} name="DI - Race" />
-            </ComposedChart>
-          </ResponsiveContainer>
+          {loading ? (
+            <div className="card flex items-center gap-2" style={{ color: 'var(--muted)' }}>
+              <Loader2 size={15} className="animate-spin" /> Loading drift timeline...
+            </div>
+          ) : (
+            <DriftTimeline batches={batches} onPointClick={openBatchAudit} />
+          )}
         </div>
 
         {/* Upload Drawer */}
         {showUpload && (
           <div className="card" style={{ borderColor: 'color-mix(in srgb, var(--primary) 30%, transparent)' }}>
             <h3 className="card-title mb-4">Upload New Data Batch</h3>
+            {formStatus && (
+              <div
+                className="mb-4 px-3 py-2 rounded-md text-xs"
+                style={{
+                  background: formStatus.kind === 'error' ? 'var(--danger-dim)' : 'color-mix(in srgb, var(--success) 15%, transparent)',
+                  color: formStatus.kind === 'error' ? 'var(--danger)' : 'var(--success)',
+                  border: `1px solid ${formStatus.kind === 'error' ? 'color-mix(in srgb, var(--danger) 35%, transparent)' : 'color-mix(in srgb, var(--success) 35%, transparent)'}`,
+                }}
+              >
+                {formStatus.message}
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>
                   <Database size={11} className="inline mr-1" /> Data File
                 </label>
-                <div 
-                  className="upload-zone py-6"
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  <Upload size={20} style={{ color: 'var(--primary)', margin: '0 auto 4px' }} />
-                  <div className="text-xs">Drop CSV here</div>
+                <input
+                  type="file"
+                  accept=".csv,.json,.parquet"
+                  className="input"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                />
+                <div className="text-xs mt-2" style={{ color: 'var(--muted)' }}>
+                  {file ? file.name : 'CSV, JSON, or Parquet'}
                 </div>
               </div>
               <div>
                 <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>
                   <Calendar size={11} className="inline mr-1" /> Collection Date
                 </label>
-                <input type="date" className="input" />
+                <input type="date" className="input" value={batchDate} onChange={(e) => setBatchDate(e.target.value)} />
               </div>
               <div>
                 <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>Notes</label>
-                <textarea className="input" style={{ minHeight: 80 }} placeholder="Optional notes about this batch..." />
+                <textarea
+                  className="input"
+                  style={{ minHeight: 80 }}
+                  placeholder="Optional notes about this batch..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3 mt-3">
+              <div>
+                <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>Label Column</label>
+                <input className="input" value={labelCol} onChange={(e) => setLabelCol(e.target.value)} />
+              </div>
+              <div>
+                <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>Positive Label</label>
+                <input className="input" value={positiveLabel} onChange={(e) => setPositiveLabel(e.target.value)} />
+              </div>
+              <div>
+                <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>Protected Columns</label>
+                <input className="input" value={protectedCols} onChange={(e) => setProtectedCols(e.target.value)} placeholder="gender,race" />
               </div>
             </div>
             <div className="flex justify-end mt-3">
-              <button className="btn btn-primary">
-                <Upload size={13} /> Submit Batch
+              <button className="btn btn-primary" onClick={submitBatch} disabled={submitting}>
+                {submitting ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />} Submit Batch
               </button>
             </div>
           </div>
@@ -181,27 +333,33 @@ export default function DriftPage() {
               <tr>
                 <th>Date</th>
                 <th>Fairness Score</th>
-                <th>DI - Gender</th>
-                <th>DI - Race</th>
+                <th>Worst DI</th>
+                <th>At-Risk Attributes</th>
                 <th>Batch Size</th>
               </tr>
             </thead>
             <tbody>
-              {[...data].reverse().map((b, i) => (
-                <tr key={i}>
-                  <td className="font-medium">{b.date}</td>
+              {[...batches].reverse().map((b) => {
+                const atRisk = (b.metrics || [])
+                  .filter((metric) => (metric.diRatio ?? 1) < 0.8)
+                  .map((metric) => metric.protectedAttribute);
+
+                return (
+                <tr key={b.id}>
+                  <td className="font-medium">{b.batchDate.slice(0, 10)}</td>
                   <td>
                     <span style={{ color: getScoreColor(b.fairnessScore) }}>{b.fairnessScore}</span>
                   </td>
-                  <td style={{ color: b.diGender < 0.8 ? 'var(--accent)' : 'var(--success)' }}>
-                    {b.diGender.toFixed(2)}
+                  <td style={{ color: b.worstDi < 0.8 ? 'var(--danger)' : 'var(--success)' }}>
+                    {Number(b.worstDi ?? 0).toFixed(2)}
                   </td>
-                  <td style={{ color: b.diRace < 0.8 ? 'var(--danger)' : 'var(--success)' }}>
-                    {b.diRace.toFixed(2)}
+                  <td style={{ color: atRisk.length > 0 ? 'var(--danger)' : 'var(--success)' }}>
+                    {atRisk.length > 0 ? atRisk.join(', ') : 'None'}
                   </td>
-                  <td style={{ color: 'var(--muted)' }}>{b.batchSize.toLocaleString()}</td>
+                  <td style={{ color: 'var(--muted)' }}>{Number(b.rowCount ?? 0).toLocaleString()}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

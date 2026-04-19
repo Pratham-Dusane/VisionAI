@@ -108,6 +108,15 @@ npm run dev:turbo
   - PASS response on acceptable fairness
   - FAIL response with HTTP 422 and violations for build blocking
 
+## Phase 9 Outputs Included
+
+- Drift monitor page now uses live API data instead of static mock data:
+  - Timeline chart with fairness score and per-attribute DI lines
+  - Upload drawer for new production batch files
+  - Batch history table with worst DI and at-risk attributes
+  - Alert banner if latest DI drops below 0.80
+- Top navigation bell badge now reads unread drift alerts count from backend
+
 ## API Expectations
 
 Frontend expects the backend to expose:
@@ -129,6 +138,9 @@ Frontend expects the backend to expose:
 - `POST /api/orgs/{orgId}/api-keys`
 - `DELETE /api/orgs/{orgId}/api-keys/{keyId}`
 - `POST /api/cicd/audit-gate`
+- `GET /api/drift/{orgId}`
+- `POST /api/drift/upload`
+- `GET /api/drift/{orgId}/notifications/count`
 
 Settings payload compatibility:
 - Backend accepts both `explain_rejection_enabled` and `explain_my_rejection_enabled` on update.

@@ -156,3 +156,31 @@ export interface ColumnSchema {
   flaggedReason: string | null;
   autoFlagged: boolean;
 }
+
+export interface DriftMetric {
+  protectedAttribute: string;
+  diRatio: number | null;
+  spd: number | null;
+  severity: SeverityLevel;
+  equalizedOdds?: {
+    fpr_gap: number;
+    groups: Record<string, { fpr: number; fnr: number }>;
+  };
+}
+
+export interface DriftBatch {
+  id: string;
+  orgId: string;
+  auditId?: string | null;
+  batchDate: string;
+  uploadDate: string;
+  notes?: string;
+  rowCount: number;
+  storagePath: string;
+  fairnessScore: number;
+  letterGrade: LetterGrade;
+  metrics: DriftMetric[];
+  worstDi: number;
+  alertTriggered: boolean;
+  status: 'COMPLETE' | 'FAILED';
+}

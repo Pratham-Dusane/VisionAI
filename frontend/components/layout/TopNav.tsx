@@ -2,6 +2,10 @@
 
 import { Bell, Search } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
+import { useAuth } from '@/lib/auth-context';
+import { getDriftNotificationCount } from '@/lib/api';
 
 interface BreadcrumbItem {
   label: string;
@@ -9,6 +13,36 @@ interface BreadcrumbItem {
 }
 
 export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] }) {
+  const { org } = useAuth();
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCount() {
+      if (!org?.id) {
+        setNotificationCount(0);
+        return;
+      }
+
+      try {
+        const data = await getDriftNotificationCount(org.id);
+        if (!cancelled) {
+          setNotificationCount(data.unread || 0);
+        }
+      } catch {
+        if (!cancelled) {
+          setNotificationCount(0);
+        }
+      }
+    }
+
+    loadCount();
+    return () => {
+      cancelled = true;
+    };
+  }, [org?.id]);
+
   return (
     <header
       className="h-[64px] flex items-center justify-between px-6 shrink-0 sticky top-0 z-40"
@@ -53,12 +87,14 @@ export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbI
           style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
         >
           <Bell size={15} style={{ color: 'var(--muted)' }} />
-          <span
-            className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-[8px] font-bold flex items-center justify-center"
-            style={{ background: 'var(--danger)', color: '#fff' }}
-          >
-            2
-          </span>
+          {notificationCount > 0 && (
+            <span
+              className="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-1 rounded-full text-[8px] font-bold flex items-center justify-center"
+              style={{ background: 'var(--danger)', color: '#fff' }}
+            >
+              {notificationCount > 99 ? '99+' : notificationCount}
+            </span>
+          )}
         </button>
       </div>
     </header>

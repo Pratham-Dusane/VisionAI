@@ -82,3 +82,47 @@ curl -X POST "http://localhost:8000/api/cicd/audit-gate" \
 ### CI example
 
 Use the ready-to-copy workflow in `examples/github-action.yml`.
+
+## Phase 9 Bias Drift Monitor
+
+The backend now exposes drift-monitor APIs for periodic production batch checks.
+
+### Endpoints
+
+- `POST /api/drift/upload`
+- `GET /api/drift/{org_id}`
+- `GET /api/drift/{org_id}/notifications/count`
+
+### Drift upload request
+
+`POST /api/drift/upload` expects multipart form data:
+
+- `orgId` (string, required)
+- `file` (CSV/JSON/Parquet, required)
+- `batchDate` (ISO date, required)
+- `labelCol` (string, required)
+- `positiveLabel` (string, required)
+- `protectedCols` (JSON array string or comma-separated list, required)
+- `notes` (string, optional)
+- `auditId` (string, optional)
+- `predictionCol` (string, optional; enables equalized odds computation)
+
+### Example curl
+
+```bash
+curl -X POST "http://localhost:8000/api/drift/upload" \
+  -F "orgId=org-1" \
+  -F "batchDate=2026-04-19" \
+  -F "labelCol=approved" \
+  -F "positiveLabel=1" \
+  -F "protectedCols=[\"gender\",\"race\"]" \
+  -F "notes=April production batch" \
+  -F "file=@loan_approval_dataset.csv"
+```
+
+### Storage behavior
+
+- Uploaded batch is stored in Firebase Storage under `drift_uploads/{orgId}/...`
+- Per-attribute drift rows are written to BigQuery table `visionai_analytics.drift_metrics` when BigQuery is configured
+- Drift batch summary is always stored in Firestore `drift_batches`
+- If latest worst DI drops below 0.8, a `DRIFT_ALERT` notification is written in Firestore
