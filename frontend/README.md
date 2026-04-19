@@ -28,11 +28,20 @@ NEXT_PUBLIC_FIREBASE_APP_ID=
 npm run dev
 ```
 
+`npm run dev` now uses webpack + disabled source maps for lower local CPU/RAM pressure.
+
+If you want max speed and your machine can handle it:
+
+```bash
+npm run dev:turbo
+```
+
 4. Open `http://localhost:3000`.
 
 ## Scripts
 
 - `npm run dev`: start development server
+- `npm run dev:turbo`: start dev server with Turbopack (higher resource usage)
 - `npm run build`: production build plus type checks
 - `npm run start`: run production server
 - `npm run lint`: run eslint
@@ -87,6 +96,18 @@ npm run dev
 - Model comparison mode on Dashboard
 - Bias origin tracer in Fixes tab
 
+## Phase 8 Outputs Included
+
+- Settings page API key management UI:
+  - Generate API key from UI
+  - View masked key inventory
+  - Revoke active keys
+  - Copy newly generated key (one-time reveal)
+- CI/CD fairness gate backend integration:
+  - Endpoint `POST /api/cicd/audit-gate`
+  - PASS response on acceptable fairness
+  - FAIL response with HTTP 422 and violations for build blocking
+
 ## API Expectations
 
 Frontend expects the backend to expose:
@@ -104,6 +125,10 @@ Frontend expects the backend to expose:
 - `GET /api/benchmarks/{domain}`
 - `GET /api/orgs/{orgId}/settings`
 - `PUT /api/orgs/{orgId}/settings`
+- `GET /api/orgs/{orgId}/api-keys`
+- `POST /api/orgs/{orgId}/api-keys`
+- `DELETE /api/orgs/{orgId}/api-keys/{keyId}`
+- `POST /api/cicd/audit-gate`
 
 Settings payload compatibility:
 - Backend accepts both `explain_rejection_enabled` and `explain_my_rejection_enabled` on update.

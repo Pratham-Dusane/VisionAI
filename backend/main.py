@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from core.firebase_init import initialize_firebase
-from routers import uploads, audits, org_settings, benchmarks
+from routers import uploads, audits, org_settings, benchmarks, cicd
 
 load_dotenv()
 
@@ -69,3 +69,4 @@ app.include_router(uploads.router, prefix="/api/uploads", tags=["uploads"])
 app.include_router(audits.router, prefix="/api/audits", tags=["audits"])
 app.include_router(org_settings.router, prefix="/api/orgs", tags=["org-settings"])
 app.include_router(benchmarks.router, prefix="/api/benchmarks", tags=["benchmarks"])
+app.include_router(cicd.router, prefix="/api/cicd", tags=["cicd"])

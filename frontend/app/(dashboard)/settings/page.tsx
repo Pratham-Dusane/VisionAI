@@ -1,11 +1,18 @@
 'use client';
 
 import TopNav from '@/components/layout/TopNav';
-import { Settings as SettingsIcon, User, Building2, Key, Bell, ToggleLeft, ToggleRight, Shield, Globe, Moon, Sun, LayoutTemplate, Rows3 } from 'lucide-react';
+import { Settings as SettingsIcon, User, Building2, Key, Bell, ToggleLeft, ToggleRight, Shield, Globe, Moon, Sun, LayoutTemplate, Rows3, Copy, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTheme } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
-import { getOrgSettings, updateOrgSettings } from '@/lib/api';
+import { createOrgApiKey, getOrgApiKeys, getOrgSettings, OrgApiKey, revokeOrgApiKey, updateOrgSettings } from '@/lib/api';
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+  return fallback;
+}
 
 export default function SettingsPage() {
   const { theme, toggleTheme, density, toggleDensity } = useTheme();
@@ -15,6 +22,24 @@ export default function SettingsPage() {
   const [explainMode, setExplainMode] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
+  const [apiKeys, setApiKeys] = useState<OrgApiKey[]>([]);
+  const [loadingApiKeys, setLoadingApiKeys] = useState(true);
+  const [apiKeyLabel, setApiKeyLabel] = useState('CI/CD Key');
+  const [newApiKey, setNewApiKey] = useState('');
+  const [apiKeyMessage, setApiKeyMessage] = useState('');
+  const [keyActionInFlight, setKeyActionInFlight] = useState(false);
+
+  async function loadApiKeys(orgId: string) {
+    setLoadingApiKeys(true);
+    try {
+      const data = await getOrgApiKeys(orgId);
+      setApiKeys(data.apiKeys || []);
+    } catch (error: unknown) {
+      setApiKeyMessage(getErrorMessage(error, 'Unable to load API keys.'));
+    } finally {
+      setLoadingApiKeys(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -31,8 +56,9 @@ export default function SettingsPage() {
           setBenchOptIn(Boolean(data.settings.benchmarking_opt_in));
           setEmailNotifs(Boolean(data.settings.email_notifications));
           setExplainMode(Boolean(data.settings.explain_rejection_enabled));
+          await loadApiKeys(org.id);
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           setSaveMessage('Unable to fetch settings from API, using local defaults.');
         }
@@ -54,8 +80,51 @@ export default function SettingsPage() {
         explain_rejection_enabled: explainMode,
       });
       setSaveMessage('Preferences saved.');
-    } catch (e: any) {
-      setSaveMessage(e?.message || 'Failed to save preferences.');
+    } catch (error: unknown) {
+      setSaveMessage(getErrorMessage(error, 'Failed to save preferences.'));
+    }
+  }
+
+  async function generateApiKey() {
+    if (!org || keyActionInFlight) return;
+    setKeyActionInFlight(true);
+    setApiKeyMessage('');
+    setNewApiKey('');
+
+    try {
+      const created = await createOrgApiKey(org.id, apiKeyLabel);
+      setNewApiKey(created.apiKey);
+      setApiKeyMessage('New API key generated. Copy it now; this is the only time the full key is shown.');
+      await loadApiKeys(org.id);
+    } catch (error: unknown) {
+      setApiKeyMessage(getErrorMessage(error, 'Failed to generate API key.'));
+    } finally {
+      setKeyActionInFlight(false);
+    }
+  }
+
+  async function revokeKey(keyId: string) {
+    if (!org || keyActionInFlight) return;
+    setKeyActionInFlight(true);
+    setApiKeyMessage('');
+
+    try {
+      await revokeOrgApiKey(org.id, keyId);
+      setApiKeyMessage('API key revoked.');
+      await loadApiKeys(org.id);
+    } catch (error: unknown) {
+      setApiKeyMessage(getErrorMessage(error, 'Failed to revoke API key.'));
+    } finally {
+      setKeyActionInFlight(false);
+    }
+  }
+
+  async function copyToClipboard(value: string, successMessage: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setApiKeyMessage(successMessage);
+    } catch {
+      setApiKeyMessage('Copy failed. Please copy manually.');
     }
   }
 
@@ -111,11 +180,57 @@ export default function SettingsPage() {
             <div className="card-title flex items-center gap-2 mb-4">
               <Key size={14} style={{ color: 'var(--warning)' }} /> API Keys
             </div>
-            <div className="px-3 py-2 rounded-lg flex items-center justify-between" style={{ background: 'var(--surface-2)' }}>
-              <code className="text-xs" style={{ color: 'var(--muted)' }}>vai_live_••••••••••••</code>
-              <span className="badge badge-pass">Active</span>
+
+            {newApiKey && (
+              <div className="p-3 rounded-lg border" style={{ background: 'var(--surface-2)', borderColor: 'var(--warning)' }}>
+                <div className="text-xs font-semibold mb-2" style={{ color: 'var(--warning)' }}>Copy this key now (shown only once)</div>
+                <div className="text-xs break-all" style={{ color: 'var(--muted)' }}>{newApiKey}</div>
+                <button className="btn btn-outline btn-sm mt-2" onClick={() => copyToClipboard(newApiKey, 'New API key copied to clipboard.')}>
+                  <Copy size={12} /> Copy Key
+                </button>
+              </div>
+            )}
+
+            <div>
+              <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>Key Label</label>
+              <input
+                className="input"
+                value={apiKeyLabel}
+                onChange={(e) => setApiKeyLabel(e.target.value)}
+                placeholder="CI/CD Key"
+              />
             </div>
-            <button className="btn btn-outline btn-sm"><Key size={12} /> Generate New Key</button>
+
+            <button className="btn btn-outline btn-sm" onClick={generateApiKey} disabled={!org || keyActionInFlight}>
+              <Key size={12} /> {keyActionInFlight ? 'Processing...' : 'Generate New Key'}
+            </button>
+
+            {loadingApiKeys ? (
+              <div className="text-xs" style={{ color: 'var(--muted)' }}>Loading keys...</div>
+            ) : apiKeys.length === 0 ? (
+              <div className="text-xs" style={{ color: 'var(--muted)' }}>No keys yet. Generate one for CI/CD integration.</div>
+            ) : (
+              <div className="space-y-2">
+                {apiKeys.map((item) => (
+                  <div key={item.keyId} className="px-3 py-2 rounded-lg flex items-center justify-between" style={{ background: 'var(--surface-2)' }}>
+                    <div>
+                      <div className="text-xs" style={{ color: 'var(--muted)' }}>{item.label}</div>
+                      <div className="text-xs font-mono" style={{ color: 'var(--placeholder)' }}>{item.masked}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={item.active ? 'badge badge-pass' : 'badge'}>{item.active ? 'Active' : 'Revoked'}</span>
+                      {item.active && (
+                        <button className="btn btn-ghost btn-sm" onClick={() => revokeKey(item.keyId)} disabled={keyActionInFlight}>
+                          <Trash2 size={12} /> Revoke
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {apiKeyMessage && <div className="text-xs" style={{ color: 'var(--muted)' }}>{apiKeyMessage}</div>}
           </div>
 
           {/* Appearance */}
