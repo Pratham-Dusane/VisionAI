@@ -3,6 +3,7 @@
 import TopNav from '@/components/layout/TopNav';
 import {
   getAudit,
+  getOrgSettings,
   exportPDF,
   exportLegalJSON,
   exportAnonJSON,
@@ -1012,12 +1013,16 @@ function ModelTab({ audit }: { audit: any }) {
   const modelBias = audit.modelBias;
   const flip = audit.flipSensitivity;
   const [sampleRow, setSampleRow] = useState<Record<string, any>>({});
+  const [sampleRowIndex, setSampleRowIndex] = useState<number | null>(null);
   const [rowLoaded, setRowLoaded] = useState(false);
   const [decisionLoading, setDecisionLoading] = useState(false);
   const [minimumFlipLoading, setMinimumFlipLoading] = useState(false);
   const [simError, setSimError] = useState('');
   const [decisionResult, setDecisionResult] = useState<any>(null);
   const [minimumFlipResult, setMinimumFlipResult] = useState<any>(null);
+  const [explainEnabled, setExplainEnabled] = useState(false);
+  const [explainLoading, setExplainLoading] = useState(false);
+  const [copyMsg, setCopyMsg] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -1028,6 +1033,7 @@ function ModelTab({ audit }: { audit: any }) {
         const data = await getSampleRow(audit.id);
         if (!cancelled) {
           setSampleRow(data.sampleRow || {});
+          setSampleRowIndex(typeof data.rowIndex === 'number' ? data.rowIndex : null);
           setRowLoaded(true);
         }
       } catch (e: any) {
@@ -1040,6 +1046,30 @@ function ModelTab({ audit }: { audit: any }) {
     loadSample();
     return () => { cancelled = true; };
   }, [audit?.id, audit?.dataOnly]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOrgSettings() {
+      if (!audit?.orgId) return;
+      try {
+        setExplainLoading(true);
+        const payload = await getOrgSettings(audit.orgId);
+        if (!cancelled) {
+          setExplainEnabled(Boolean(payload?.settings?.explain_rejection_enabled));
+        }
+      } catch {
+        if (!cancelled) {
+          setExplainEnabled(false);
+        }
+      } finally {
+        if (!cancelled) setExplainLoading(false);
+      }
+    }
+
+    loadOrgSettings();
+    return () => { cancelled = true; };
+  }, [audit?.orgId]);
 
   if (!modelBias) return (
     <div className="card flex items-center gap-3 py-8" style={{ background: 'var(--primary-dim)', borderColor: 'var(--primary-dim)' }}>
@@ -1055,6 +1085,10 @@ function ModelTab({ audit }: { audit: any }) {
   const editableFields = Object.entries(sampleRow)
     .filter(([k]) => k !== audit.labelCol && !isIdentifierField(k))
     .slice(0, 14);
+
+  const explainUrl = (sampleRowIndex != null)
+    ? `${window.location.origin}/explain/${audit.id}/${sampleRowIndex}`
+    : '';
 
   const changedFeatures = new Set((minimumFlipResult?.changedFields || []).map((x: any) => x.feature));
 
@@ -1091,6 +1125,17 @@ function ModelTab({ audit }: { audit: any }) {
     } finally {
       setMinimumFlipLoading(false);
     }
+  }
+
+  function onCopyExplainUrl() {
+    if (!explainUrl) return;
+    navigator.clipboard.writeText(explainUrl).then(() => {
+      setCopyMsg('Copied');
+      setTimeout(() => setCopyMsg(''), 1500);
+    }).catch(() => {
+      setCopyMsg('Copy failed');
+      setTimeout(() => setCopyMsg(''), 1500);
+    });
   }
 
   return (
@@ -1131,7 +1176,30 @@ function ModelTab({ audit }: { audit: any }) {
                 {minimumFlipLoading ? <Loader2 size={13} className="animate-spin" /> : null}
                 Find Minimum Flip
               </button>
+              <button
+                className="btn btn-outline btn-sm"
+                disabled={!explainEnabled || !explainUrl || explainLoading}
+                onClick={() => window.open(explainUrl, '_blank', 'noopener,noreferrer')}
+              >
+                Open Explain Page
+              </button>
+              <button
+                className="btn btn-outline btn-sm"
+                disabled={!explainEnabled || !explainUrl || explainLoading}
+                onClick={onCopyExplainUrl}
+              >
+                Copy Explain URL
+              </button>
               {simError && <span className="text-xs" style={{ color: 'var(--danger)' }}>{simError}</span>}
+              {!simError && copyMsg && <span className="text-xs" style={{ color: 'var(--success)' }}>{copyMsg}</span>}
+            </div>
+
+            <div className="mt-2 text-xs" style={{ color: 'var(--placeholder)' }}>
+              {explainLoading
+                ? 'Checking Explain My Rejection setting...'
+                : explainEnabled
+                  ? `Public explanation is enabled. This link points to sample row ${sampleRowIndex ?? '-'}.`
+                  : 'Explain My Rejection is currently disabled in Settings.'}
             </div>
 
             {decisionResult && (

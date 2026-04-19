@@ -429,3 +429,63 @@ export async function getDriftNotificationCount(orgId: string) {
     unread: number;
   }>;
 }
+
+export type DriftNotification = {
+  id: string;
+  orgId: string;
+  type: string;
+  title: string;
+  message: string;
+  batchId?: string;
+  read: boolean;
+  createdAt?: string;
+  readAt?: string;
+};
+
+export async function getDriftNotifications(orgId: string) {
+  const res = await fetch(`${API_BASE}/api/drift/${orgId}/notifications`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to load notifications (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    orgId: string;
+    notifications: DriftNotification[];
+    unread: number;
+  }>;
+}
+
+export async function markDriftNotificationRead(orgId: string, notificationId: string) {
+  const res = await fetch(`${API_BASE}/api/drift/${orgId}/notifications/${notificationId}/read`, {
+    method: 'POST',
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to update notification (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    orgId: string;
+    notificationId: string;
+    read: boolean;
+  }>;
+}
+
+export async function markAllDriftNotificationsRead(orgId: string) {
+  const res = await fetch(`${API_BASE}/api/drift/${orgId}/notifications/read-all`, {
+    method: 'POST',
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to update notifications (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    orgId: string;
+    updated: number;
+  }>;
+}
