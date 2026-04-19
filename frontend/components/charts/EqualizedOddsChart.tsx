@@ -26,7 +26,7 @@ export default function EqualizedOddsChart({ equalizedOdds }: EqualizedOddsChart
         return (
           <div key={attr} className="card" style={{ padding: '16px 12px' }}>
             <h4 className="text-xs font-semibold mb-3 px-2" style={{ color: 'var(--muted)' }}>
-              Equalized Odds — {attr}
+              Equalized Odds- {attr}
             </h4>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={data} margin={{ top: 5, right: 24, bottom: 5, left: 0 }}>

@@ -54,7 +54,7 @@ export default function ShapSummaryChart({ explainability }: ShapSummaryChartPro
         return (
           <div key={attr} className="card" style={{ padding: '16px 12px' }}>
             <h4 className="text-xs font-semibold mb-3 px-2" style={{ color: 'var(--muted)' }}>
-              SHAP Feature Importance by Group — {attr}
+              SHAP Feature Importance by Group- {attr}
             </h4>
             <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 32)}>
               <BarChart

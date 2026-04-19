@@ -33,7 +33,7 @@ export default function GroupDistributionChart({ profiles }: GroupDistributionCh
         return (
           <div key={profile.attribute} className="card" style={{ padding: '16px 12px' }}>
             <h4 className="text-xs font-semibold mb-3 px-2" style={{ color: 'var(--muted)' }}>
-              Group Distribution — {profile.attribute}
+              Group Distribution- {profile.attribute}
             </h4>
             <ResponsiveContainer width="100%" height={Math.max(180, data.length * 40)}>
               <BarChart data={data} layout="vertical" margin={{ top: 0, right: 24, bottom: 0, left: 0 }}>

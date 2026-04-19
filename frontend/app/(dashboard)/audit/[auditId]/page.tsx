@@ -40,6 +40,18 @@ const BASE_TABS = [
   { key: 'legal', label: 'Legal', icon: Scale },
 ];
 
+const MODE_TAB_KEYS: Record<StakeholderMode, string[]> = {
+  technical: ['overview', 'data', 'model', 'intersectional', 'explainability', 'narratives', 'fixes', 'legal'],
+  executive: ['overview', 'narratives', 'legal'],
+  legal: ['overview', 'intersectional', 'legal', 'narratives'],
+};
+
+const MODE_DEFAULT_TAB: Record<StakeholderMode, string> = {
+  technical: 'model',
+  executive: 'overview',
+  legal: 'legal',
+};
+
 function gradeColor(g: string) {
   const m: Record<string, string> = { A: 'var(--grade-a)', B: 'var(--grade-b)', C: 'var(--grade-c)', D: 'var(--grade-d)', F: 'var(--grade-f)' };
   return m[g] || 'var(--muted)';
@@ -57,10 +69,12 @@ function sevBadge(s: string) {
 }
 
 function getTabs(mode: StakeholderMode) {
-  if (mode === 'executive') {
-    return BASE_TABS.filter((t) => t.key !== 'explainability');
-  }
-  return BASE_TABS;
+  const allowed = new Set(MODE_TAB_KEYS[mode]);
+  return BASE_TABS.filter((t) => allowed.has(t.key));
+}
+
+function getDefaultTabForMode(mode: StakeholderMode) {
+  return MODE_DEFAULT_TAB[mode];
 }
 
 function riskLevelFromScore(score: number) {
@@ -125,23 +139,74 @@ function narrativeToPlainText(markdown: string) {
     .trim();
 }
 
-function extractNarrativeTldr(markdown: string, maxChars = 320) {
+function extractNarrativeTldr(markdown: string, mode: StakeholderMode, maxChars = 360) {
   const plain = narrativeToPlainText(markdown || '');
   if (!plain) return 'Narrative summary is not available yet.';
 
-  const lines = plain
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !line.startsWith('•'));
+  const narrative = plain
+    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  const source = lines.join(' ');
-  if (source.length <= maxChars) return source;
+  const sentences = narrative
+    .split(/(?<=[.!?])\s+(?=[A-Z0-9])/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 40);
 
-  const clipped = source.slice(0, maxChars);
-  const lastSentence = clipped.lastIndexOf('. ');
-  if (lastSentence > 120) {
-    return `${clipped.slice(0, lastSentence + 1)}`;
+  if (sentences.length === 0) {
+    return narrative.length <= maxChars ? narrative : `${narrative.slice(0, maxChars).trim()}...`;
   }
+
+  const keywordMap: Record<StakeholderMode, string[]> = {
+    executive: ['fairness', 'risk', 'business', 'deployment', 'recommendation', 'liability', 'fine', 'impact'],
+    legal: ['compliance', 'regulation', 'clause', 'liability', 'violation', 'required action', 'legal', 'article'],
+    technical: ['disparate impact', 'flip', 'equalized odds', 'proxy', 'feature', 'model', 'threshold', 'bias'],
+  };
+  const modeKeywords = keywordMap[mode] || [];
+  const severityHints = ['critical', 'high', 'fail', 'violation', 'no-go'];
+
+  const scored = sentences.map((sentence, index) => {
+    const lower = sentence.toLowerCase();
+    let score = 0;
+
+    for (const keyword of modeKeywords) {
+      if (lower.includes(keyword)) score += 3;
+    }
+    for (const hint of severityHints) {
+      if (lower.includes(hint)) score += 2;
+    }
+    if (/\d/.test(sentence)) score += 1;
+    if (/%|inr|usd|di|spd|fpr|fnr/i.test(sentence)) score += 1;
+
+    // Mild position prior keeps context but does not dominate.
+    score += Math.max(0, 1.5 - index * 0.1);
+
+    return { sentence, score };
+  });
+
+  const selected: string[] = [];
+  const usedTokens = new Set<string>();
+  for (const item of [...scored].sort((a, b) => b.score - a.score)) {
+    const tokens = item.sentence.toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length > 3);
+    const overlap = tokens.filter((t) => usedTokens.has(t)).length;
+    if (selected.length > 0 && overlap / Math.max(tokens.length, 1) > 0.6) continue;
+
+    selected.push(item.sentence);
+    tokens.forEach((t) => usedTokens.add(t));
+
+    const joined = selected.join(' ');
+    if (joined.length >= maxChars || selected.length >= 3) break;
+  }
+
+  const summary = selected.join(' ').trim();
+  if (!summary) {
+    return narrative.length <= maxChars ? narrative : `${narrative.slice(0, maxChars).trim()}...`;
+  }
+  if (summary.length <= maxChars) return summary;
+
+  const clipped = summary.slice(0, maxChars);
+  const cutoff = clipped.lastIndexOf('. ');
+  if (cutoff > 120) return clipped.slice(0, cutoff + 1).trim();
   return `${clipped.trim()}...`;
 }
 
@@ -249,7 +314,7 @@ function buildSimplePdf(text: string, title = 'VisionAI Narrative') {
 
 export default function AuditResultsPage({ params }: { params: Promise<{ auditId: string }> }) {
   const { auditId } = use(params);
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useState(getDefaultTabForMode('technical'));
   const [stakeholderMode, setStakeholderMode] = useState<StakeholderMode>('technical');
   const [audit, setAudit] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -285,8 +350,13 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   }, [auditId]);
 
   useEffect(() => {
-    if (stakeholderMode === 'executive' && tab === 'explainability') {
-      setTab('overview');
+    setTab(getDefaultTabForMode(stakeholderMode));
+  }, [stakeholderMode]);
+
+  useEffect(() => {
+    const allowed = MODE_TAB_KEYS[stakeholderMode];
+    if (!allowed.includes(tab)) {
+      setTab(getDefaultTabForMode(stakeholderMode));
     }
   }, [stakeholderMode, tab]);
 
@@ -366,6 +436,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   const score = sev.fairness_score ?? audit.fairnessScore ?? 0;
   const grade = sev.letter_grade ?? audit.letterGrade ?? '?';
   const tabs = getTabs(stakeholderMode);
+  const visibleTabKeys = new Set(tabs.map((t) => t.key));
 
   async function onRunRedTeam() {
     try {
@@ -461,14 +532,14 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
         </div>
 
         {/* Tab content */}
-        {tab === 'overview' && <OverviewTab audit={audit} stakeholderMode={stakeholderMode} />}
-        {tab === 'data' && <DataTab audit={audit} />}
-        {tab === 'model' && <ModelTab audit={audit} />}
-        {tab === 'intersectional' && <IntersectionalTab audit={audit} />}
-        {tab === 'explainability' && <ExplainabilityTab audit={audit} />}
-        {tab === 'narratives' && <NarrativesTab audit={audit} mode={stakeholderMode} />}
-        {tab === 'fixes' && <FixesTab audit={audit} stakeholderMode={stakeholderMode} />}
-        {tab === 'legal' && <LegalTab audit={audit} />}
+        {visibleTabKeys.has('overview') && tab === 'overview' && <OverviewTab audit={audit} stakeholderMode={stakeholderMode} />}
+        {visibleTabKeys.has('data') && tab === 'data' && <DataTab audit={audit} />}
+        {visibleTabKeys.has('model') && tab === 'model' && <ModelTab audit={audit} />}
+        {visibleTabKeys.has('intersectional') && tab === 'intersectional' && <IntersectionalTab audit={audit} />}
+        {visibleTabKeys.has('explainability') && tab === 'explainability' && <ExplainabilityTab audit={audit} />}
+        {visibleTabKeys.has('narratives') && tab === 'narratives' && <NarrativesTab audit={audit} mode={stakeholderMode} />}
+        {visibleTabKeys.has('fixes') && tab === 'fixes' && <FixesTab audit={audit} stakeholderMode={stakeholderMode} />}
+        {visibleTabKeys.has('legal') && tab === 'legal' && <LegalTab audit={audit} mode={stakeholderMode} />}
       </div>
     </>
   );
@@ -1155,7 +1226,7 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
   } as const;
 
   const currentNarrative = narratives[mode] || '';
-  const tldr = extractNarrativeTldr(currentNarrative || '');
+  const tldr = extractNarrativeTldr(currentNarrative || '', mode);
   const hasNarratives = Object.keys(narratives).length > 0 && Object.values(narratives).some((v: any) => v && v.length > 0);
 
   if (!hasNarratives) return (
@@ -2203,11 +2274,12 @@ function BiasOriginTracerCard({ items }: { items: any[] }) {
 }
 
 /* ==================== LEGAL ==================== */
-function LegalTab({ audit }: { audit: any }) {
+function LegalTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
   const regs = audit.regulationMap || [];
   const criticalCount = regs.filter((r: any) => String(r.compliance_risk || '').includes('CRITICAL')).length;
   const highCount = regs.filter((r: any) => String(r.compliance_risk || '').includes('HIGH')).length;
   const mitigations = regs.filter((r: any) => Boolean(r.recommended_mitigation)).length;
+  const legalFocus = mode === 'legal';
 
   const downloadComplianceSheet = () => {
     const pipeline = audit.pipeline || {};
@@ -2298,7 +2370,7 @@ function LegalTab({ audit }: { audit: any }) {
         </div>
       ) : (
         <>
-          <div className="card" style={{ padding: 0 }}>
+          <div className="card" style={{ padding: 0, borderColor: legalFocus ? 'var(--primary)' : 'var(--border)' }}>
             <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
               Framework Mapping Sheet
             </div>
