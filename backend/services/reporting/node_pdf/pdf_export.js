@@ -171,9 +171,42 @@ function sectionHtml(title, body) {
   `;
 }
 
-function buildAnonymizedHtml(payload) {
+function renderLogoMarkup(logoSrc, orgName) {
+  if (logoSrc) {
+    return `<img class="brand-logo" src="${escapeHtml(logoSrc)}" alt="${escapeHtml(orgName)} logo" />`;
+  }
+
+  const initial = String(orgName || 'O').trim().charAt(0).toUpperCase() || 'O';
+  return `<div class="brand-logo brand-logo-fallback">${escapeHtml(initial)}</div>`;
+}
+
+async function resolveLogoDataUri(rawUrl) {
+  const url = String(rawUrl || '').trim();
+  if (!url) return '';
+  if (url.startsWith('data:image/')) return url;
+
+  try {
+    const response = await fetch(url, { redirect: 'follow' });
+    if (!response.ok) return '';
+
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    if (!contentType.startsWith('image/')) return '';
+
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    return `data:${contentType};base64,${base64}`;
+  } catch (_error) {
+    return '';
+  }
+}
+
+function buildAnonymizedHtml(payload, logoSrc = '') {
   const summary = payload.anonymizedSummary || {};
   const findings = payload.riskIndicators || {};
+  const branding = payload.branding || {};
+  const orgName = branding.orgName || 'Organization';
+  const stakeholder = branding.stakeholder || 'Whistleblower Stakeholder';
+  const productName = branding.productName || 'VisionAI';
   const regulations = findings.regulationMappings || [];
   const dataBias = findings.dataBiasFindings || [];
   const proxyWarnings = findings.proxyWarnings || [];
@@ -217,6 +250,12 @@ function buildAnonymizedHtml(payload) {
           body { font-family: 'Segoe UI', Arial, sans-serif; color: #111827; margin: 0; padding: 0; background: #f8fafc; }
           .page { width: 100%; box-sizing: border-box; padding: 28px 34px; }
           .cover { border: 1px solid #e5e7eb; border-radius: 16px; background: #ffffff; padding: 20px; }
+          .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 10px; }
+          .brand-left { display: flex; align-items: center; gap: 10px; }
+          .brand-logo { width: 34px; height: 34px; border-radius: 8px; object-fit: contain; border: 1px solid #e5e7eb; background: #ffffff; }
+          .brand-org { font-size: 12px; font-weight: 700; color: #111827; }
+          .brand-stakeholder { font-size: 11px; color: #4b5563; }
+          .brand-product { font-size: 12px; font-weight: 800; color: #4f46e5; letter-spacing: 0.08em; text-transform: uppercase; }
           .cover h1 { margin: 0; font-size: 28px; }
           .muted { color: #4b5563; font-size: 13px; }
           .chip { display: inline-block; margin-top: 10px; padding: 8px 12px; border-radius: 999px; background: #1f2937; color: white; font-size: 12px; }
@@ -233,8 +272,18 @@ function buildAnonymizedHtml(payload) {
       <body>
         <div class="page">
           <div class="cover">
+            <div class="brand-row">
+              <div class="brand-left">
+                ${renderLogoMarkup(logoSrc, orgName)}
+                <div>
+                  <div class="brand-org">${escapeHtml(orgName)}</div>
+                  <div class="brand-stakeholder">${escapeHtml(stakeholder)}</div>
+                </div>
+              </div>
+              <div class="brand-product">${escapeHtml(productName)}</div>
+            </div>
             <h1>Anonymized Fairness Report</h1>
-            <p class="muted">Organization: Company A</p>
+            <p class="muted">Organization: ${escapeHtml(orgName)}</p>
             <p class="muted">Reference: ${escapeHtml(payload.auditRef)}</p>
             <p class="muted">Generated: ${escapeHtml(payload.generatedAt)}</p>
             <div class="chip">Fairness ${escapeHtml(summary.fairnessScore)} / 100 | Grade ${escapeHtml(summary.letterGrade)}</div>
@@ -277,11 +326,15 @@ function buildAnonymizedHtml(payload) {
   `;
 }
 
-async function buildHtml(payload, chartPngDataUri) {
+async function buildHtml(payload, chartPngDataUri, logoSrc = '') {
   if (payload.reportType === 'AnonymizedWhistleblowerExport') {
-    return buildAnonymizedHtml(payload);
+    return buildAnonymizedHtml(payload, logoSrc);
   }
 
+  const branding = payload.branding || {};
+  const orgName = branding.orgName || 'Organization';
+  const stakeholder = branding.stakeholder || 'Technical Stakeholder';
+  const productName = branding.productName || 'VisionAI';
   const cover = payload.cover || {};
   const summary = payload.executiveSummary || {};
   const dataAnalysis = payload.dataAnalysis || {};
@@ -355,6 +408,51 @@ async function buildHtml(payload, chartPngDataUri) {
             border: 1px solid #dbeafe;
             border-radius: 16px;
             padding: 20px;
+          }
+          .brand-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 10px;
+          }
+          .brand-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .brand-logo {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            object-fit: contain;
+            border: 1px solid #dbeafe;
+            background: #ffffff;
+          }
+          .brand-logo-fallback {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 800;
+            color: #4338ca;
+            background: #eef2ff;
+          }
+          .brand-org {
+            font-size: 12px;
+            font-weight: 700;
+            color: #111827;
+          }
+          .brand-stakeholder {
+            font-size: 11px;
+            color: #4b5563;
+          }
+          .brand-product {
+            font-size: 12px;
+            font-weight: 800;
+            color: #4f46e5;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
           }
           .cover h1 {
             margin: 0;
@@ -444,6 +542,16 @@ async function buildHtml(payload, chartPngDataUri) {
       <body>
         <div class="page">
           <div class="cover">
+            <div class="brand-row">
+              <div class="brand-left">
+                ${renderLogoMarkup(logoSrc, orgName)}
+                <div>
+                  <div class="brand-org">${escapeHtml(orgName)}</div>
+                  <div class="brand-stakeholder">${escapeHtml(stakeholder)}</div>
+                </div>
+              </div>
+              <div class="brand-product">${escapeHtml(productName)}</div>
+            </div>
             <h1>VisionAI Audit Report</h1>
             <p class="muted">Audit ID: ${escapeHtml(payload.auditId)}</p>
             <p class="muted">Audit Name: ${escapeHtml(cover.auditName)}</p>
@@ -531,7 +639,8 @@ async function main() {
   const payload = JSON.parse(payloadRaw);
 
   const chartPngDataUri = await renderChartPngDataUri(payload);
-  const html = await buildHtml(payload, chartPngDataUri);
+  const logoSrc = await resolveLogoDataUri(payload?.branding?.orgLogoUrl);
+  const html = await buildHtml(payload, chartPngDataUri, logoSrc);
 
   const browser = await puppeteer.launch({
     headless: true,

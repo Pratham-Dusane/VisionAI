@@ -1,43 +1,174 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/lib/auth-context';
+import { listAudits, exportPDF } from '@/lib/api';
 import TopNav from '@/components/layout/TopNav';
-import { FileText, Download, Calendar, Filter } from 'lucide-react';
-import { MOCK_AUDITS, getScoreColor } from '@/lib/mock-data';
+import { FileText, Download, Filter, RefreshCw, AlertCircle, CircleDot, CheckCircle2, Loader2 } from 'lucide-react';
+import { getScoreColor } from '@/lib/mock-data';
+
+function formatAuditDate(value: unknown) {
+  if (!value) return 'Unknown date';
+  const date = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(date.getTime())) return 'Unknown date';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function statusBadgeClass(status: string) {
+  if (status === 'COMPLETE') return 'badge-pass';
+  if (status === 'PROCESSING') return 'badge-medium';
+  if (status === 'FAILED') return 'badge-critical';
+  return 'badge-neutral';
+}
 
 export default function ReportsPage() {
-  const completedAudits = MOCK_AUDITS.filter((a) => a.status === 'COMPLETE');
+  const { org, orgLoading } = useAuth();
+  const [audits, setAudits] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (orgLoading) return;
+    if (!org?.id) {
+      setLoading(false);
+      setAudits([]);
+      setError('No organization found for this account.');
+      return;
+    }
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    async function loadAudits() {
+      try {
+        const data = await listAudits(org.id);
+        if (cancelled) return;
+        setAudits(Array.isArray(data) ? data : []);
+        setError('');
+      } catch (err: any) {
+        if (!cancelled) {
+          setError(err?.message || 'Failed to load reports');
+          setAudits([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+        if (!cancelled) timer = setTimeout(loadAudits, 20000);
+      }
+    }
+
+    setLoading(true);
+    loadAudits();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [org?.id, orgLoading]);
+
+  const completedAudits = useMemo(
+    () => audits.filter((audit) => audit.status === 'COMPLETE'),
+    [audits],
+  );
+  const processingAudits = useMemo(
+    () => audits.filter((audit) => audit.status === 'PROCESSING'),
+    [audits],
+  );
+  const failedAudits = useMemo(
+    () => audits.filter((audit) => audit.status === 'FAILED'),
+    [audits],
+  );
+
+  const avgScore = completedAudits.length > 0
+    ? Math.round(completedAudits.reduce((sum, audit) => sum + (audit.fairnessScore || 0), 0) / completedAudits.length)
+    : 0;
 
   return (
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Reports' }]} />
       <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold">Audit Reports</h1>
-          <div className="flex gap-2">
-            <button className="btn btn-outline btn-sm"><Filter size={13} /> Filter</button>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-lg font-bold">Audit Reports</h1>
+            <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
+              Live reports from {org?.name || 'your organization'}.
+            </p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button className="btn btn-outline btn-sm" onClick={() => window.location.reload()}>
+              <RefreshCw size={13} /> Refresh
+            </button>
+            <button className="btn btn-outline btn-sm" disabled>
+              <Filter size={13} /> Filter
+            </button>
           </div>
         </div>
 
+        <div className="grid grid-cols-4 gap-3">
+          <div className="card">
+            <div className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Completed</div>
+            <div className="text-2xl font-black mt-1">{completedAudits.length}</div>
+          </div>
+          <div className="card">
+            <div className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Processing</div>
+            <div className="text-2xl font-black mt-1">{processingAudits.length}</div>
+          </div>
+          <div className="card">
+            <div className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Failed</div>
+            <div className="text-2xl font-black mt-1">{failedAudits.length}</div>
+          </div>
+          <div className="card">
+            <div className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Average score</div>
+            <div className="text-2xl font-black mt-1" style={{ color: getScoreColor(avgScore) }}>{avgScore || '-'}</div>
+          </div>
+        </div>
+
+        {loading && (
+          <div className="card flex items-center gap-2" style={{ color: 'var(--muted)' }}>
+            <Loader2 size={14} className="animate-spin" /> Loading live reports...
+          </div>
+        )}
+
+        {error && !loading && (
+          <div className="card flex items-center gap-2" style={{ borderColor: 'var(--danger-dim)', background: 'var(--danger-dim)' }}>
+            <AlertCircle size={14} style={{ color: 'var(--danger)' }} />
+            <span className="text-sm" style={{ color: 'var(--fg)' }}>{error}</span>
+          </div>
+        )}
+
+        {!loading && !error && completedAudits.length === 0 && (
+          <div className="card text-sm" style={{ color: 'var(--muted)' }}>
+            No completed audits yet. Finished audits will appear here automatically.
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-6">
-          {completedAudits.map((audit) => (
-            <div key={audit.id} className="card card-glow flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: 'var(--primary-dim)' }}>
-                <FileText size={18} style={{ color: 'var(--primary)' }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold mb-0.5">{audit.name}</div>
-                <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--muted)' }}>
-                  <span>{audit.domain}</span>
-                  <span>•</span>
-                  <span>{audit.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                  <span>•</span>
-                  <span style={{ color: getScoreColor(audit.fairnessScore || 0) }}>Score: {audit.fairnessScore}</span>
+          {completedAudits.map((audit) => {
+            const score = audit.fairnessScore || audit.results?.fairnessScore || 0;
+            return (
+              <div key={audit.id} className="card card-glow flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--primary-dim)' }}>
+                  <FileText size={18} style={{ color: 'var(--primary)' }} />
                 </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <div className="text-sm font-semibold">{audit.name}</div>
+                    <span className={`badge ${statusBadgeClass(audit.status)}`}>{audit.status}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs flex-wrap" style={{ color: 'var(--muted)' }}>
+                    <span>{audit.domain}</span>
+                    <span>•</span>
+                    <span>{formatAuditDate(audit.createdAt)}</span>
+                    <span>•</span>
+                    <span style={{ color: getScoreColor(score) }}>Score: {score}</span>
+                  </div>
+                </div>
+                <button className="btn btn-outline btn-sm shrink-0" onClick={() => exportPDF(audit.id)}>
+                  <Download size={12} /> PDF
+                </button>
               </div>
-              <button className="btn btn-outline btn-sm shrink-0"><Download size={12} /> PDF</button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </>

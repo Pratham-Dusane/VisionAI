@@ -20,6 +20,7 @@ class UpdateSettingsRequest(BaseModel):
     email_notifications: bool | None = None
     explain_rejection_enabled: bool | None = None
     explain_my_rejection_enabled: bool | None = None
+    org_logo_url: str | None = None
 
 
 class CreateApiKeyRequest(BaseModel):

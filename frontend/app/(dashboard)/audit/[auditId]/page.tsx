@@ -3,6 +3,7 @@
 import TopNav from '@/components/layout/TopNav';
 import {
   getAudit,
+  getOrgSettings,
   exportPDF,
   exportLegalJSON,
   exportAnonJSON,
@@ -13,7 +14,7 @@ import {
 } from '@/lib/api';
 import { useState, useEffect, use } from 'react';
 import {
-  Download, Share2, AlertTriangle, Shield, BarChart3,
+  Download, AlertTriangle, Shield, BarChart3,
   Brain, Wrench, Scale, CheckCircle2, Loader2, XCircle,
   Zap, Users, Eye, FileText, Layers, Info, Sparkles,
 } from 'lucide-react';
@@ -66,6 +67,136 @@ function riskLevelFromScore(score: number) {
   if (score >= 80) return 'LOW';
   if (score >= 60) return 'MEDIUM';
   return 'HIGH';
+}
+
+function isIdentifierField(fieldName: string) {
+  const normalized = fieldName.toLowerCase();
+  return normalized === 'id'
+    || normalized.endsWith('_id')
+    || normalized.includes('applicant_id')
+    || normalized.includes('record_id')
+    || normalized.includes('user_id')
+    || normalized.includes('customer_id');
+}
+
+function narrativeToPlainText(markdown: string) {
+  return markdown
+    .split('\n')
+    .map((line) => line.trim())
+    .map((line) => line
+      .replace(/^#{1,6}\s*/, '')
+      .replace(/^[-*]\s+/, '• ')
+      .replace(/^\d+\.\s+/, '• ')
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\*(.+?)\*/g, '$1')
+      .replace(/`(.+?)`/g, '$1')
+      .replace(/\[(.+?)\]\((.+?)\)/g, '$1')
+    )
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function asciiOnly(text: string) {
+  return text
+    .replace(/\u2013|\u2014/g, '-')
+    .replace(/\u2018|\u2019/g, "'")
+    .replace(/\u201c|\u201d/g, '"')
+    .replace(/\u2022/g, '- ')
+    .replace(/[^	\u000A\u000D\u0020-\u007E]/g, '');
+}
+
+function escapePdfText(text: string) {
+  return asciiOnly(text)
+    .replace(/\\/g, '\\\\')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)');
+}
+
+function buildSimplePdf(text: string, title = 'VisionAI Narrative') {
+  const normalized = asciiOnly(text).replace(/\r\n/g, '\n');
+  const maxCharsPerLine = 86;
+  const linesPerPage = 46;
+
+  const wrapLine = (line: string) => {
+    const trimmed = line.trim();
+    if (!trimmed) return [''];
+    if (trimmed.length <= maxCharsPerLine) return [trimmed];
+
+    const words = trimmed.split(/\s+/);
+    const wrapped: string[] = [];
+    let current = '';
+
+    for (const word of words) {
+      if (!current) {
+        current = word;
+        continue;
+      }
+      if ((current + ' ' + word).length <= maxCharsPerLine) {
+        current += ` ${word}`;
+      } else {
+        wrapped.push(current);
+        current = word;
+      }
+    }
+
+    if (current) wrapped.push(current);
+    return wrapped;
+  };
+
+  const wrappedLines = normalized
+    .split('\n')
+    .flatMap((line) => wrapLine(line))
+    .slice(0, 500);
+
+  const pages: string[][] = [];
+  for (let index = 0; index < wrappedLines.length; index += linesPerPage) {
+    pages.push(wrappedLines.slice(index, index + linesPerPage));
+  }
+  if (pages.length === 0) pages.push(['']);
+
+  const objects: string[] = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    `<< /Type /Pages /Kids [${pages.map((_, index) => `${4 + index * 2} 0 R`).join(' ')}] /Count ${pages.length} >>`,
+    `<< /Title (${escapePdfText(title)}) /Creator (VisionAI) /Producer (VisionAI) >>`,
+  ];
+  const fontObjectId = 4 + pages.length * 2;
+
+  pages.forEach((pageLines, pageIndex) => {
+    const contentLines = [
+      'BT',
+      '/F1 12 Tf',
+      '14 TL',
+      '72 760 Td',
+      ...pageLines.map((line, index) => {
+        const safeLine = escapePdfText(line || ' ');
+        return index === 0 ? `(${safeLine}) Tj` : `T* (${safeLine}) Tj`;
+      }),
+      'ET',
+    ];
+    const contentStream = contentLines.join('\n');
+    const pageObjectId = 4 + pageIndex * 2;
+    const contentObjectId = pageObjectId + 1;
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${fontObjectId} 0 R >> >> /Contents ${contentObjectId} 0 R >>`);
+    objects.push(`<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream`);
+  });
+
+  objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+
+  const pdfParts: string[] = ['%PDF-1.4\n'];
+  const offsets: number[] = [0];
+  for (let index = 0; index < objects.length; index++) {
+    offsets.push(pdfParts.join('').length);
+    pdfParts.push(`${index + 1} 0 obj\n${objects[index]}\nendobj\n`);
+  }
+
+  const xrefStart = pdfParts.join('').length;
+  let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (let index = 1; index < offsets.length; index++) {
+    xref += `${String(offsets[index]).padStart(10, '0')} 00000 n \n`;
+  }
+  const trailer = `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R /Info 3 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+  return new Blob([pdfParts.join(''), xref, trailer], { type: 'application/pdf' });
 }
 
 export default function AuditResultsPage({ params }: { params: Promise<{ auditId: string }> }) {
@@ -248,7 +379,6 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button className="btn btn-outline btn-sm" onClick={() => { navigator.clipboard.writeText(window.location.href); }}><Share2 size={13} /> Share</button>
             <button className="btn btn-outline btn-sm" onClick={onRunRedTeam} disabled={redTeamLoading || audit.dataOnly}>
               {redTeamLoading ? <Loader2 size={13} className="animate-spin" /> : <Shield size={13} />} Red Team
             </button>
@@ -732,9 +862,9 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
 
     const inlineFormat = (text: string) => {
       return text
-        .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#E8EAED">$1</strong>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--fg)">$1</strong>')
         .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        .replace(/`(.+?)`/g, '<code style="background:#1A1F2B;padding:1px 4px;border-radius:3px;font-size:11px;color:#3EC1D3">$1</code>');
+        .replace(/`(.+?)`/g, '<code style="background:var(--surface-2);padding:1px 4px;border-radius:3px;font-size:11px;color:var(--primary);border:1px solid var(--border)">$1</code>');
     };
 
     for (let i = 0; i < lines.length; i++) {
@@ -787,6 +917,33 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
             {MODES[mode].label} Narrative
           </span>
           <span className="text-xs ml-auto" style={{ color: 'var(--placeholder)' }}>Generated by Gemini AI</span>
+        </div>
+        <div className="flex items-center gap-2 mb-3">
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={!currentNarrative}
+            onClick={() => navigator.clipboard.writeText(narrativeToPlainText(currentNarrative || ''))}
+          >
+            Copy narrative
+          </button>
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={!currentNarrative}
+            onClick={() => {
+              const plainText = narrativeToPlainText(currentNarrative || '');
+              const blob = buildSimplePdf(plainText, `${MODES[mode].label} Narrative`);
+              const url = window.URL.createObjectURL(blob);
+              const anchor = document.createElement('a');
+              anchor.href = url;
+              anchor.download = `visionai-${mode}-narrative.pdf`;
+              document.body.appendChild(anchor);
+              anchor.click();
+              anchor.remove();
+              window.URL.revokeObjectURL(url);
+            }}
+          >
+            Download narrative
+          </button>
         </div>
         <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '8px' }}>
           {currentNarrative ? renderMarkdown(currentNarrative) : (
@@ -856,11 +1013,16 @@ function ModelTab({ audit }: { audit: any }) {
   const modelBias = audit.modelBias;
   const flip = audit.flipSensitivity;
   const [sampleRow, setSampleRow] = useState<Record<string, any>>({});
+  const [sampleRowIndex, setSampleRowIndex] = useState<number | null>(null);
   const [rowLoaded, setRowLoaded] = useState(false);
-  const [simLoading, setSimLoading] = useState(false);
+  const [decisionLoading, setDecisionLoading] = useState(false);
+  const [minimumFlipLoading, setMinimumFlipLoading] = useState(false);
   const [simError, setSimError] = useState('');
   const [decisionResult, setDecisionResult] = useState<any>(null);
   const [minimumFlipResult, setMinimumFlipResult] = useState<any>(null);
+  const [explainEnabled, setExplainEnabled] = useState(false);
+  const [explainLoading, setExplainLoading] = useState(false);
+  const [copyMsg, setCopyMsg] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -871,6 +1033,7 @@ function ModelTab({ audit }: { audit: any }) {
         const data = await getSampleRow(audit.id);
         if (!cancelled) {
           setSampleRow(data.sampleRow || {});
+          setSampleRowIndex(typeof data.rowIndex === 'number' ? data.rowIndex : null);
           setRowLoaded(true);
         }
       } catch (e: any) {
@@ -884,6 +1047,30 @@ function ModelTab({ audit }: { audit: any }) {
     return () => { cancelled = true; };
   }, [audit?.id, audit?.dataOnly]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOrgSettings() {
+      if (!audit?.orgId) return;
+      try {
+        setExplainLoading(true);
+        const payload = await getOrgSettings(audit.orgId);
+        if (!cancelled) {
+          setExplainEnabled(Boolean(payload?.settings?.explain_rejection_enabled));
+        }
+      } catch {
+        if (!cancelled) {
+          setExplainEnabled(false);
+        }
+      } finally {
+        if (!cancelled) setExplainLoading(false);
+      }
+    }
+
+    loadOrgSettings();
+    return () => { cancelled = true; };
+  }, [audit?.orgId]);
+
   if (!modelBias) return (
     <div className="card flex items-center gap-3 py-8" style={{ background: 'var(--primary-dim)', borderColor: 'var(--primary-dim)' }}>
       <Info size={20} style={{ color: 'var(--primary)' }} />
@@ -896,14 +1083,18 @@ function ModelTab({ audit }: { audit: any }) {
 
   const eqOdds = modelBias._equalized_odds || {};
   const editableFields = Object.entries(sampleRow)
-    .filter(([k]) => k !== audit.labelCol)
+    .filter(([k]) => k !== audit.labelCol && !isIdentifierField(k))
     .slice(0, 14);
+
+  const explainUrl = (sampleRowIndex != null)
+    ? `${window.location.origin}/explain/${audit.id}/${sampleRowIndex}`
+    : '';
 
   const changedFeatures = new Set((minimumFlipResult?.changedFields || []).map((x: any) => x.feature));
 
   async function onCheckDecision() {
     try {
-      setSimLoading(true);
+      setDecisionLoading(true);
       setSimError('');
       const result = await predictAuditDecision({
         auditId: audit.id,
@@ -914,13 +1105,13 @@ function ModelTab({ audit }: { audit: any }) {
     } catch (e: any) {
       setSimError(e?.message || 'Failed to predict decision');
     } finally {
-      setSimLoading(false);
+      setDecisionLoading(false);
     }
   }
 
   async function onFindMinimumFlip() {
     try {
-      setSimLoading(true);
+      setMinimumFlipLoading(true);
       setSimError('');
       const result = await findMinimumFlip({
         auditId: audit.id,
@@ -932,8 +1123,19 @@ function ModelTab({ audit }: { audit: any }) {
     } catch (e: any) {
       setSimError(e?.message || 'Failed to find minimum flip');
     } finally {
-      setSimLoading(false);
+      setMinimumFlipLoading(false);
     }
+  }
+
+  function onCopyExplainUrl() {
+    if (!explainUrl) return;
+    navigator.clipboard.writeText(explainUrl).then(() => {
+      setCopyMsg('Copied');
+      setTimeout(() => setCopyMsg(''), 1500);
+    }).catch(() => {
+      setCopyMsg('Copy failed');
+      setTimeout(() => setCopyMsg(''), 1500);
+    });
   }
 
   return (
@@ -946,7 +1148,6 @@ function ModelTab({ audit }: { audit: any }) {
               Edit the profile and test model decisions. Use minimum flip to find the smallest non-protected changes.
             </div>
           </div>
-          <span className="badge badge-medium">Phase 7</span>
         </div>
 
         {!rowLoaded ? (
@@ -967,15 +1168,38 @@ function ModelTab({ audit }: { audit: any }) {
             </div>
 
             <div className="flex items-center gap-2 mt-3">
-              <button className="btn btn-outline btn-sm" onClick={onCheckDecision} disabled={simLoading}>
-                {simLoading ? <Loader2 size={13} className="animate-spin" /> : null}
+              <button className="btn btn-outline btn-sm" onClick={onCheckDecision} disabled={decisionLoading || minimumFlipLoading}>
+                {decisionLoading ? <Loader2 size={13} className="animate-spin" /> : null}
                 Check Decision
               </button>
-              <button className="btn btn-primary btn-sm" onClick={onFindMinimumFlip} disabled={simLoading}>
-                {simLoading ? <Loader2 size={13} className="animate-spin" /> : null}
+              <button className="btn btn-primary btn-sm" onClick={onFindMinimumFlip} disabled={decisionLoading || minimumFlipLoading}>
+                {minimumFlipLoading ? <Loader2 size={13} className="animate-spin" /> : null}
                 Find Minimum Flip
               </button>
+              <button
+                className="btn btn-outline btn-sm"
+                disabled={!explainEnabled || !explainUrl || explainLoading}
+                onClick={() => window.open(explainUrl, '_blank', 'noopener,noreferrer')}
+              >
+                Open Explain Page
+              </button>
+              <button
+                className="btn btn-outline btn-sm"
+                disabled={!explainEnabled || !explainUrl || explainLoading}
+                onClick={onCopyExplainUrl}
+              >
+                Copy Explain URL
+              </button>
               {simError && <span className="text-xs" style={{ color: 'var(--danger)' }}>{simError}</span>}
+              {!simError && copyMsg && <span className="text-xs" style={{ color: 'var(--success)' }}>{copyMsg}</span>}
+            </div>
+
+            <div className="mt-2 text-xs" style={{ color: 'var(--placeholder)' }}>
+              {explainLoading
+                ? 'Checking Explain My Rejection setting...'
+                : explainEnabled
+                  ? `Public explanation is enabled. This link points to sample row ${sampleRowIndex ?? '-'}.`
+                  : 'Explain My Rejection is currently disabled in Settings.'}
             </div>
 
             {decisionResult && (
@@ -1668,7 +1892,7 @@ function LegalTab({ audit }: { audit: any }) {
                   </div>
                   <div className="text-xs font-medium mb-1" style={{ color: 'var(--primary)' }}>{r.clause}</div>
                   <div className="text-xs mb-2" style={{ color: 'var(--fg)' }}>{r.indicator_note || r.description}</div>
-                  <div className="flex flex-col gap-1 text-xs px-3 py-2 rounded bg-[#1A1F2B]">
+                  <div className="flex flex-col gap-1 text-xs px-3 py-2 rounded" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                     <div><span style={{ color: 'var(--muted)' }}>Triggered by:</span> <strong style={{ color: 'var(--danger)' }}>{r.triggered_by}</strong></div>
                     <div><span style={{ color: 'var(--muted)' }}>Mitigation:</span> <span style={{ color: 'var(--success)' }}>{r.recommended_mitigation}</span></div>
                   </div>

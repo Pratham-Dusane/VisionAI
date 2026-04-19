@@ -9,6 +9,7 @@ DEFAULT_ORG_SETTINGS = {
     "benchmarking_opt_in": False,
     "email_notifications": True,
     "explain_rejection_enabled": False,
+    "org_logo_url": "",
 }
 
 API_KEY_PREFIX = "vai_live_"
@@ -50,7 +51,10 @@ def get_org_settings(db, org_id: str) -> dict:
     merged = dict(DEFAULT_ORG_SETTINGS)
     for key in ALLOWED_KEYS:
         if key in saved:
-            merged[key] = bool(saved[key])
+            if key == "org_logo_url":
+                merged[key] = str(saved[key] or "").strip()
+            else:
+                merged[key] = bool(saved[key])
 
     # Backward compatibility with older key naming in stored documents.
     if "explain_rejection_enabled" not in saved and "explain_my_rejection_enabled" in saved:
@@ -65,7 +69,10 @@ def update_org_settings(db, org_id: str, patch: dict) -> dict:
     current = get_org_settings(db, org_id)
     for key in ALLOWED_KEYS:
         if key in patch and patch[key] is not None:
-            current[key] = bool(patch[key])
+            if key == "org_logo_url":
+                current[key] = str(patch[key] or "").strip()
+            else:
+                current[key] = bool(patch[key])
 
     db.collection("organizations").document(org_id).set(
         {
