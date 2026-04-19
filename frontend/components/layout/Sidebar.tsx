@@ -68,7 +68,7 @@ export default function Sidebar() {
   return (
     <aside
       className={`fixed left-4 top-4 z-50 flex flex-col transition-all duration-300 rounded-3xl ${
-        collapsed ? 'w-[60px]' : 'w-[220px]'
+        collapsed ? 'w-[64px]' : 'w-[232px]'
       }`}
       style={{
         height: 'calc(100vh - 32px)',
@@ -77,7 +77,7 @@ export default function Sidebar() {
       }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 h-[56px] shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+      <div className="flex items-center gap-2 px-4 h-[64px] shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
           style={{ background: 'var(--primary)' }}
@@ -93,7 +93,7 @@ export default function Sidebar() {
       </div>
 
       {/* Compose Button */}
-      <div className="px-3 py-3">
+      <div className="px-3 py-4">
         <Link
           href="/audit/new"
           className={`flex items-center gap-3 w-full bg-white transition-shadow shadow-sm hover:shadow-md border border-border-light text-primary font-semibold ${
@@ -107,7 +107,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-1 overflow-y-auto">
+      <nav className="flex-1 py-2 overflow-y-auto">
         {NAV_GROUPS.map((group, groupIdx) => (
           <div key={group.title} className={groupIdx > 0 ? 'mt-4' : ''}>
             {!collapsed && (
@@ -122,8 +122,8 @@ export default function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 mx-2 mb-0.5 rounded-full transition-all duration-200 group ${
-                    collapsed ? 'justify-center px-0 py-2.5' : 'px-4 py-2.5'
+                  className={`flex items-center gap-3 mx-2 mb-1 rounded-full transition-all duration-200 group ${
+                    collapsed ? 'justify-center px-0 py-2.5' : 'px-4 py-3'
                   }`}
                   style={{
                     background: active ? 'var(--sidebar-active-bg)' : 'transparent',
