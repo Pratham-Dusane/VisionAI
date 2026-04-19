@@ -18,6 +18,16 @@ VISIONAI_BACKEND_RELOAD=1 python dev_server.py
 
 Reload mode uses constrained watch paths and excludes heavy directories.
 
+## One-command install from repo root
+
+From the repository root, install Python dependencies with:
+
+```bash
+pip install -r requirements.txt
+```
+
+This root file delegates to `backend/requirements.txt` so the backend dependency list stays in one place.
+
 ## Phase 8 CI/CD Integration
 
 This backend now supports a CI fairness gate endpoint:
