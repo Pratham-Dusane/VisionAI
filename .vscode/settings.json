@@ -1,7 +1,27 @@
-{
+﻿{
     "kiroAgent.configureMCP": "Disabled",
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/**": true,
+        "**/.next/**": true,
+        "**/.venv/**": true,
+        "**/__pycache__/**": true,
+        "**/backend/temp_uploads/**": true
+    },
+    "search.exclude": {
+        "**/.next/**": true,
+        "**/.venv/**": true,
+        "**/node_modules/**": true,
+        "**/__pycache__/**": true
+    },
+    "python.analysis.exclude": [
+        "**/.venv/**",
+        "**/node_modules/**",
+        "**/.next/**"
+    ],
     "chat.tools.terminal.autoApprove": {
-        "/^cd \\.\\.; cd backend; python -m py_compile main\\.py routers\\\\audits\\.py services\\\\analysis\\\\pipeline\\.py services\\\\reporting\\\\audit_serializer\\.py services\\\\reporting\\\\pdf_generator\\.py$/": {
+        "/^cd \\.\\.; cd backend; python -m py_compile main\\.py routers\\audits\\.py services\\analysis\\pipeline\\.py services\\reporting\\audit_serializer\\.py services\\reporting\\pdf_generator\\.py$/": {
             "approve": true,
             "matchCommandLine": true
         }

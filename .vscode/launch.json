@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "VisionAI Backend (Safe)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/dev_server.py",
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "VisionAI Frontend (Safe)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/frontend"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "VisionAI Full Stack (Safe)",
+      "configurations": [
+        "VisionAI Backend (Safe)",
+        "VisionAI Frontend (Safe)"
+      ]
+    }
+  ]
+}

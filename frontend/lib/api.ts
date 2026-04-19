@@ -53,9 +53,9 @@ export async function createAudit(params: {
   return res.json() as Promise<{
     auditId: string;
     status: string;
-    schema: any;
-    proxies: any[];
-    profiles: any[];
+    schema: Record<string, unknown>;
+    proxies: Array<Record<string, unknown>>;
+    profiles: Array<Record<string, unknown>>;
   }>;
 }
 
@@ -165,13 +165,13 @@ export async function getSampleRow(auditId: string) {
   return res.json() as Promise<{
     auditId: string;
     rowIndex: number;
-    sampleRow: Record<string, any>;
+    sampleRow: Record<string, unknown>;
   }>;
 }
 
 export async function predictAuditDecision(params: {
   auditId: string;
-  values: Record<string, any>;
+  values: Record<string, unknown>;
   threshold?: number;
 }) {
   const res = await fetch(`${API_BASE}/api/audits/${params.auditId}/predict`, {
@@ -189,13 +189,13 @@ export async function predictAuditDecision(params: {
     score: number;
     decision: 'ACCEPT' | 'REJECT';
     threshold: number;
-    profile: Record<string, any>;
+    profile: Record<string, unknown>;
   }>;
 }
 
 export async function findMinimumFlip(params: {
   auditId: string;
-  values: Record<string, any>;
+  values: Record<string, unknown>;
   threshold?: number;
   maxChanges?: number;
 }) {
@@ -278,4 +278,69 @@ export async function updateOrgSettings(orgId: string, settings: {
   }
 
   return res.json();
+}
+
+export type OrgApiKey = {
+  keyId: string;
+  label: string;
+  masked: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  lastUsedAt?: string | null;
+  revokedAt?: string | null;
+};
+
+export async function getOrgApiKeys(orgId: string) {
+  const res = await fetch(`${API_BASE}/api/orgs/${orgId}/api-keys`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to fetch API keys (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    orgId: string;
+    apiKeys: OrgApiKey[];
+  }>;
+}
+
+export async function createOrgApiKey(orgId: string, label?: string) {
+  const res = await fetch(`${API_BASE}/api/orgs/${orgId}/api-keys`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to create API key (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    orgId: string;
+    keyId: string;
+    apiKey: string;
+    masked: string;
+    label: string;
+    active: boolean;
+    createdAt: string;
+  }>;
+}
+
+export async function revokeOrgApiKey(orgId: string, keyId: string) {
+  const res = await fetch(`${API_BASE}/api/orgs/${orgId}/api-keys/${keyId}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to revoke API key (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    orgId: string;
+    keyId: string;
+    revoked: boolean;
+  }>;
 }
