@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { listAudits, exportPDF } from '@/lib/api';
 import TopNav from '@/components/layout/TopNav';
-import { FileText, Download, Filter, RefreshCw, AlertCircle, CircleDot, CheckCircle2, Loader2 } from 'lucide-react';
+import { FileText, Download, Filter, RefreshCw, AlertCircle, CircleDot, CheckCircle2 } from 'lucide-react';
 import { getScoreColor } from '@/lib/mock-data';
 
 function formatAuditDate(value: unknown) {
@@ -123,8 +123,18 @@ export default function ReportsPage() {
         </div>
 
         {loading && (
-          <div className="card flex items-center gap-2" style={{ color: 'var(--muted)' }}>
-            <Loader2 size={14} className="animate-spin" /> Loading live reports...
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="card card-glow flex items-start gap-3">
+                <div className="skeleton w-10 h-10 rounded-lg shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="skeleton" style={{ width: '42%', height: 14 }} />
+                  <div className="skeleton" style={{ width: '72%', height: 12 }} />
+                  <div className="skeleton" style={{ width: '52%', height: 12 }} />
+                </div>
+                <div className="skeleton w-14 h-8 rounded-lg shrink-0" />
+              </div>
+            ))}
           </div>
         )}
 

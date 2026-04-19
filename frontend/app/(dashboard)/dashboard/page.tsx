@@ -13,7 +13,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Loader2,
   ShieldAlert,
   ActivitySquare
 } from 'lucide-react';
@@ -243,9 +242,14 @@ export default function DashboardPage() {
 
         {/* Loading */}
         {loading && (
-          <div className="card flex items-center justify-center py-12 rounded-3xl">
-            <Loader2 size={24} className="animate-spin" style={{ color: 'var(--primary)' }} />
-            <span className="ml-3 text-sm" style={{ color: 'var(--muted)' }}>Loading audits...</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="card space-y-3 rounded-3xl">
+                <div className="skeleton" style={{ width: '38%', height: 12 }} />
+                <div className="skeleton" style={{ width: '62%', height: 28 }} />
+                <div className="skeleton" style={{ width: '84%', height: 12 }} />
+              </div>
+            ))}
           </div>
         )}
 

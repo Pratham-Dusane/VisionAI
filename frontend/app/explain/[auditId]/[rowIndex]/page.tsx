@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { AlertTriangle, CheckCircle2, Link2, Loader2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Link2 } from 'lucide-react';
 import { getExplainMyRejection } from '@/lib/api';
 
 export default function ExplainMyRejectionPage({
@@ -39,9 +39,14 @@ export default function ExplainMyRejectionPage({
   if (loading) {
     return (
       <main className="min-h-screen p-6 flex items-center justify-center" style={{ background: 'var(--surface)' }}>
-        <div className="card flex items-center gap-2">
-          <Loader2 size={16} className="animate-spin" style={{ color: 'var(--primary)' }} />
-          <span className="text-sm" style={{ color: 'var(--muted)' }}>Loading your explanation...</span>
+        <div className="card w-full max-w-2xl space-y-4">
+          <div className="skeleton" style={{ width: '38%', height: 12 }} />
+          <div className="skeleton" style={{ width: '58%', height: 22 }} />
+          <div className="space-y-2">
+            <div className="skeleton" style={{ width: '92%', height: 12 }} />
+            <div className="skeleton" style={{ width: '84%', height: 12 }} />
+            <div className="skeleton" style={{ width: '74%', height: 12 }} />
+          </div>
         </div>
       </main>
     );

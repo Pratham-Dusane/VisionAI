@@ -13,7 +13,6 @@ import {
   Rocket,
   AlertTriangle,
   Info,
-  Loader2,
   CheckCircle2,
   XCircle,
   Calendar,
@@ -115,6 +114,38 @@ function CustomDatePicker({ value, onChange }: { value: string, onChange: (v: st
                 </button>
               )
             })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SkeletonUploadState({
+  title,
+  progress,
+  tone = 'primary',
+}: {
+  title: string;
+  progress?: number;
+  tone?: 'primary' | 'warning';
+}) {
+  const toneColor = tone === 'warning' ? 'var(--warning)' : 'var(--primary)';
+  return (
+    <div className="w-full max-w-sm">
+      <div className="skeleton mx-auto mb-4" style={{ width: 56, height: 56, borderRadius: '50%' }} />
+      <div className="space-y-2">
+        <div className="skeleton" style={{ height: 14, width: '72%', margin: '0 auto' }} />
+        <div className="skeleton" style={{ height: 12, width: '44%', margin: '0 auto' }} />
+      </div>
+      {typeof progress === 'number' && (
+        <div className="mt-4">
+          <div className="flex justify-between text-xs font-semibold mb-2" style={{ color: toneColor }}>
+            <span>{title}</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: toneColor }} />
           </div>
         </div>
       )}
@@ -357,25 +388,12 @@ export default function NewAuditPage() {
                   {dataFile ? (
                     <div className="w-full px-6 flex flex-col items-center">
                       {uploadProgress?.state === 'uploading' ? (
-                        <div className="w-full max-w-sm">
-                          <Loader2 size={28} className="mx-auto mb-4 animate-spin" style={{ color: 'var(--primary)' }} />
-                          <div className="flex justify-between text-xs font-semibold mb-2" style={{ color: 'var(--primary)' }}>
-                            <span>Uploading {dataFile.name}</span>
-                            <span>{uploadProgress.progress}%</span>
-                          </div>
-                          <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-                            <div
-                              className="h-full rounded-full transition-all duration-300"
-                              style={{ width: `${uploadProgress.progress}%`, background: 'var(--primary)' }}
-                            />
-                          </div>
-                        </div>
+                        <SkeletonUploadState title={`Uploading ${dataFile.name}`} progress={uploadProgress.progress} tone="primary" />
                       ) : analyzing ? (
                         <div className="w-full max-w-sm text-center">
-                          <Loader2 size={28} className="mx-auto mb-3 animate-spin" style={{ color: 'var(--warning)' }} />
-                          <div className="text-sm font-medium" style={{ color: 'var(--warning)' }}>
-                            Processing schema...
-                          </div>
+                          <div className="skeleton mx-auto mb-3" style={{ width: 56, height: 56, borderRadius: '50%' }} />
+                          <div className="skeleton mx-auto mb-2" style={{ width: '58%', height: 14 }} />
+                          <div className="skeleton mx-auto" style={{ width: '42%', height: 12 }} />
                         </div>
                       ) : columns.length > 0 ? (
                         <div className="text-center w-full max-w-sm">
@@ -409,7 +427,7 @@ export default function NewAuditPage() {
                       <Upload size={32} style={{ color: 'var(--primary)', margin: '0 auto 12px' }} />
                       <div className="text-[15px] font-semibold mb-1" style={{ color: 'var(--fg)' }}>Drag & drop your dataset</div>
                       <div className="text-xs font-medium" style={{ color: 'var(--placeholder)' }}>
-                        .csv, .json, .parquet — up to 500MB
+                        .csv, .json, .parquet- up to 500MB
                       </div>
                     </div>
                   )}
@@ -488,19 +506,7 @@ export default function NewAuditPage() {
                     {modelFile ? (
                       <div className="w-full px-6 flex flex-col items-center">
                         {modelUploadProgress?.state === 'uploading' ? (
-                          <div className="w-full max-w-sm">
-                            <Loader2 size={28} className="mx-auto mb-4 animate-spin" style={{ color: 'var(--warning)' }} />
-                            <div className="flex justify-between text-xs font-semibold mb-2" style={{ color: 'var(--warning)' }}>
-                              <span>Uploading {modelFile.name}</span>
-                              <span>{modelUploadProgress.progress}%</span>
-                            </div>
-                            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-                              <div
-                                className="h-full rounded-full transition-all duration-300"
-                                style={{ width: `${modelUploadProgress.progress}%`, background: 'var(--warning)' }}
-                              />
-                            </div>
-                          </div>
+                            <SkeletonUploadState title={`Uploading ${modelFile.name}`} progress={modelUploadProgress.progress} tone="warning" />
                         ) : modelUploadProgress?.state === 'error' ? (
                           <div className="text-center w-full max-w-sm">
                             <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--danger-dim)' }}>
@@ -533,7 +539,7 @@ export default function NewAuditPage() {
                         <Cpu size={32} style={{ color: 'var(--warning)', margin: '0 auto 12px' }} />
                         <div className="text-[15px] font-semibold mb-1" style={{ color: 'var(--fg)' }}>Upload your model</div>
                         <div className="text-xs font-medium" style={{ color: 'var(--placeholder)' }}>
-                          .pkl, .onnx, .joblib — up to 500MB
+                          .pkl, .onnx, .joblib- up to 500MB
                         </div>
                       </div>
                     )}
@@ -979,7 +985,7 @@ export default function NewAuditPage() {
                 }}
               >
                 {launching ? (
-                  <><Loader2 size={16} className="animate-spin" /> Analyzing...</>
+                  <span className="inline-flex items-center gap-2"><span className="skeleton" style={{ width: 14, height: 14, borderRadius: '50%' }} /> Analyzing...</span>
                 ) : (
                   <><Rocket size={16} /> Launch Audit</>
                 )}
