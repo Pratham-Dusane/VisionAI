@@ -119,6 +119,19 @@ npm run dev:turbo
 - Top navigation bell badge now reads unread drift alerts count from backend
 - Top navigation bell now supports notification list + mark read + mark all read
 
+## Responsive Layout Notes
+
+- Dashboard shell now supports mobile-first behavior:
+  - Sidebar switches to an off-canvas drawer on small screens
+  - Content area no longer keeps a fixed desktop left margin on mobile
+- Top navigation adapts on narrow widths:
+  - Search input is hidden on small screens
+  - Notification panel width scales to viewport
+- Core pages are responsive across breakpoints:
+  - Dashboard, Drift, Reports, Settings, New Audit, Audit Detail, and Explain page
+  - Multi-column card grids collapse to 1-2 columns on narrow widths
+  - Large tables use horizontal scroll wrappers to prevent layout breakage
+
 ## API Expectations
 
 Frontend expects the backend to expose:

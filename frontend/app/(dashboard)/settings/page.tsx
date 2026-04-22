@@ -168,10 +168,10 @@ export default function SettingsPage() {
   return (
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Settings' }]} />
-      <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
+      <div className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         <h1 className="page-title mb-2">Settings</h1>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Organization */}
           <div className="card space-y-3">
             <div className="card-title flex items-center gap-2 mb-4">

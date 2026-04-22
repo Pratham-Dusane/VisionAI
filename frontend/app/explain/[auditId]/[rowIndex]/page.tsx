@@ -38,7 +38,7 @@ export default function ExplainMyRejectionPage({
 
   if (loading) {
     return (
-      <main className="min-h-screen p-6 flex items-center justify-center" style={{ background: 'var(--surface)' }}>
+      <main className="min-h-screen p-4 sm:p-6 flex items-center justify-center" style={{ background: 'var(--surface)' }}>
         <div className="card w-full max-w-2xl space-y-4">
           <div className="skeleton" style={{ width: '38%', height: 12 }} />
           <div className="skeleton" style={{ width: '58%', height: 22 }} />
@@ -54,7 +54,7 @@ export default function ExplainMyRejectionPage({
 
   if (error || !data) {
     return (
-      <main className="min-h-screen p-6 flex items-center justify-center" style={{ background: 'var(--surface)' }}>
+      <main className="min-h-screen p-4 sm:p-6 flex items-center justify-center" style={{ background: 'var(--surface)' }}>
         <div className="card max-w-2xl">
           <div className="text-sm font-semibold" style={{ color: 'var(--danger)' }}>Unable to display explanation</div>
           <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{error || 'No explanation data found'}</div>
@@ -64,7 +64,7 @@ export default function ExplainMyRejectionPage({
   }
 
   return (
-    <main className="min-h-screen p-6" style={{ background: 'var(--surface)' }}>
+    <main className="min-h-screen p-4 sm:p-6" style={{ background: 'var(--surface)' }}>
       <div className="max-w-3xl mx-auto space-y-4 animate-fade-in">
         <div className="card" style={{ borderColor: 'var(--primary-dim)', background: 'var(--primary-dim)' }}>
           <div className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>Explain My Rejection</div>

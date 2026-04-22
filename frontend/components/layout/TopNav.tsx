@@ -98,7 +98,8 @@ export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbI
 
   return (
     <header
-      className="h-[72px] flex items-center justify-between px-6 md:px-8 shrink-0 sticky top-0 z-40"
+      data-tour="welcome"
+      className="h-[64px] sm:h-[72px] flex items-center justify-between pl-14 pr-3 sm:px-6 md:px-8 shrink-0 sticky top-0 z-40"
       style={{
         background: 'var(--topnav-bg)',
         backdropFilter: 'blur(12px)',
@@ -106,7 +107,7 @@ export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbI
       }}
     >
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-[13px]">
+      <div className="flex items-center gap-1.5 text-[12px] sm:text-[13px] min-w-0 overflow-x-auto whitespace-nowrap">
         {breadcrumbs.map((item, i) => (
           <span key={i} className="flex items-center gap-1.5">
             {i > 0 && <span style={{ color: 'var(--border-light)' }}>/</span>}
@@ -124,13 +125,13 @@ export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbI
       {/* Right side */}
       <div className="flex items-center gap-3">
         {/* Search */}
-        <div className="relative">
+        <div className="relative hidden md:block">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--placeholder)' }} />
           <input
             type="text"
             placeholder="Search audits..."
             className="input pl-8 text-xs"
-            style={{ width: 220, padding: '8px 10px 8px 30px', background: 'var(--surface-2)' }}
+            style={{ width: 200, padding: '8px 10px 8px 30px', background: 'var(--surface-2)' }}
           />
         </div>
 
@@ -154,7 +155,7 @@ export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbI
 
           {notificationsOpen && (
             <div
-              className="absolute right-0 mt-2 w-80 rounded-xl border shadow-xl p-3 z-50"
+              className="absolute right-0 mt-2 w-[min(88vw,20rem)] rounded-xl border shadow-xl p-3 z-50"
               style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
             >
               <div className="flex items-center justify-between mb-2">
@@ -192,6 +193,16 @@ export default function TopNav({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbI
             </div>
           )}
         </div>
+
+        {/* Help / Tour */}
+        <button
+          className="tour-help-btn"
+          data-tour="done"
+          title="Take a tour"
+          onClick={() => window.dispatchEvent(new CustomEvent('start-tour'))}
+        >
+          ?
+        </button>
       </div>
     </header>
   );

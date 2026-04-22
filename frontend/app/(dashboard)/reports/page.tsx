@@ -85,7 +85,7 @@ export default function ReportsPage() {
   return (
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Reports' }]} />
-      <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
+      <div className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-lg font-bold">Audit Reports</h1>
@@ -103,7 +103,7 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="card">
             <div className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Completed</div>
             <div className="text-2xl font-black mt-1">{completedAudits.length}</div>
@@ -151,7 +151,7 @@ export default function ReportsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {completedAudits.map((audit) => {
             const score = audit.fairnessScore || audit.results?.fairnessScore || 0;
             return (

@@ -24,6 +24,11 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedPair, setSelectedPair] = useState<string>('');
   const [selectedCell, setSelectedCell] = useState<any>(null);
+  const [hoveredCell, setHoveredCell] = useState<{
+    x: number;
+    y: number;
+    entry: IntersectionalHeatmapProps['data'][number];
+  } | null>(null);
 
   // Extract available attribute pairs
   const pairs = new Map<string, { colA: string; colB: string }>();
@@ -54,29 +59,36 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
     const rowValues = Array.from(new Set(filtered.map((d) => d.val_a)));
     const colValues = Array.from(new Set(filtered.map((d) => d.val_b)));
 
-    const cellSize = Math.min(
-      Math.floor((containerRef.current.clientWidth - 140) / Math.max(colValues.length, 1)),
-      80
+    const cellSize = Math.max(
+      34,
+      Math.min(
+        Math.floor((containerRef.current.clientWidth - 120) / Math.max(colValues.length, 1)),
+        56
+      )
     );
 
     const margin = { top: 50, right: 20, bottom: 10, left: 120 };
     const width = margin.left + colValues.length * cellSize + margin.right;
     const height = margin.top + rowValues.length * cellSize + margin.bottom;
+    const cellGap = 2;
 
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
     svg.attr('width', width).attr('height', height);
 
+    const diColorScale = d3.scaleLinear<string>()
+      .domain([0.5, 0.8, 1.1])
+      .range(['#B42318', '#9EA5B3', '#157347'])
+      .clamp(true);
+
     const colorScale = (di: number | null) => {
-      if (di === null) return '#2A3040';
-      if (di >= 0.8) return '#06D6A0';
-      if (di >= 0.6) return '#FF9A00';
-      return '#FF165D';
+      if (di === null) return '#8B95A7';
+      return diColorScale(di);
     };
 
     const opacityScale = (di: number | null) => {
-      if (di === null) return 0.3;
-      return 0.15 + Math.min(Math.abs(1 - di), 0.5) * 1.4;
+      if (di === null) return 0.32;
+      return 0.38 + Math.min(Math.abs(1 - di), 0.45) * 0.85;
     };
 
     // Column labels (top)
@@ -123,16 +135,16 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
 
         // Background rect
         cell.append('rect')
-          .attr('x', x + 1)
-          .attr('y', y + 1)
-          .attr('width', cellSize - 2)
-          .attr('height', cellSize - 2)
+          .attr('x', x + cellGap / 2)
+          .attr('y', y + cellGap / 2)
+          .attr('width', cellSize - cellGap)
+          .attr('height', cellSize - cellGap)
           .attr('rx', 4)
           .attr('fill', colorScale(di))
           .attr('fill-opacity', opacityScale(di))
           .attr('stroke', colorScale(di))
           .attr('stroke-width', 1)
-          .attr('stroke-opacity', 0.3);
+          .attr('stroke-opacity', 0.45);
 
         // DI value text
         cell.append('text')
@@ -140,7 +152,7 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
           .attr('y', y + cellSize / 2 + 1)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')
-          .attr('fill', di !== null ? colorScale(di) : 'var(--placeholder)')
+          .attr('fill', di !== null ? 'var(--fg)' : 'var(--placeholder)')
           .attr('font-size', 13)
           .attr('font-weight', 700)
           .text(di !== null ? di.toFixed(2) : '-');
@@ -160,7 +172,20 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
         if (entry) {
           cell.on('click', () => {
             setSelectedCell(entry);
-          });
+          })
+            .on('mouseenter', (event) => {
+              if (!containerRef.current) return;
+              const [mx, my] = d3.pointer(event, containerRef.current);
+              setHoveredCell({ x: mx + 12, y: my + 12, entry });
+            })
+            .on('mousemove', (event) => {
+              if (!containerRef.current) return;
+              const [mx, my] = d3.pointer(event, containerRef.current);
+              setHoveredCell({ x: mx + 12, y: my + 12, entry });
+            })
+            .on('mouseleave', () => {
+              setHoveredCell(null);
+            });
         }
       });
     });
@@ -217,24 +242,65 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
           </h4>
           <div className="flex items-center gap-3 text-xs">
             <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: '#06D6A0' }} />
-              Pass (≥0.8)
+              <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: '#157347' }} />
+              Near parity
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: '#FF9A00' }} />
-              Medium (0.6–0.8)
+              <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: '#9EA5B3' }} />
+              Moderate delta
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: '#FF165D' }} />
-              Critical (&lt;0.6)
+              <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: '#B42318' }} />
+              High impact
             </span>
           </div>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4" style={{ position: 'relative' }}>
           <div ref={containerRef} className="flex-1 overflow-x-auto">
             <svg ref={svgRef} style={{ display: 'block' }} />
           </div>
+
+          {hoveredCell && (
+            <div
+              className="pointer-events-none"
+              style={{
+                position: 'absolute',
+                left: hoveredCell.x,
+                top: hoveredCell.y,
+                zIndex: 12,
+                minWidth: 230,
+                maxWidth: 280,
+                padding: '10px 12px',
+                borderRadius: 12,
+                border: '1px solid color-mix(in srgb, var(--border) 75%, transparent)',
+                background: 'color-mix(in srgb, var(--surface) 83%, transparent)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 20px rgba(0, 0, 0, 0.18)',
+                color: 'var(--fg)',
+              }}
+            >
+              <div className="text-[11px] font-bold mb-1">{hoveredCell.entry.group}</div>
+              <div className="text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>
+                DI: <strong style={{ color: 'var(--fg)' }}>{hoveredCell.entry.di_vs_overall?.toFixed(3) ?? '-'}</strong>
+              </div>
+              <div className="text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>
+                Delta from parity: <strong style={{ color: 'var(--fg)' }}>
+                  {hoveredCell.entry.di_vs_overall != null
+                    ? `${hoveredCell.entry.di_vs_overall >= 1 ? '+' : ''}${(hoveredCell.entry.di_vs_overall - 1).toFixed(3)}`
+                    : '-'}
+                </strong>
+              </div>
+              <div className="text-[11px] leading-relaxed mt-1" style={{ color: 'var(--placeholder)' }}>
+                Mathematical impact: {hoveredCell.entry.di_vs_overall == null
+                  ? 'insufficient support for robust estimate.'
+                  : hoveredCell.entry.di_vs_overall < 1
+                    ? `${((1 - hoveredCell.entry.di_vs_overall) * 100).toFixed(1)}% lower positive outcome likelihood vs parity baseline.`
+                    : `${((hoveredCell.entry.di_vs_overall - 1) * 100).toFixed(1)}% higher positive outcome likelihood vs parity baseline.`}
+              </div>
+            </div>
+          )}
 
           {/* Side panel on cell click */}
           {selectedCell && (
@@ -276,8 +342,15 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
                   </span>
                 </div>
                 {selectedCell.low_confidence && (
-                  <div className="text-xs mt-1 p-1.5 rounded" style={{ background: 'var(--surface)', color: 'var(--accent)' }}>
-                    ⚠ {selectedCell.statistical_note || 'Low confidence (n < 30)'}
+                  <div
+                    className="text-xs mt-1 p-2 rounded"
+                    style={{
+                      background: 'color-mix(in srgb, var(--warning-dim) 72%, var(--surface))',
+                      border: '1px solid color-mix(in srgb, var(--warning) 36%, transparent)',
+                      color: 'var(--warning)',
+                    }}
+                  >
+                    {selectedCell.statistical_note || 'Low confidence estimate (sample size under 30).'}
                   </div>
                 )}
               </div>

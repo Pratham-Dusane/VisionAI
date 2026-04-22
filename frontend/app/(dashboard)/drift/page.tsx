@@ -175,7 +175,7 @@ export default function DriftPage() {
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Drift Monitor' }]} />
 
-      <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
+      <div className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         {error && (
           <div className="card" style={{ borderColor: 'color-mix(in srgb, var(--danger) 45%, transparent)', background: 'var(--danger-dim)' }}>
             <div className="text-sm" style={{ color: 'var(--danger)' }}>{error}</div>
@@ -211,7 +211,7 @@ export default function DriftPage() {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
           <div className="card">
             <div className="label-text mb-2" style={{ color: 'var(--muted)' }}>Current Score</div>
             <div className="text-xl font-bold" style={{ color: latest ? getScoreColor(latest.fairnessScore) : 'var(--muted)' }}>
@@ -269,7 +269,7 @@ export default function DriftPage() {
                 {formStatus.message}
               </div>
             )}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>
                   <Database size={11} className="inline mr-1" /> Data File
@@ -301,7 +301,7 @@ export default function DriftPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3 mt-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
               <div>
                 <label className="label-text block mb-2" style={{ color: 'var(--muted)' }}>Label Column</label>
                 <input className="input" value={labelCol} onChange={(e) => setLabelCol(e.target.value)} />
@@ -328,40 +328,42 @@ export default function DriftPage() {
           <div className="px-4 py-3 card-title" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
             Batch History
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Fairness Score</th>
-                <th>Worst DI</th>
-                <th>At-Risk Attributes</th>
-                <th>Batch Size</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...batches].reverse().map((b) => {
-                const atRisk = (b.metrics || [])
-                  .filter((metric) => (metric.diRatio ?? 1) < 0.8)
-                  .map((metric) => metric.protectedAttribute);
-
-                return (
-                <tr key={b.id}>
-                  <td className="font-medium">{b.batchDate.slice(0, 10)}</td>
-                  <td>
-                    <span style={{ color: getScoreColor(b.fairnessScore) }}>{b.fairnessScore}</span>
-                  </td>
-                  <td style={{ color: b.worstDi < 0.8 ? 'var(--danger)' : 'var(--success)' }}>
-                    {Number(b.worstDi ?? 0).toFixed(2)}
-                  </td>
-                  <td style={{ color: atRisk.length > 0 ? 'var(--danger)' : 'var(--success)' }}>
-                    {atRisk.length > 0 ? atRisk.join(', ') : 'None'}
-                  </td>
-                  <td style={{ color: 'var(--muted)' }}>{Number(b.rowCount ?? 0).toLocaleString()}</td>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Fairness Score</th>
+                  <th>Worst DI</th>
+                  <th>At-Risk Attributes</th>
+                  <th>Batch Size</th>
                 </tr>
-                );
-              })}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {[...batches].reverse().map((b) => {
+                  const atRisk = (b.metrics || [])
+                    .filter((metric) => (metric.diRatio ?? 1) < 0.8)
+                    .map((metric) => metric.protectedAttribute);
+
+                  return (
+                  <tr key={b.id}>
+                    <td className="font-medium">{b.batchDate.slice(0, 10)}</td>
+                    <td>
+                      <span style={{ color: getScoreColor(b.fairnessScore) }}>{b.fairnessScore}</span>
+                    </td>
+                    <td style={{ color: b.worstDi < 0.8 ? 'var(--danger)' : 'var(--success)' }}>
+                      {Number(b.worstDi ?? 0).toFixed(2)}
+                    </td>
+                    <td style={{ color: atRisk.length > 0 ? 'var(--danger)' : 'var(--success)' }}>
+                      {atRisk.length > 0 ? atRisk.join(', ') : 'None'}
+                    </td>
+                    <td style={{ color: 'var(--muted)' }}>{Number(b.rowCount ?? 0).toLocaleString()}</td>
+                  </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </>

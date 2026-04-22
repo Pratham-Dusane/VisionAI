@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Eye, Mail, Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
+const GUIDED_SANDBOX_ARMED_KEY = 'visionai-guided-sandbox-armed';
+const GUIDED_SANDBOX_DISABLED_KEY = 'visionai-guided-sandbox-disabled';
+
 export default function LoginPage() {
   const router = useRouter();
   const { signIn, signUp, signInWithGoogle, user, org, loading, orgLoading } = useAuth();
@@ -41,6 +44,12 @@ export default function LoginPage() {
           return;
         }
         await signUp(email, password, displayName);
+        try {
+          window.localStorage.setItem(GUIDED_SANDBOX_ARMED_KEY, '1');
+          window.localStorage.removeItem(GUIDED_SANDBOX_DISABLED_KEY);
+        } catch {
+          // Non-blocking localStorage write for guided sandbox kickoff.
+        }
       } else {
         await signIn(email, password);
       }

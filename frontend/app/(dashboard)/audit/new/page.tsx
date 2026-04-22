@@ -313,7 +313,7 @@ export default function NewAuditPage() {
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'New Audit' }]} />
 
-      <div className="flex-1 p-6 max-w-7xl mx-auto w-full animate-fade-in">
+      <div className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full animate-fade-in">
         {/* Stepper */}
         <div className="flex items-center gap-0 mb-6 max-w-lg mx-auto">
           {[1, 2, 3].map((s) => (
@@ -340,7 +340,7 @@ export default function NewAuditPage() {
         {/* Step 1 - Upload */}
         {step === 1 && (
           <div className="space-y-4 max-w-4xl mx-auto">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {/* Dataset Upload */}
               <div>
                 <label className="text-xs font-semibold mb-2 block" style={{ color: 'var(--muted)' }}>
@@ -642,7 +642,7 @@ export default function NewAuditPage() {
         {/* Step 2 - Context Definition */}
         {step === 2 && (
           <div className="max-w-3xl mx-auto space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--muted)' }}>
                   Audit Name <span style={{ color: 'var(--danger)' }}>*</span>
@@ -671,7 +671,7 @@ export default function NewAuditPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--muted)' }}>
                   Label Column <span style={{ color: 'var(--danger)' }}>*</span>
@@ -719,7 +719,7 @@ export default function NewAuditPage() {
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {(showAllColumns ? columns : columns.filter(c => c.auto_flagged || protectedCols.includes(c.name))).length > 0 ? (
                   (showAllColumns ? columns : columns.filter(c => c.auto_flagged || protectedCols.includes(c.name))).map((col) => (
                     <label
@@ -821,7 +821,7 @@ export default function NewAuditPage() {
                       This model has been deployed in production
                     </label>
                     {deployed && (
-                      <div className="grid grid-cols-2 gap-3 p-3 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                         <div>
                           <label className="text-xs block mb-1" style={{ color: 'var(--placeholder)' }}>
                             Deployed since
@@ -905,7 +905,7 @@ export default function NewAuditPage() {
               <h3 className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>
                 Audit Configuration Summary
               </h3>
-              <div className="grid grid-cols-2 gap-y-2 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-sm">
                 <span style={{ color: 'var(--muted)' }}>Name</span>
                 <span>{auditName || 'Untitled Audit'}</span>
                 <span style={{ color: 'var(--muted)' }}>Domain</span>

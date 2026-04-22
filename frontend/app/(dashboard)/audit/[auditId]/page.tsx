@@ -11,23 +11,31 @@ import {
   getSampleRow,
   predictAuditDecision,
   findMinimumFlip,
+  getOrgSettings,
 } from '@/lib/api';
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef, useMemo } from 'react';
 import {
   Download, AlertTriangle, Shield, BarChart3,
   Brain, Wrench, Scale, CheckCircle2, Loader2, XCircle,
-  Zap, Users, Eye, FileText, Layers, Info, Sparkles,
+  Zap, Users, Eye, FileText, Layers, Info, Sparkles, Command, ArrowRight,
+  MessageSquareText, Send, MessageCircle, Trash2,
 } from 'lucide-react';
-import GroupDistributionChart from '@/components/charts/GroupDistributionChart';
-import LabelDistributionChart from '@/components/charts/LabelDistributionChart';
 import ProxyNetworkGraph from '@/components/charts/ProxyNetworkGraph';
-import EqualizedOddsChart from '@/components/charts/EqualizedOddsChart';
-import PredictiveParityChart from '@/components/charts/PredictiveParityChart';
 import ShapSummaryChart from '@/components/charts/ShapSummaryChart';
 import IntersectionalHeatmap from '@/components/charts/IntersectionalHeatmap';
 import ParetoFrontier from '@/components/charts/ParetoFrontier';
+import DimensionPillToggle from '@/components/charts/DimensionPillToggle';
+import MasterDetailDistributionChart from '@/components/charts/MasterDetailDistributionChart';
+import DisparityDumbbellChart from '@/components/charts/DisparityDumbbellChart';
+import EqualizedOddsChart from '@/components/charts/EqualizedOddsChart';
+import PredictiveParityChart from '@/components/charts/PredictiveParityChart';
 import AuditTrailTimeline from '@/components/audit/AuditTrailTimeline';
 import StakeholderToggle, { StakeholderMode } from '@/components/audit/StakeholderToggle';
+import { buildDimensionOptions, CanonicalDimensionKey, getDimensionLabel, normalizeDimensionKey, summarizeLargestGroup } from '@/lib/analysis/dimensions';
+import { joinFeaturesWithProxyRisk } from '@/lib/analysis/proxy-risk';
+import ProxyRiskFeatureBars from '@/components/charts/ProxyRiskFeatureBars';
+import GroupImpactWaterfall from '@/components/charts/GroupImpactWaterfall';
+import Image from 'next/image';
 
 const BASE_TABS = [
   { key: 'overview', label: 'Overview', icon: Eye },
@@ -35,15 +43,16 @@ const BASE_TABS = [
   { key: 'model', label: 'Model Analysis', icon: Brain },
   { key: 'intersectional', label: 'Intersectional', icon: Layers },
   { key: 'explainability', label: 'Explainability', icon: Zap },
+  { key: 'results', label: 'Results', icon: Command },
   { key: 'narratives', label: 'AI Narratives', icon: Sparkles },
   { key: 'fixes', label: 'Fixes', icon: Wrench },
   { key: 'legal', label: 'Legal', icon: Scale },
 ];
 
 const MODE_TAB_KEYS: Record<StakeholderMode, string[]> = {
-  technical: ['overview', 'data', 'model', 'intersectional', 'explainability', 'narratives', 'fixes', 'legal'],
-  executive: ['overview', 'narratives', 'legal'],
-  legal: ['overview', 'intersectional', 'legal', 'narratives'],
+  technical: ['overview', 'data', 'model', 'intersectional', 'explainability', 'results', 'narratives', 'fixes', 'legal'],
+  executive: ['overview', 'results', 'narratives', 'legal'],
+  legal: ['overview', 'intersectional', 'results', 'legal', 'narratives'],
 };
 
 const MODE_DEFAULT_TAB: Record<StakeholderMode, string> = {
@@ -51,6 +60,9 @@ const MODE_DEFAULT_TAB: Record<StakeholderMode, string> = {
   executive: 'overview',
   legal: 'legal',
 };
+
+const GUIDED_SANDBOX_ARMED_KEY = 'visionai-guided-sandbox-armed';
+const GUIDED_SANDBOX_DISABLED_KEY = 'visionai-guided-sandbox-disabled';
 
 function gradeColor(g: string) {
   const m: Record<string, string> = { A: 'var(--grade-a)', B: 'var(--grade-b)', C: 'var(--grade-c)', D: 'var(--grade-d)', F: 'var(--grade-f)' };
@@ -321,6 +333,8 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   const [error, setError] = useState('');
   const [redTeam, setRedTeam] = useState<any>(null);
   const [redTeamLoading, setRedTeamLoading] = useState(false);
+  const [guidedSandboxActive, setGuidedSandboxActive] = useState(false);
+  const [guidedBannerVisible, setGuidedBannerVisible] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -360,6 +374,25 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
     }
   }, [stakeholderMode, tab]);
 
+  useEffect(() => {
+    if (!audit?.id) return;
+
+    try {
+      const disabled = window.localStorage.getItem(GUIDED_SANDBOX_DISABLED_KEY) === '1';
+      const armed = window.localStorage.getItem(GUIDED_SANDBOX_ARMED_KEY) === '1';
+
+      if (!disabled && armed) {
+        setStakeholderMode('technical');
+        setTab('data');
+        setGuidedSandboxActive(true);
+        setGuidedBannerVisible(true);
+        window.localStorage.removeItem(GUIDED_SANDBOX_ARMED_KEY);
+      }
+    } catch {
+      // Ignore storage access issues and continue normal render flow.
+    }
+  }, [audit?.id]);
+
   // Show processing state - skeleton shimmer layout
   if (loading || (audit && audit.status === 'PROCESSING')) {
     const pipeline = audit?.pipeline || {};
@@ -367,7 +400,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
     return (
       <>
         <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: audit?.name || 'Analyzing...' }]} />
-        <div className="flex-1 p-4 space-y-3 animate-fade-in">
+        <div className="flex-1 p-4 sm:p-6 space-y-3 animate-fade-in">
           {/* Header skeleton */}
           <div className="flex items-start gap-4">
             <div className="skeleton" style={{ width: 88, height: 88, borderRadius: '50%' }} />
@@ -385,7 +418,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
           </div>
 
           {/* Metric cards skeleton */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="skeleton" style={{ height: 80 }} />
             ))}
@@ -398,7 +431,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
                 <Loader2 size={14} className="animate-spin" style={{ color: 'var(--primary)' }} />
                 <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>Pipeline Progress</span>
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
                 {steps.map(([step, status]) => (
                   <div key={step} className="flex items-center gap-1.5 text-xs">
                     {status === 'complete' ? <CheckCircle2 size={10} style={{ color: 'var(--success)' }} /> :
@@ -438,6 +471,44 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   const tabs = getTabs(stakeholderMode);
   const visibleTabKeys = new Set(tabs.map((t) => t.key));
 
+  function dismissGuidedSandbox() {
+    setGuidedBannerVisible(false);
+    setGuidedSandboxActive(false);
+  }
+
+  function skipGuidedSandbox() {
+    setGuidedBannerVisible(false);
+    setGuidedSandboxActive(false);
+    try {
+      window.localStorage.setItem(GUIDED_SANDBOX_DISABLED_KEY, '1');
+      window.localStorage.removeItem(GUIDED_SANDBOX_ARMED_KEY);
+    } catch {
+      // Ignore storage write failures.
+    }
+  }
+
+  function retriggerGuidedSandbox() {
+    try {
+      window.localStorage.removeItem(GUIDED_SANDBOX_DISABLED_KEY);
+    } catch {
+      // Ignore storage write failures.
+    }
+    setStakeholderMode('technical');
+    setTab('data');
+    setGuidedSandboxActive(true);
+    setGuidedBannerVisible(true);
+  }
+
+  function handleGuidedMetricClick() {
+    if (!guidedSandboxActive) return;
+
+    if (visibleTabKeys.has('narratives')) {
+      setTab('narratives');
+    }
+    setGuidedBannerVisible(false);
+    setGuidedSandboxActive(false);
+  }
+
   async function onRunRedTeam() {
     try {
       setRedTeamLoading(true);
@@ -453,7 +524,38 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   return (
     <>
       <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: audit.name }]} />
-      <div className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
+
+      {guidedBannerVisible && (
+        <div className="guided-sandbox-banner" role="status" aria-live="polite">
+          <div className="guided-sandbox-banner-message">
+            <Sparkles size={13} strokeWidth={2.2} />
+            <span>You are viewing a simulated audit of a loan approval model. Click any metric to inspect the AI narrative.</span>
+          </div>
+          <div className="guided-sandbox-banner-actions">
+            <button type="button" className="guided-sandbox-banner-btn" onClick={() => { setStakeholderMode('technical'); setTab('data'); }}>
+              Show Metrics
+            </button>
+            <button type="button" className="guided-sandbox-banner-btn" onClick={dismissGuidedSandbox}>
+              Dismiss
+            </button>
+            <button type="button" className="guided-sandbox-banner-btn guided-sandbox-banner-btn-critical" onClick={skipGuidedSandbox}>
+              Skip Tour
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="guided-sandbox-retrigger-wrap">
+        <button
+          type="button"
+          className="guided-sandbox-retrigger"
+          onClick={guidedSandboxActive ? skipGuidedSandbox : retriggerGuidedSandbox}
+        >
+          {guidedSandboxActive ? 'Skip Guided Sandbox' : 'Replay Guided Sandbox'}
+        </button>
+      </div>
+
+      <div className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         {redTeam?.worstCase && (
           <div className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.35)', background: 'var(--danger-dim)' }}>
             <div className="text-xs font-semibold mb-1" style={{ color: 'var(--danger)' }}>WORST CASE SCENARIO</div>
@@ -533,15 +635,367 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
 
         {/* Tab content */}
         {visibleTabKeys.has('overview') && tab === 'overview' && <OverviewTab audit={audit} stakeholderMode={stakeholderMode} />}
-        {visibleTabKeys.has('data') && tab === 'data' && <DataTab audit={audit} />}
+        {visibleTabKeys.has('data') && tab === 'data' && (
+          <DataTab
+            audit={audit}
+            guidedSandboxActive={guidedSandboxActive}
+            onGuidedMetricClick={handleGuidedMetricClick}
+          />
+        )}
         {visibleTabKeys.has('model') && tab === 'model' && <ModelTab audit={audit} />}
         {visibleTabKeys.has('intersectional') && tab === 'intersectional' && <IntersectionalTab audit={audit} />}
         {visibleTabKeys.has('explainability') && tab === 'explainability' && <ExplainabilityTab audit={audit} />}
+        {visibleTabKeys.has('results') && tab === 'results' && <ResultsTab audit={audit} onNavigateTab={setTab} visibleTabKeys={visibleTabKeys} />}
         {visibleTabKeys.has('narratives') && tab === 'narratives' && <NarrativesTab audit={audit} mode={stakeholderMode} />}
         {visibleTabKeys.has('fixes') && tab === 'fixes' && <FixesTab audit={audit} stakeholderMode={stakeholderMode} />}
         {visibleTabKeys.has('legal') && tab === 'legal' && <LegalTab audit={audit} mode={stakeholderMode} />}
       </div>
     </>
+  );
+}
+
+type ResultsSignalTone = 'success' | 'warning' | 'danger' | 'info';
+
+type ResultsSignal = {
+  title: string;
+  value: string;
+  detail: string;
+  tone: ResultsSignalTone;
+  tabKey?: string;
+  tabLabel?: string;
+};
+
+type ResultsEvaluation = {
+  summary: string;
+  signals: ResultsSignal[];
+  intent: 'flip' | 'data' | 'legal' | 'group' | 'explainability' | 'narrative' | 'readiness' | 'general';
+  query: string;
+};
+
+function evaluateResultsCommand(query: string, audit: Record<string, unknown>) {
+  const sev = (audit?.severity as Record<string, unknown>) || {};
+  const fairnessScore = Number(sev.fairness_score ?? audit?.fairnessScore ?? 0);
+  const grade = String(sev.letter_grade ?? audit?.letterGrade ?? '?');
+  const thresholdScore = Number(audit?.threshold ?? 0.8) * 100;
+  const proxies = (audit?.proxies as unknown[]) || [];
+  const regs = (audit?.regulationMap as unknown[]) || [];
+  const legalCritical = hasCriticalLegalTrigger(regs);
+  const dataBias = (audit?.dataBias as Record<string, unknown>) || {};
+  const dataBiasRows = Object.values(dataBias).map((raw) => {
+    const row = (raw || {}) as Record<string, unknown>;
+    const metrics = (row.metrics || {}) as Record<string, unknown>;
+    const di = Number(metrics.disparate_impact ?? 1);
+    return {
+      attribute: String(row.attribute || 'unknown'),
+      severity: String(row.severity || 'UNKNOWN').toUpperCase(),
+      di,
+      verdict: String(row.verdict || '-'),
+    };
+  });
+
+  const criticalBiasRows = dataBiasRows
+    .filter((row) => row.severity === 'CRITICAL' || row.severity === 'HIGH')
+    .sort((a, b) => a.di - b.di);
+  const topCriticalBias = criticalBiasRows[0] || null;
+
+  const highBiasCount = Object.values(dataBias).filter((v: unknown) => {
+    const severity = String((v as { severity?: string })?.severity || '').toUpperCase();
+    return ['HIGH', 'CRITICAL'].includes(severity);
+  }).length;
+
+  const flipEntries = Object.entries(audit?.modelBias || {})
+    .filter(([attr]) => attr !== '_equalized_odds')
+    .map(([attr, data]: [string, unknown]) => ({
+      attr,
+      rate: Number((data as { max_flip_rate?: number })?.max_flip_rate || 0),
+    }))
+    .sort((a, b) => b.rate - a.rate);
+  const topFlip = flipEntries[0] || null;
+  const noGo = fairnessScore < thresholdScore || legalCritical;
+
+  const q = query.trim().toLowerCase();
+  const looksLikeFlip = /(flip|sensitivity|counterfactual|feature|perturb|riskiest feature|highest flip)/.test(q);
+  const looksLikeData = /(proxy|distribution|dataset|column|data\s*bias|sample|bias|critical data|cirticial|alert|trigger)/.test(q);
+  const looksLikeLegal = /(legal|compliance|regulation|liability|fine|clause)/.test(q);
+  const looksLikeGroup = /(intersection|group|heatmap|disparate impact|equalized odds)/.test(q);
+  const looksLikeExplain = /(explain|shap|importance|why)/.test(q);
+  const looksLikeNarrative = /(narrative|summary|tldr|executive)/.test(q);
+  const looksLikeReadiness = /(deploy|readiness|ready|go|no-go|ship|production|launch)/.test(q);
+
+  const signals: ResultsSignal[] = [];
+
+  signals.push({
+    title: 'Fairness Baseline',
+    value: `${fairnessScore.toFixed(0)}/100 (${grade})`,
+    detail: `Threshold target is ${thresholdScore.toFixed(0)}.`,
+    tone: fairnessScore < thresholdScore ? 'warning' : 'success',
+    tabKey: 'overview',
+    tabLabel: 'Overview',
+  });
+
+  if (looksLikeFlip || (!looksLikeData && !looksLikeLegal && !looksLikeGroup && !looksLikeExplain && !looksLikeNarrative)) {
+    signals.push({
+      title: 'Feature Flip Sensitivity',
+      value: topFlip ? `${(topFlip.rate * 100).toFixed(1)}% max` : 'No flip data',
+      detail: topFlip ? `${topFlip.attr} is currently the highest-risk attribute.` : 'Run a full model audit to populate flip sensitivity.',
+      tone: topFlip && topFlip.rate > 0.1 ? 'danger' : 'info',
+      tabKey: 'model',
+      tabLabel: 'Model Analysis',
+    });
+  }
+
+  if (looksLikeData || (!looksLikeFlip && !looksLikeLegal && !looksLikeGroup && !looksLikeExplain && !looksLikeNarrative)) {
+    signals.push({
+      title: 'Data and Proxy Pressure Test',
+      value: `${proxies.length} proxies flagged`,
+      detail: `${highBiasCount} high-severity data bias findings across protected attributes.`,
+      tone: proxies.length > 0 || highBiasCount > 0 ? 'warning' : 'success',
+      tabKey: 'data',
+      tabLabel: 'Data Analysis',
+    });
+  }
+
+  if (looksLikeGroup) {
+    signals.push({
+      title: 'Group Disparity Focus',
+      value: 'Intersectional checks available',
+      detail: 'Review subgroup deltas and disparity heatmap before deployment decisions.',
+      tone: 'info',
+      tabKey: 'intersectional',
+      tabLabel: 'Intersectional',
+    });
+  }
+
+  if (looksLikeExplain) {
+    signals.push({
+      title: 'Explainability Lens',
+      value: 'SHAP and feature contributions ready',
+      detail: 'Use explainability to validate whether mitigation changed causal signals, not just scores.',
+      tone: 'info',
+      tabKey: 'explainability',
+      tabLabel: 'Explainability',
+    });
+  }
+
+  if (looksLikeLegal || (!looksLikeFlip && !looksLikeData && !looksLikeGroup && !looksLikeExplain && !looksLikeNarrative)) {
+    signals.push({
+      title: 'Compliance Risk',
+      value: legalCritical ? 'Critical trigger active' : 'No critical trigger',
+      detail: `${regs.length} mapped regulation checks available for review.`,
+      tone: legalCritical ? 'danger' : 'success',
+      tabKey: 'legal',
+      tabLabel: 'Legal',
+    });
+  }
+
+  if (looksLikeNarrative) {
+    signals.push({
+      title: 'Narrative Briefing',
+      value: 'Executive and legal narratives ready',
+      detail: 'Use AI Narratives to translate score movement into business and legal language.',
+      tone: 'info',
+      tabKey: 'narratives',
+      tabLabel: 'AI Narratives',
+    });
+  }
+
+  let intent: ResultsEvaluation['intent'] = 'general';
+  if (looksLikeFlip) intent = 'flip';
+  else if (looksLikeData) intent = 'data';
+  else if (looksLikeLegal) intent = 'legal';
+  else if (looksLikeGroup) intent = 'group';
+  else if (looksLikeExplain) intent = 'explainability';
+  else if (looksLikeNarrative) intent = 'narrative';
+  else if (looksLikeReadiness) intent = 'readiness';
+
+  let summary = `Fairness baseline is ${fairnessScore.toFixed(0)}/100 (${grade}). Use the command bar to pressure-test by flip rate, legal risk, proxies, or subgroup gaps.`;
+
+  if (query.trim()) {
+    if (intent === 'flip') {
+      summary = topFlip
+        ? `Highest flip-rate risk is ${topFlip.attr} at ${(topFlip.rate * 100).toFixed(1)}%. This is the strongest sensitivity hotspot in your current audit.`
+        : 'Flip-rate metrics are not available yet for this audit. Run model analysis with protected attributes to populate sensitivity results.';
+    } else if (intent === 'data') {
+      summary = topCriticalBias
+        ? `Most critical data bias appears on ${topCriticalBias.attribute} (DI ${topCriticalBias.di.toFixed(2)}, severity ${topCriticalBias.severity}). Review this first in Data Analysis.`
+        : highBiasCount > 0
+          ? `There are ${highBiasCount} high-severity data bias findings. Open Data Analysis for attribute-level details.`
+          : `No HIGH/CRITICAL data bias finding is currently flagged. Proxy and subgroup checks should still be reviewed before deployment.`;
+    } else if (intent === 'legal') {
+      summary = legalCritical
+        ? `Compliance pressure is elevated: at least one critical legal trigger is active across ${regs.length} mapped checks.`
+        : `No critical legal trigger is active right now across ${regs.length} mapped checks.`;
+    } else if (intent === 'readiness') {
+      summary = noGo
+        ? `Deployment readiness: NO-GO for now. Fairness/legal guardrails are not fully satisfied.`
+        : 'Deployment readiness: GO under current thresholds, with ongoing drift and subgroup monitoring.';
+    } else {
+      summary = `For \"${query.trim()}\", the strongest signal is fairness ${fairnessScore.toFixed(0)}/100 (${grade}) with ${legalCritical ? 'active legal escalation pressure.' : 'no critical legal trigger currently active.'}`;
+    }
+  }
+
+  return { summary, signals, intent, query: query.trim() } as ResultsEvaluation;
+}
+
+function toneStyles(tone: ResultsSignalTone) {
+  if (tone === 'success') {
+    return { borderColor: 'color-mix(in srgb, var(--success) 28%, var(--border))', badge: 'var(--success)' };
+  }
+  if (tone === 'warning') {
+    return { borderColor: 'color-mix(in srgb, var(--status-warning) 30%, var(--border))', badge: 'var(--status-warning)' };
+  }
+  if (tone === 'danger') {
+    return { borderColor: 'color-mix(in srgb, var(--danger) 30%, var(--border))', badge: 'var(--danger)' };
+  }
+  return { borderColor: 'color-mix(in srgb, var(--primary) 24%, var(--border))', badge: 'var(--primary)' };
+}
+
+function ResultsTab({ audit, onNavigateTab, visibleTabKeys }: { audit: Record<string, unknown>; onNavigateTab: (tabKey: string) => void; visibleTabKeys: Set<string> }) {
+  const [commandText, setCommandText] = useState('');
+  const [history, setHistory] = useState<string[]>([]);
+  const [runLoading, setRunLoading] = useState(false);
+  const [lastRunAt, setLastRunAt] = useState<number | null>(null);
+  const [result, setResult] = useState<ResultsEvaluation>(() => evaluateResultsCommand('', audit));
+
+  const quickPrompts = [
+    'Show me the highest flip-rate risk',
+    'What is my legal pressure right now?',
+    'Where are the strongest subgroup disparities?',
+    'Summarize deployment readiness',
+  ];
+
+  const runCommand = (raw: string) => {
+    const query = raw.trim();
+    if (!query) return;
+    setRunLoading(true);
+    window.setTimeout(() => {
+      setResult(evaluateResultsCommand(query, audit));
+      setHistory((prev) => [query, ...prev.filter((item) => item.toLowerCase() !== query.toLowerCase())].slice(0, 5));
+      setLastRunAt(Date.now());
+      setRunLoading(false);
+    }, 180);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="card" style={{ borderColor: 'color-mix(in srgb, var(--primary) 20%, var(--border))', background: 'color-mix(in srgb, var(--surface) 90%, transparent)' }}>
+        <div className="flex items-center gap-2 mb-3">
+          <Command size={14} style={{ color: 'var(--primary)' }} />
+          <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>Results Command Bar</span>
+          <span className="text-[11px] ml-auto" style={{ color: 'var(--placeholder)' }}>Frontend-only local evaluator</span>
+        </div>
+
+        <form
+          className="flex flex-col sm:flex-row gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            runCommand(commandText);
+          }}
+        >
+          <input
+            value={commandText}
+            onChange={(e) => setCommandText(e.target.value)}
+            className="input flex-1"
+            placeholder="Ask: Show me the flip rate for female applicants over 40"
+          />
+          <button type="submit" className="btn btn-primary btn-sm" disabled={!commandText.trim()}>
+            {runLoading ? <Loader2 size={13} className="animate-spin" /> : null}
+            {runLoading ? 'Running...' : 'Run'}
+          </button>
+        </form>
+
+        {lastRunAt && (
+          <div className="text-[11px] mt-2" style={{ color: 'var(--placeholder)' }}>
+            Executed at {new Date(lastRunAt).toLocaleTimeString()} {result.query ? `for "${result.query}"` : ''}
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2 mt-3">
+          {quickPrompts.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              className="text-xs px-2.5 py-1.5 rounded-full"
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--muted)' }}
+              onClick={() => {
+                setCommandText(prompt);
+                runCommand(prompt);
+              }}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+
+        {history.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {history.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className="text-[11px] px-2 py-1 rounded-md"
+                style={{ background: 'var(--surface-2)', color: 'var(--placeholder)' }}
+                onClick={() => {
+                  setCommandText(item);
+                  runCommand(item);
+                }}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+          {result.query ? (
+            <>
+              <div className="text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>Question</div>
+              <div className="text-sm mt-1" style={{ color: 'var(--fg)' }}>{result.query}</div>
+              <div className="text-[11px] font-semibold mt-3" style={{ color: 'var(--primary)' }}>Answer</div>
+              <div className="text-sm mt-1" style={{ color: 'var(--fg)' }}>{result.summary}</div>
+              <div className="text-[11px] mt-2" style={{ color: 'var(--placeholder)' }}>
+                Intent detected: {result.intent}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm" style={{ color: 'var(--muted)' }}>
+              Run a question above to see the answer inline here.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {result.signals.map((signal) => {
+          const style = toneStyles(signal.tone);
+          return (
+            <div
+              key={`${signal.title}-${signal.value}`}
+              className="card"
+              style={{ borderColor: style.borderColor, background: 'color-mix(in srgb, var(--surface) 94%, transparent)' }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full" style={{ background: style.badge }} />
+                <span className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{signal.title}</span>
+              </div>
+              <div className="text-lg font-black" style={{ color: 'var(--fg)' }}>{signal.value}</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{signal.detail}</div>
+
+              {signal.tabKey && visibleTabKeys.has(signal.tabKey) && (
+                <button
+                  type="button"
+                  className="mt-3 btn btn-outline btn-sm"
+                  onClick={() => onNavigateTab(signal.tabKey as string)}
+                >
+                  Open {signal.tabLabel || signal.tabKey}
+                  <ArrowRight size={13} />
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -665,7 +1119,7 @@ function OverviewTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: 
             Executive TLDR
           </div>
           <div className="text-sm" style={{ color: 'var(--fg)' }}>
-            Current fairness score is <strong>{fairnessScore}</strong> against threshold <strong>{Math.round(threshold * 100)}</strong>. 
+            Current fairness score is <strong>{fairnessScore}</strong> against threshold <strong>{Math.round(threshold * 100)}</strong>.
             Recommendation is <strong>{deploymentDecision}</strong> because {legalCritical ? 'a critical legal trigger is active' : fairnessScore < threshold * 100 ? 'fairness is below threshold' : 'risk is within allowed bounds'}.
           </div>
           <div className="text-xs mt-2" style={{ color: 'var(--muted)' }}>
@@ -803,7 +1257,7 @@ function OverviewTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: 
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <Mini label="Fairness Score" value={`${sev.fairness_score ?? 0}`} sub={`Grade: ${sev.letter_grade ?? '?'}`}
           color={scoreColor(sev.fairness_score ?? 0)} />
         <Mini label={primaryMetricLabel} value={String(primaryMetricValue)}
@@ -875,7 +1329,7 @@ function OverviewTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: 
 
       <div className="card">
         <h3 className="text-xs font-semibold mb-3" style={{ color: 'var(--muted)' }}>Audit Configuration</h3>
-        <div className="grid grid-cols-2 gap-y-2 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-sm">
           <span style={{ color: 'var(--placeholder)' }}>Label Column</span><span>{audit.labelCol}</span>
           <span style={{ color: 'var(--placeholder)' }}>Positive Value</span><span>{audit.positiveLabel}</span>
           <span style={{ color: 'var(--placeholder)' }}>Protected Attributes</span><span>{audit.protectedCols?.join(', ')}</span>
@@ -961,13 +1415,46 @@ function OverviewTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: 
 }
 
 /* ==================== DATA ANALYSIS ==================== */
-function DataTab({ audit }: { audit: any }) {
+function DataTab({
+  audit,
+  guidedSandboxActive = false,
+  onGuidedMetricClick,
+}: {
+  audit: any;
+  guidedSandboxActive?: boolean;
+  onGuidedMetricClick?: () => void;
+}) {
   const dataBias = audit.dataBias || {};
   const schema = audit.schema;
   const proxies = audit.proxies || [];
   const profiles = audit.profiles || [];
   const blindSpots = audit.blindSpots || [];
   const [activePanel, setActivePanel] = useState<'disparate' | 'distribution' | 'proxy' | 'schema' | 'blindspots'>('disparate');
+  const dimensionOptions = useMemo(() => buildDimensionOptions(profiles, dataBias), [profiles, dataBias]);
+  const [selectedDimensionKey, setSelectedDimensionKey] = useState<CanonicalDimensionKey | null>(null);
+
+  useEffect(() => {
+    if (dimensionOptions.length === 0) {
+      setSelectedDimensionKey(null);
+      return;
+    }
+
+    if (!selectedDimensionKey || !dimensionOptions.some((opt) => opt.key === selectedDimensionKey)) {
+      setSelectedDimensionKey(dimensionOptions[0].key);
+    }
+  }, [dimensionOptions, selectedDimensionKey]);
+
+  const selectedDimension = useMemo(() => {
+    if (dimensionOptions.length === 0) return null;
+    return dimensionOptions.find((opt) => opt.key === selectedDimensionKey) || dimensionOptions[0];
+  }, [dimensionOptions, selectedDimensionKey]);
+
+  const highestDisparityDimension = useMemo(() => {
+    const ranked = dimensionOptions
+      .filter((opt) => opt.disparateImpact != null)
+      .sort((a, b) => Number(a.disparateImpact) - Number(b.disparateImpact));
+    return ranked[0] || null;
+  }, [dimensionOptions]);
 
   const diRows = Object.values(dataBias) as any[];
   const worstDi = diRows.length > 0
@@ -1020,12 +1507,18 @@ function DataTab({ audit }: { audit: any }) {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
         {kpiCards.map((card) => {
           const active = activePanel === card.key;
+          const isGuidedTarget = guidedSandboxActive && card.key === 'disparate';
           return (
             <button
               key={card.key}
               type="button"
-              onClick={() => setActivePanel(card.key)}
-              className="card text-left"
+              onClick={() => {
+                setActivePanel(card.key);
+                if (guidedSandboxActive) {
+                  onGuidedMetricClick?.();
+                }
+              }}
+              className={`card text-left ${isGuidedTarget ? 'guided-sandbox-target-card' : ''}`}
               style={{
                 borderColor: active ? 'var(--primary)' : 'var(--border)',
                 boxShadow: active ? '0 0 0 1px var(--primary-dim)' : undefined,
@@ -1041,50 +1534,76 @@ function DataTab({ audit }: { audit: any }) {
       </div>
 
       {activePanel === 'distribution' && (
-        <>
-          <GroupDistributionChart profiles={profiles} />
-          <LabelDistributionChart profiles={profiles} />
+        <div className="space-y-4">
+          {dimensionOptions.length === 0 ? (
+            <div className="card">
+              <div className="text-sm font-semibold" style={{ color: 'var(--fg)' }}>No supported dimensions available</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
+                Expected one of: Age, Gender, Race, or Zip Code in the current audit payload.
+              </div>
+            </div>
+          ) : (
+            <>
+              <DimensionPillToggle
+                options={dimensionOptions.map((opt) => ({ key: opt.key, label: opt.label }))}
+                selectedKey={selectedDimension?.key || null}
+                onChange={setSelectedDimensionKey}
+              />
 
-          {profiles.map((p: any, i: number) => (
-            <div key={i} className="card space-y-2">
-              <div className="flex items-center gap-2">
-                <Users size={14} style={{ color: 'var(--primary)' }} />
-                <span className="text-sm font-semibold">{p.attribute}</span>
-                {p.imbalance_warning && <span className="badge badge-high">IMBALANCED ({p.imbalance_ratio}x)</span>}
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {Object.entries(p.group_counts as Record<string, number>).map(([g, c]) => (
-                  <div key={g} className="flex-1 min-w-[100px] p-2 rounded-lg" style={{ background: 'var(--surface-2)' }}>
-                    <div className="text-xs" style={{ color: 'var(--muted)' }}>{g}</div>
-                    <div className="text-sm font-bold">{(c as number).toLocaleString()}</div>
-                    <div className="w-full h-1 rounded-full mt-1" style={{ background: 'var(--border)' }}>
-                      <div className="h-full rounded-full" style={{ width: `${p.group_percentages[g]}%`, background: 'var(--primary)' }} />
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--placeholder)' }}>{p.group_percentages[g]}%</div>
-                  </div>
-                ))}
-              </div>
-              {p.label_distribution_per_group && (
-                <div className="space-y-1 mt-2">
-                  <div className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Outcome Rate by Group</div>
-                  {Object.entries(p.label_distribution_per_group as Record<string, any>).map(([g, r]) => (
-                    <div key={g} className="flex items-center gap-2">
-                      <span className="text-xs w-20 truncate" style={{ color: 'var(--muted)' }}>{g}</span>
-                      <div className="flex-1 h-3 rounded-full overflow-hidden flex" style={{ background: 'var(--surface-2)' }}>
-                        <div className="h-full flex items-center justify-center text-[8px] font-bold"
-                          style={{ width: `${(r as any).positive}%`, background: 'var(--success)', color: '#fff' }}>
-                          {(r as any).positive}%</div>
-                        <div className="h-full flex items-center justify-center text-[8px] font-bold"
-                          style={{ width: `${(r as any).negative}%`, background: 'var(--danger)', color: '#fff' }}>
-                          {(r as any).negative}%</div>
+              {selectedDimension && (
+                <>
+                  <MasterDetailDistributionChart
+                    dimensionKey={selectedDimension.key}
+                    dimensionLabel={selectedDimension.label}
+                    profile={selectedDimension.profile}
+                    disparateImpact={selectedDimension.disparateImpact}
+                    severity={selectedDimension.severity}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="card" style={{ padding: '14px 16px' }}>
+                      <div className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+                        Imbalance Warning
+                      </div>
+                      <div className="text-xs mt-1" style={{ color: selectedDimension.profile.imbalance_warning ? 'var(--status-warning)' : 'var(--muted)' }}>
+                        {selectedDimension.profile.imbalance_warning
+                          ? `Skew detected (${String(selectedDimension.profile.imbalance_ratio ?? '?')}x ratio).`
+                          : 'No major imbalance warning detected in this lens.'}
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    <div className="card" style={{ padding: '14px 16px' }}>
+                      <div className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+                        Group Count Summary
+                      </div>
+                      {(() => {
+                        const largest = summarizeLargestGroup(selectedDimension.profile);
+                        return (
+                          <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
+                            {largest.totalGroups} groups tracked. Largest group is {largest.name} ({largest.percentage.toFixed(1)}%).
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="card" style={{ padding: '14px 16px' }}>
+                      <div className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+                        Highest Disparity Hint
+                      </div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
+                        {highestDisparityDimension?.disparateImpact == null
+                          ? 'No severe disparate-impact hotspot detected across available dimensions.'
+                          : highestDisparityDimension.key === selectedDimension.key
+                            ? `Highest disparity is currently visible in this lens (DI ${highestDisparityDimension.disparateImpact.toFixed(2)}).`
+                            : `Highest disparity appears in ${highestDisparityDimension.label} (DI ${highestDisparityDimension.disparateImpact.toFixed(2)}).`}
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
-            </div>
-          ))}
-        </>
+            </>
+          )}
+        </div>
       )}
 
       {activePanel === 'disparate' && (
@@ -1154,7 +1673,10 @@ function DataTab({ audit }: { audit: any }) {
           <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
             <Sparkles size={13} style={{ color: 'var(--primary)' }} />
             <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>AI Blind Spot Detection</span>
-            <span className="text-xs ml-auto" style={{ color: 'var(--placeholder)' }}>Powered by Gemini</span>
+            <span className="text-xs ml-auto inline-flex items-center gap-1 gemini-powered-label">
+              <GeminiGlyph size={11} />
+              Powered by Gemini
+            </span>
           </div>
           <div className="p-4 space-y-2">
             <div className="text-xs mb-3" style={{ color: 'var(--placeholder)' }}>
@@ -1215,9 +1737,236 @@ function DataTab({ audit }: { audit: any }) {
 }
 
 /* ==================== AI NARRATIVES ==================== */
+function NarrativeTypewriter({ text, speedMs = 24, step = 2 }: { text: string; speedMs?: number; step?: number }) {
+  const [visibleChars, setVisibleChars] = useState(0);
+
+  useEffect(() => {
+    if (!text) return;
+    const ticker = window.setInterval(() => {
+      setVisibleChars((prev) => {
+        const next = Math.min(prev + step, text.length);
+        if (next >= text.length) window.clearInterval(ticker);
+        return next;
+      });
+    }, speedMs);
+
+    return () => window.clearInterval(ticker);
+  }, [text, speedMs, step]);
+
+  const done = visibleChars >= text.length;
+
+  return (
+    <div className="text-sm leading-relaxed ai-narrative-typewriter" style={{ color: 'var(--fg)' }}>
+      {text.slice(0, visibleChars)}
+      {!done && <span className="ai-narrative-caret" aria-hidden>|</span>}
+    </div>
+  );
+}
+
+function GeminiGlyph({ size = 14 }: { size?: number }) {
+  return (
+    <span className="gemini-glyph" style={{ width: size, height: size }} aria-hidden>
+      <Image src="/gemini.png" alt="" width={size} height={size} />
+    </span>
+  );
+}
+
+function buildAuditChatContext(audit: any) {
+  const sev = audit?.severity || {};
+  const fairnessScore = Number(sev.fairness_score ?? audit?.fairnessScore ?? 0);
+  const thresholdScore = Number(audit?.threshold ?? 0.8) * 100;
+  const dataBiasRows = Object.values(audit?.dataBias || {}).map((raw: any) => ({
+    attribute: String(raw?.attribute || 'unknown'),
+    severity: String(raw?.severity || 'UNKNOWN').toUpperCase(),
+    disparateImpact: Number(raw?.metrics?.disparate_impact ?? 1),
+    verdict: String(raw?.verdict || '-'),
+  }));
+  const topCriticalBias = [...dataBiasRows]
+    .filter((row) => row.severity === 'CRITICAL' || row.severity === 'HIGH')
+    .sort((a, b) => a.disparateImpact - b.disparateImpact)[0] || null;
+
+  const proxies = (audit?.proxies || []).map((p: any) => ({
+    proxyColumn: p.proxy_column,
+    protectedColumn: p.protected_column,
+    score: Number(p.association_score || 0),
+    riskLevel: p.risk_level,
+  }));
+
+  const topProxy = [...proxies].sort((a, b) => b.score - a.score)[0] || null;
+
+  const topFlip = Object.entries(audit?.modelBias || {})
+    .filter(([attr]) => attr !== '_equalized_odds')
+    .map(([attr, data]: [string, any]) => ({ attr, rate: Number(data?.max_flip_rate || 0) }))
+    .sort((a, b) => b.rate - a.rate)[0] || null;
+
+  const legalChecks = (audit?.regulationMap || []).map((r: any) => ({
+    regulation: r?.regulation,
+    clause: r?.clause,
+    complianceRisk: r?.compliance_risk,
+    liability: r?.liability,
+  }));
+
+  const legalCritical = hasCriticalLegalTrigger(legalChecks);
+  const noGo = fairnessScore < thresholdScore || legalCritical;
+
+  const contextData = {
+    auditName: audit?.name,
+    domain: audit?.domain,
+    fairnessScore,
+    thresholdScore,
+    noGo,
+    topCriticalBias,
+    topProxy,
+    topFlip,
+    legalCritical,
+    legalChecks: legalChecks.slice(0, 6),
+    protectedColumns: audit?.protectedCols || [],
+  };
+
+  const systemPrompt = `You are an AI compliance auditor. Answer strictly based on this audit context JSON: ${JSON.stringify(contextData)}. If asked for mitigations, reference the bias metrics in this context.`;
+
+  return { contextData, systemPrompt };
+}
+
+function buildChatSuggestedPrompts(context: ReturnType<typeof buildAuditChatContext>, mode: StakeholderMode) {
+  const topBiasAttr = context.contextData.topCriticalBias?.attribute || context.contextData.topFlip?.attr || 'the highest-risk variable';
+  const modePrompt = mode === 'legal'
+    ? 'Draft a legal mitigation ticket for JIRA from this audit.'
+    : 'Draft a mitigation ticket for JIRA based on this audit.';
+
+  return [
+    `Why did ${topBiasAttr} trigger an alert?`,
+    'What is the critical data bias here and what should we fix first?',
+    modePrompt,
+  ];
+}
+
+function buildNarrativeAssistantReply(question: string, audit: any, mode: StakeholderMode) {
+  const { contextData, systemPrompt } = buildAuditChatContext(audit);
+  const lower = question.toLowerCase();
+
+  // Keep the scoped prompt available for future API calls and clearly enforced in local mode.
+  const scoped = systemPrompt.length > 0;
+  if (!scoped) {
+    return {
+      reply: 'I do not have audit context available yet. Please reopen this audit narrative and try again.',
+      continuePrompt: 'Summarize current fairness and top risk once context is loaded.',
+    };
+  }
+
+  if (/(change|update|edit).*(date)|date.*(change|update|edit)|20 april 2026/.test(lower)) {
+    return {
+      reply: 'I cannot directly edit stored audit artifacts from this chat panel. I can draft the exact update note: "Change internal audit report date to 20 April 2026" and you can keep it as a comment/ticket for follow-through.',
+      continuePrompt: 'Draft the final comment text for this date change with owner and due date.',
+    };
+  }
+
+  if (/(critical|cirticial|bias|data\s*bias|alert|trigger)/.test(lower)) {
+    if (contextData.topCriticalBias) {
+      return {
+        reply: `Critical data bias is centered on ${contextData.topCriticalBias.attribute} with DI ${contextData.topCriticalBias.disparateImpact.toFixed(2)} (${contextData.topCriticalBias.severity}). Verdict: ${contextData.topCriticalBias.verdict}. ${contextData.topProxy ? `Top proxy pressure is ${contextData.topProxy.proxyColumn} -> ${contextData.topProxy.protectedColumn} (${contextData.topProxy.score.toFixed(2)}).` : ''}`,
+        continuePrompt: `Give me 3 concrete mitigations for ${contextData.topCriticalBias.attribute} with validation checks.`,
+      };
+    }
+    return {
+      reply: 'No HIGH/CRITICAL data bias entry is currently flagged in this audit context. Continue monitoring subgroup DI and proxy behavior before deployment.',
+      continuePrompt: 'Show me the next strongest non-critical bias risk in this audit.',
+    };
+  }
+
+  if (/(jira|mitigation\s*ticket|ticket|remediation)/.test(lower)) {
+    const target = contextData.topCriticalBias?.attribute || contextData.topFlip?.attr || 'highest-risk attribute';
+    const di = contextData.topCriticalBias?.disparateImpact;
+    return {
+      reply: `JIRA Draft: Title: Mitigate fairness risk for ${target}. Description: Audit ${contextData.auditName} detected elevated bias${Number.isFinite(di) ? ` (DI ${Number(di).toFixed(2)})` : ''}. Tasks: (1) review feature encoding and proxy leakage, (2) retrain with fairness constraints, (3) re-run audit and confirm DI >= 0.80 and reduced flip sensitivity.`,
+      continuePrompt: `Expand this JIRA ticket with acceptance criteria and rollback plan.`,
+    };
+  }
+
+  if (/(flip|sensitivity|counterfactual|feature)/.test(lower)) {
+    if (!contextData.topFlip) {
+      return {
+        reply: 'No flip sensitivity metrics are available yet for this audit context.',
+        continuePrompt: 'Explain what inputs are needed to compute flip sensitivity.',
+      };
+    }
+    return {
+      reply: `Top flip sensitivity is ${contextData.topFlip.attr} at ${(contextData.topFlip.rate * 100).toFixed(1)}%. This is the most unstable decision feature in the current audit context.`,
+      continuePrompt: `What mitigation should we try first for ${contextData.topFlip.attr}?`,
+    };
+  }
+
+  if (/(legal|compliance|liability|fine|regulation|clause)/.test(lower)) {
+    return {
+      reply: contextData.legalCritical
+        ? `Legal pressure is elevated in this audit context: at least one critical mapped regulation trigger is active. Fairness is ${contextData.fairnessScore.toFixed(0)} vs threshold ${contextData.thresholdScore.toFixed(0)}.`
+        : `No critical legal trigger is active in this audit context. Fairness is ${contextData.fairnessScore.toFixed(0)} vs threshold ${contextData.thresholdScore.toFixed(0)}.`,
+      continuePrompt: 'List the legal checks and the exact evidence we should attach for compliance review.',
+    };
+  }
+
+  if (/(deploy|go|no-go|ship|release|production|readiness)/.test(lower)) {
+    return {
+      reply: contextData.noGo
+        ? 'Deployment recommendation is NO-GO for this audit context. Fairness and/or legal guardrails are not fully met.'
+        : 'Deployment recommendation is GO under current thresholds, with continued drift and subgroup monitoring.',
+      continuePrompt: 'Give me a final pre-deployment checklist from this audit context.',
+    };
+  }
+
+  if (mode === 'executive') {
+    return {
+      reply: `Executive summary from current audit context: fairness ${contextData.fairnessScore.toFixed(0)}/100. ${contextData.legalCritical ? 'Critical legal attention required.' : 'No critical legal trigger.'}`,
+      continuePrompt: 'Condense this into a 3-line board update.',
+    };
+  }
+
+  if (mode === 'legal') {
+    return {
+      reply: `Legal summary from current audit context: fairness ${contextData.fairnessScore.toFixed(0)}/100 vs threshold ${contextData.thresholdScore.toFixed(0)}. ${contextData.legalCritical ? 'Critical mapped compliance signal present.' : 'No critical mapped compliance signal present.'}`,
+      continuePrompt: 'Draft a legal memo stub citing the top compliance concern.',
+    };
+  }
+
+  return {
+    reply: `Technical summary from current audit context: fairness ${contextData.fairnessScore.toFixed(0)}/100, ${contextData.topFlip ? `highest flip ${contextData.topFlip.attr} ${(contextData.topFlip.rate * 100).toFixed(1)}%` : 'flip metrics limited'}, and ${contextData.legalCritical ? 'critical legal pressure active.' : 'no critical legal trigger.'}`,
+    continuePrompt: 'Would you like me to keep talking and walk through mitigation priorities step-by-step?',
+  };
+}
+
 function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
   const narratives = audit.narratives || {};
   const [fullNarrativeOpen, setFullNarrativeOpen] = useState(false);
+  const [fullNarrativeLoading, setFullNarrativeLoading] = useState(false);
+  const [drawerPanel, setDrawerPanel] = useState<'chat' | 'comments'>('chat');
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [continuePrompt, setContinuePrompt] = useState('');
+  const [commentFeedback, setCommentFeedback] = useState('');
+  const [chatMessages, setChatMessages] = useState<Array<{ id: number; role: 'user' | 'assistant'; text: string; createdAt: number }>>([
+    {
+      id: 1,
+      role: 'assistant',
+      text: 'Ask me anything about this audit narrative. I answer strictly from this audit context only.',
+      createdAt: Date.now(),
+    },
+  ]);
+  const [commentInput, setCommentInput] = useState('');
+  const fullNarrativeTimerRef = useRef<number | null>(null);
+  const chatReplyTimerRef = useRef<number | null>(null);
+  const chatInputRef = useRef<HTMLInputElement | null>(null);
+  const chatListRef = useRef<HTMLDivElement | null>(null);
+  const commentsStorageKey = `visionai-narrative-comments-${audit?.id || 'unknown'}`;
+  const [comments, setComments] = useState<Array<{ id: number; text: string; createdAt: number }>>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = window.localStorage.getItem(commentsStorageKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
 
   const MODES = {
     executive: { label: 'Executive', desc: 'Board-ready summary' },
@@ -1226,8 +1975,104 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
   } as const;
 
   const currentNarrative = narratives[mode] || '';
+  const chatContext = useMemo(() => buildAuditChatContext(audit), [audit]);
+  const suggestedPrompts = useMemo(() => buildChatSuggestedPrompts(chatContext, mode), [chatContext, mode]);
   const tldr = extractNarrativeTldr(currentNarrative || '', mode);
   const hasNarratives = Object.keys(narratives).length > 0 && Object.values(narratives).some((v: any) => v && v.length > 0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(commentsStorageKey, JSON.stringify(comments));
+  }, [comments, commentsStorageKey]);
+
+  useEffect(() => {
+    return () => {
+      if (fullNarrativeTimerRef.current !== null) {
+        window.clearTimeout(fullNarrativeTimerRef.current);
+      }
+      if (chatReplyTimerRef.current !== null) {
+        window.clearTimeout(chatReplyTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!chatListRef.current || drawerPanel !== 'chat') return;
+    const container = chatListRef.current;
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+  }, [chatMessages, chatLoading, drawerPanel]);
+
+  const openFullNarrative = () => {
+    if (fullNarrativeTimerRef.current !== null) {
+      window.clearTimeout(fullNarrativeTimerRef.current);
+    }
+    setFullNarrativeLoading(true);
+    setFullNarrativeOpen(true);
+    setDrawerPanel('chat');
+    fullNarrativeTimerRef.current = window.setTimeout(() => {
+      setFullNarrativeLoading(false);
+      fullNarrativeTimerRef.current = null;
+    }, 360);
+  };
+
+  const closeFullNarrative = () => {
+    if (fullNarrativeTimerRef.current !== null) {
+      window.clearTimeout(fullNarrativeTimerRef.current);
+      fullNarrativeTimerRef.current = null;
+    }
+    if (chatReplyTimerRef.current !== null) {
+      window.clearTimeout(chatReplyTimerRef.current);
+      chatReplyTimerRef.current = null;
+    }
+    setChatLoading(false);
+    setFullNarrativeLoading(false);
+    setFullNarrativeOpen(false);
+  };
+
+  const sendChat = (questionOverride?: string, options?: { keepTalkingAuto?: boolean }) => {
+    const question = (questionOverride ?? chatInput).trim();
+    if (!question) return;
+    const keepTalkingAuto = options?.keepTalkingAuto === true;
+
+    const userMessage = { id: Date.now(), role: 'user' as const, text: question, createdAt: Date.now() };
+    setChatMessages((prev) => [...prev, userMessage]);
+    setChatInput('');
+    setContinuePrompt('');
+    setChatLoading(true);
+
+    if (chatReplyTimerRef.current !== null) {
+      window.clearTimeout(chatReplyTimerRef.current);
+    }
+
+    chatReplyTimerRef.current = window.setTimeout(() => {
+      const reply = buildNarrativeAssistantReply(question, audit, mode);
+      setChatMessages((prev) => [...prev, { id: Date.now() + 1, role: 'assistant', text: reply.reply, createdAt: Date.now() }]);
+      setContinuePrompt(keepTalkingAuto ? '' : (reply.continuePrompt || ''));
+      setChatLoading(false);
+      chatReplyTimerRef.current = null;
+    }, 420);
+  };
+
+  const askFromSelection = () => {
+    const selected = window.getSelection?.()?.toString().trim() || '';
+    if (!selected) return;
+    const snippet = selected.length > 220 ? `${selected.slice(0, 220)}...` : selected;
+    setChatInput(`Explain this excerpt: "${snippet}"`);
+    setDrawerPanel('chat');
+  };
+
+  const addComment = () => {
+    const text = commentInput.trim();
+    if (!text) return;
+    const next = { id: Date.now(), text, createdAt: Date.now() };
+    setComments((prev) => [next, ...prev].slice(0, 80));
+    setCommentInput('');
+    setCommentFeedback('Comment saved. Note: comments annotate this audit view and do not auto-edit backend report artifacts.');
+  };
+
+  const deleteComment = (id: number) => {
+    setComments((prev) => prev.filter((c) => c.id !== id));
+  };
 
   if (!hasNarratives) return (
     <div className="card text-center py-12">
@@ -1243,7 +2088,6 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
   const renderMarkdown = (md: string) => {
     const lines = md.split('\n');
     const elements: any[] = [];
-    let inList = false;
     let listItems: string[] = [];
 
     const flushList = () => {
@@ -1260,7 +2104,6 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
         );
         listItems = [];
       }
-      inList = false;
     };
 
     const inlineFormat = (text: string) => {
@@ -1286,7 +2129,6 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
         flushList();
         elements.push(<hr key={i} className="my-3" style={{ borderColor: 'var(--border)' }} />);
       } else if (line.startsWith('- ') || line.startsWith('* ') || /^\d+\.\s/.test(line)) {
-        inList = true;
         const content = line.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '');
         listItems.push(content);
       } else if (line === '') {
@@ -1305,26 +2147,25 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
 
   return (
     <div className="space-y-3">
-      <div className="card" style={{ borderColor: 'var(--primary-dim)', background: 'var(--primary-dim)' }}>
+      <div className="card ai-narrative-glow" style={{ borderColor: 'var(--primary-dim)', background: 'var(--primary-dim)' }}>
         <div className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>
           Showing {MODES[mode].label} Narrative
         </div>
         <div className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{MODES[mode].desc}</div>
       </div>
 
-      <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
+      <div className="card ai-narrative-glow" style={{ borderColor: 'var(--primary-dim)' }}>
         <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-          <Sparkles size={14} style={{ color: 'var(--primary)' }} />
+          <GeminiGlyph size={14} />
           <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>
             TLDR
           </span>
-          <span className="text-xs ml-auto" style={{ color: 'var(--placeholder)' }}>Generated by Gemini AI</span>
+          <span className="text-xs ml-auto gemini-powered-label">Generated by Gemini AI</span>
         </div>
-        <div className="text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>
-          {tldr}
-        </div>
+        <NarrativeTypewriter key={`${mode}-${tldr}`} text={tldr} />
         <div className="mt-3">
-          <button className="btn btn-outline btn-sm" disabled={!currentNarrative} onClick={() => setFullNarrativeOpen(true)}>
+          <button className="btn btn-outline btn-sm ai-narrative-cta gap-1" disabled={!currentNarrative} onClick={openFullNarrative}>
+            <Sparkles size={12} />
             View Full Audit Narrative
           </button>
         </div>
@@ -1333,15 +2174,16 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
       {fullNarrativeOpen && (
         <>
           <div
-            onClick={() => setFullNarrativeOpen(false)}
+            onClick={closeFullNarrative}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 70 }}
           />
           <aside
+            className="ai-narrative-drawer"
             style={{
               position: 'fixed',
               top: 0,
               right: 0,
-              width: 'min(720px, 100vw)',
+              width: 'min(1120px, 100vw)',
               height: '100vh',
               background: 'var(--surface)',
               borderLeft: '1px solid var(--border)',
@@ -1355,7 +2197,7 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
               <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>
                 {MODES[mode].label} Full Narrative
               </span>
-              <button className="btn btn-outline btn-sm ml-auto" onClick={() => setFullNarrativeOpen(false)}>Close</button>
+              <button className="btn btn-outline btn-sm ml-auto" onClick={closeFullNarrative}>Close</button>
             </div>
             <div className="flex items-center gap-2 mb-3">
               <button
@@ -1383,13 +2225,207 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
               >
                 Download narrative
               </button>
+              <button
+                className="btn btn-outline btn-sm"
+                disabled={!currentNarrative}
+                onClick={askFromSelection}
+              >
+                Ask about selection
+              </button>
             </div>
-            <div>
-              {currentNarrative ? renderMarkdown(currentNarrative) : (
-                <div className="text-sm text-center py-8" style={{ color: 'var(--placeholder)' }}>
-                  No narrative available for {mode} mode.
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
+              <div className="xl:col-span-3 card ai-narrative-glow" style={{ borderColor: 'var(--primary-dim)', minHeight: '68vh' }}>
+                {fullNarrativeLoading ? (
+                  <div className="space-y-3 py-2">
+                    <div className="ai-narrative-skeleton" style={{ width: '100%' }} />
+                    <div className="ai-narrative-skeleton" style={{ width: '96%' }} />
+                    <div className="ai-narrative-skeleton" style={{ width: '92%' }} />
+                    <div className="ai-narrative-skeleton" style={{ width: '85%' }} />
+                    <div className="ai-narrative-skeleton" style={{ width: '98%' }} />
+                  </div>
+                ) : currentNarrative ? renderMarkdown(currentNarrative) : (
+                  <div className="text-sm text-center py-8" style={{ color: 'var(--placeholder)' }}>
+                    No narrative available for {mode} mode.
+                  </div>
+                )}
+              </div>
+
+              <div className="xl:col-span-2 space-y-3">
+                <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => setDrawerPanel('chat')}
+                      style={{
+                        borderColor: drawerPanel === 'chat' ? 'var(--primary)' : undefined,
+                        color: drawerPanel === 'chat' ? 'var(--primary)' : undefined,
+                      }}
+                    >
+                      <MessageCircle size={13} /> Chat
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => setDrawerPanel('comments')}
+                      style={{
+                        borderColor: drawerPanel === 'comments' ? 'var(--primary)' : undefined,
+                        color: drawerPanel === 'comments' ? 'var(--primary)' : undefined,
+                      }}
+                    >
+                      <MessageSquareText size={13} /> Comments
+                    </button>
+                  </div>
                 </div>
-              )}
+
+                {drawerPanel === 'chat' ? (
+                  <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <GeminiGlyph size={14} />
+                      <div className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>Gemini Follow-up Chat</div>
+                      <div className="text-[11px] ml-auto gemini-powered-label">Powered by Gemini</div>
+                    </div>
+                    <div className="text-[11px] mb-3" style={{ color: 'var(--placeholder)' }}>
+                      Chat with the audit only. Current audit context JSON is injected into the local system prompt.
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {suggestedPrompts.slice(0, 3).map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          className="text-[11px] px-2.5 py-1.5 rounded-full"
+                          style={{ background: 'color-mix(in srgb, var(--primary) 10%, var(--surface-2))', border: '1px solid color-mix(in srgb, var(--primary) 24%, var(--border))', color: 'var(--primary)' }}
+                          onClick={() => sendChat(prompt)}
+                          disabled={chatLoading}
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div ref={chatListRef} className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                      {chatMessages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className="rounded-lg px-3 py-2 text-xs leading-relaxed"
+                          style={{
+                            background: msg.role === 'assistant' ? 'color-mix(in srgb, var(--primary) 10%, var(--surface-2))' : 'var(--surface-2)',
+                            border: `1px solid ${msg.role === 'assistant' ? 'color-mix(in srgb, var(--primary) 25%, var(--border))' : 'var(--border)'}`,
+                            color: 'var(--fg)',
+                          }}
+                        >
+                          <div className="font-semibold mb-1" style={{ color: msg.role === 'assistant' ? 'var(--primary)' : 'var(--muted)' }}>
+                            {msg.role === 'assistant' ? (
+                              <span className="inline-flex items-center gap-1">
+                                <GeminiGlyph size={11} />
+                                Gemini
+                              </span>
+                            ) : 'You'}
+                          </div>
+                          {msg.text}
+                        </div>
+                      ))}
+
+                      {chatLoading && (
+                        <div className="rounded-lg px-3 py-2 text-xs" style={{ background: 'color-mix(in srgb, var(--primary) 8%, var(--surface-2))', color: 'var(--primary)' }}>
+                          Gemini is drafting a response...
+                        </div>
+                      )}
+                    </div>
+
+                    <form
+                      className="mt-3 flex gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        sendChat();
+                      }}
+                    >
+                      <input
+                        ref={chatInputRef}
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        className="input flex-1"
+                        placeholder="Ask about risks, legal pressure, or deployment readiness"
+                      />
+                      <button type="submit" className="btn btn-primary btn-sm" disabled={!chatInput.trim() || chatLoading}>
+                        <Send size={12} />
+                        Send
+                      </button>
+                    </form>
+
+                    {continuePrompt && !chatLoading && (
+                      <div className="mt-3 p-2.5 rounded-lg" style={{ background: 'color-mix(in srgb, var(--primary) 8%, var(--surface-2))', border: '1px solid color-mix(in srgb, var(--primary) 24%, var(--border))' }}>
+                        <div className="text-[11px] mb-2" style={{ color: 'var(--muted)' }}>
+                          Do you want to keep talking?
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-sm"
+                            onClick={() => sendChat(continuePrompt, { keepTalkingAuto: true })}
+                          >
+                            Yes, keep talking
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            onClick={() => {
+                              setChatInput(continuePrompt);
+                              setContinuePrompt('');
+                              chatInputRef.current?.focus();
+                            }}
+                          >
+                            Edit next question
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
+                    <div className="text-xs font-semibold mb-2" style={{ color: 'var(--primary)' }}>Narrative Comments</div>
+                    <div className="text-[11px] mb-3" style={{ color: 'var(--placeholder)' }}>
+                      Comments persist in your browser for this audit.
+                    </div>
+
+                    <div className="space-y-2 max-h-[42vh] overflow-y-auto pr-1">
+                      {comments.length === 0 && (
+                        <div className="text-xs" style={{ color: 'var(--muted)' }}>No comments yet. Add one to start brainstorming.</div>
+                      )}
+                      {comments.map((comment) => (
+                        <div key={comment.id} className="rounded-lg p-3" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                          <div className="text-[11px] mb-1" style={{ color: 'var(--placeholder)' }}>
+                            {new Date(comment.createdAt).toLocaleString()}
+                          </div>
+                          <div className="text-xs leading-relaxed" style={{ color: 'var(--fg)' }}>{comment.text}</div>
+                          <div className="mt-2">
+                            <button type="button" className="btn btn-outline btn-sm" onClick={() => deleteComment(comment.id)}>
+                              <Trash2 size={12} /> Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-3 space-y-2">
+                      <textarea
+                        className="textarea w-full"
+                        rows={3}
+                        value={commentInput}
+                        onChange={(e) => setCommentInput(e.target.value)}
+                        placeholder="Capture an observation, risk hypothesis, or mitigation idea"
+                      />
+                      <button type="button" className="btn btn-primary btn-sm" onClick={addComment} disabled={!commentInput.trim()}>
+                        Add comment
+                      </button>
+                      {commentFeedback && (
+                        <div className="text-[11px]" style={{ color: 'var(--placeholder)' }}>{commentFeedback}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </aside>
         </>
@@ -1453,6 +2489,7 @@ function EqOddsGroup({ attr, groups }: { attr: string; groups: any }) {
 function ModelTab({ audit }: { audit: any }) {
   const modelBias = audit.modelBias;
   const flip = audit.flipSensitivity;
+  const flipAttributeEntries = Object.entries(modelBias || {}).filter(([k]) => k !== '_equalized_odds');
   const [sampleRow, setSampleRow] = useState<Record<string, any>>({});
   const [sampleRowIndex, setSampleRowIndex] = useState<number | null>(null);
   const [rowLoaded, setRowLoaded] = useState(false);
@@ -1464,6 +2501,7 @@ function ModelTab({ audit }: { audit: any }) {
   const [explainEnabled, setExplainEnabled] = useState(false);
   const [explainLoading, setExplainLoading] = useState(false);
   const [copyMsg, setCopyMsg] = useState('');
+  const [expandedFlipAttr, setExpandedFlipAttr] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -1533,6 +2571,64 @@ function ModelTab({ audit }: { audit: any }) {
 
   const changedFeatures = new Set((minimumFlipResult?.changedFields || []).map((x: any) => x.feature));
 
+  /* ---- Phase D: dimension + metric toggles ---- */
+  const [modelMetric, setModelMetric] = useState<'fpr' | 'fnr'>('fpr');
+
+  const eqOddsDimensions = useMemo(() => {
+    return Object.keys(eqOdds).filter((k) => Object.keys(eqOdds[k] || {}).length >= 2);
+  }, [eqOdds]);
+
+  const [modelDimension, setModelDimension] = useState<string>(eqOddsDimensions[0] || '');
+
+  useEffect(() => {
+    if (eqOddsDimensions.length > 0 && !eqOddsDimensions.includes(modelDimension)) {
+      setModelDimension(eqOddsDimensions[0]);
+    }
+  }, [eqOddsDimensions, modelDimension]);
+
+  const resolveBaseline = (dim: string) => {
+    const biasEntry = Object.values(audit.dataBias || {}).find(
+      (b: any) => String(b?.attribute || '').toLowerCase().replace(/[^a-z]/g, '') === dim.toLowerCase().replace(/[^a-z]/g, ''),
+    ) as any;
+    if (biasEntry?.privileged_group || biasEntry?.privilegedGroup) {
+      return biasEntry.privileged_group || biasEntry.privilegedGroup;
+    }
+    const groups = Object.keys(eqOdds[dim] || {});
+    return groups[0] || '';
+  };
+
+  const baselineGroup = resolveBaseline(modelDimension);
+
+  const dumbbellRows = useMemo(() => {
+    const dimData = eqOdds[modelDimension] || {};
+    const baseMetrics = dimData[baselineGroup];
+    if (!baseMetrics) return [];
+    const baseVal = (baseMetrics[modelMetric] ?? 0) * 100;
+    return Object.entries(dimData)
+      .filter(([g]) => g !== baselineGroup)
+      .map(([group, metrics]: [string, any]) => {
+        const val = (metrics[modelMetric] ?? 0) * 100;
+        return { group, baselineValue: baseVal, value: val, delta: val - baseVal };
+      })
+      .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  }, [eqOdds, modelDimension, modelMetric, baselineGroup]);
+
+  const validationRows = useMemo(() => {
+    const dimData = eqOdds[modelDimension] || {};
+    const baseMetrics = dimData[baselineGroup];
+    if (!baseMetrics) return [];
+    return Object.entries(dimData).map(([group, metrics]: [string, any]) => {
+      const fpr = (metrics.fpr ?? 0) * 100;
+      const fnr = (metrics.fnr ?? 0) * 100;
+      const precision = (metrics.precision ?? 0) * 100;
+      const baseFpr = (baseMetrics.fpr ?? 0) * 100;
+      const baseFnr = (baseMetrics.fnr ?? 0) * 100;
+      const deltaFpr = fpr - baseFpr;
+      const deltaFnr = fnr - baseFnr;
+      return { group, fpr, fnr, precision, deltaFpr, deltaFnr, isBaseline: group === baselineGroup };
+    });
+  }, [eqOdds, modelDimension, baselineGroup]);
+
   async function onCheckDecision() {
     try {
       setDecisionLoading(true);
@@ -1579,8 +2675,136 @@ function ModelTab({ audit }: { audit: any }) {
     });
   }
 
+  const getFlipRateBand = (rate: number) => {
+    if (rate >= 0.1) return { label: 'Critical', cls: 'flip-rate-pill critical' };
+    if (rate >= 0.05) return { label: 'Elevated', cls: 'flip-rate-pill warning' };
+    return { label: 'Stable', cls: 'flip-rate-pill safe' };
+  };
+
   return (
     <div className="space-y-3">
+      {/* ---- Phase D: Disparity Dumbbell with toggles ---- */}
+      {eqOddsDimensions.length > 0 && (
+        <>
+          {/* Model Dimension Toggle */}
+          <div className="card" style={{ padding: 10 }}>
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Model dimension selector">
+              {eqOddsDimensions.map((dim) => {
+                const active = modelDimension === dim;
+                return (
+                  <button
+                    key={dim}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setModelDimension(dim)}
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                    style={{
+                      border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
+                      background: active ? 'var(--primary-dim)' : 'var(--surface)',
+                      color: active ? 'var(--primary)' : 'var(--muted)',
+                    }}
+                  >
+                    {dim.charAt(0).toUpperCase() + dim.slice(1).replace(/_/g, ' ')}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* FPR / FNR Metric Toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Metric:</span>
+            {(['fpr', 'fnr'] as const).map((m) => {
+              const active = modelMetric === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setModelMetric(m)}
+                  className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+                  style={{
+                    border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
+                    background: active ? 'var(--primary)' : 'var(--surface)',
+                    color: active ? '#fff' : 'var(--muted)',
+                  }}
+                >
+                  {m === 'fpr' ? 'False Positive Rate' : 'False Negative Rate'}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Dumbbell Chart */}
+          <div className="card">
+            <DisparityDumbbellChart
+              dimensionLabel={modelDimension.charAt(0).toUpperCase() + modelDimension.slice(1).replace(/_/g, ' ')}
+              metric={modelMetric}
+              baselineGroup={baselineGroup}
+              rows={dumbbellRows}
+            />
+          </div>
+
+          {/* Phase D2: Raw Validation Table */}
+          {validationRows.length > 0 && (
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
+                FPR / FNR Validation- {modelDimension.charAt(0).toUpperCase() + modelDimension.slice(1).replace(/_/g, ' ')}
+                <span className="ml-2 text-[10px] font-normal" style={{ color: 'var(--placeholder)' }}>
+                  Baseline: {baselineGroup}
+                </span>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Group</th>
+                      <th>FPR</th>
+                      <th>FNR</th>
+                      <th>Precision</th>
+                      <th>Δ FPR vs Baseline</th>
+                      <th>Δ FNR vs Baseline</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {validationRows.map((row) => {
+                      const deltaColor = (d: number) => {
+                        const abs = Math.abs(d);
+                        if (abs >= 10) return 'var(--danger)';
+                        if (abs >= 5) return 'var(--status-warning)';
+                        return 'var(--muted)';
+                      };
+                      return (
+                        <tr key={row.group}>
+                          <td className="font-medium">
+                            {row.group}
+                            {row.isBaseline && (
+                              <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--primary-dim)', color: 'var(--primary)' }}>
+                                baseline
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ color: row.fpr > 15 ? 'var(--danger)' : 'var(--muted)' }}>{row.fpr.toFixed(1)}%</td>
+                          <td style={{ color: row.fnr > 15 ? 'var(--accent)' : 'var(--muted)' }}>{row.fnr.toFixed(1)}%</td>
+                          <td>{row.precision.toFixed(1)}%</td>
+                          <td style={{ color: deltaColor(row.deltaFpr), fontWeight: Math.abs(row.deltaFpr) >= 5 ? 600 : 400 }}>
+                            {row.isBaseline ? '-' : `${row.deltaFpr > 0 ? '+' : ''}${row.deltaFpr.toFixed(1)} pp`}
+                          </td>
+                          <td style={{ color: deltaColor(row.deltaFnr), fontWeight: Math.abs(row.deltaFnr) >= 5 ? 600 : 400 }}>
+                            {row.isBaseline ? '-' : `${row.deltaFnr > 0 ? '+' : ''}${row.deltaFnr.toFixed(1)} pp`}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ---- Adversarial Applicant Simulator (existing) ---- */}
       <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
         <div className="flex items-center justify-between gap-2 mb-3">
           <div>
@@ -1595,7 +2819,7 @@ function ModelTab({ audit }: { audit: any }) {
           <div className="text-xs" style={{ color: 'var(--muted)' }}>Loading sample row...</div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {editableFields.map(([feature, value]) => (
                 <div key={feature}>
                   <label className="label-text block mb-1" style={{ color: 'var(--muted)' }}>{feature}</label>
@@ -1656,7 +2880,7 @@ function ModelTab({ audit }: { audit: any }) {
             )}
 
             {minimumFlipResult && (
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                   <div className="text-xs font-semibold mb-2" style={{ color: 'var(--muted)' }}>Current Profile</div>
                   <div className="space-y-1 text-xs">
@@ -1692,9 +2916,13 @@ function ModelTab({ audit }: { audit: any }) {
       </div>
 
       {/* Counterfactual flip rates */}
-      {Object.entries(modelBias).filter(([k]) => k !== '_equalized_odds').map(([attr, data]: [string, any]) => {
+      {flipAttributeEntries.map(([attr, data]: [string, any]) => {
         const flips = Object.entries(data.flip_rates || {}).filter(([, r]: [string, any]) => r > 0);
+        const topPreview = [...flips]
+          .sort((a: any, b: any) => Number(b[1]) - Number(a[1]))
+          .slice(0, 3);
         const totalTested = data.total_transitions_tested || Object.keys(data.flip_rates || {}).length;
+        const isExpanded = expandedFlipAttr === attr;
         return (
           <div key={attr} className="card" style={{ padding: 0 }}>
             <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -1704,30 +2932,82 @@ function ModelTab({ audit }: { audit: any }) {
                   ({flips.length} non-zero of {totalTested} tested)
                 </span>
               </div>
-              <span className={`badge ${sevBadge(data.verdict)}`}>{data.verdict}</span>
+              <div className="flex items-center gap-2">
+                <span className={`badge ${sevBadge(data.verdict)}`}>{data.verdict}</span>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => setExpandedFlipAttr((prev) => (prev === attr ? null : attr))}
+                >
+                  {isExpanded ? 'Hide details' : 'Show details'}
+                </button>
+              </div>
             </div>
-            {flips.length > 0 ? (
+
+            {!isExpanded && (
+              <div className="px-4 py-3" style={{ color: 'var(--muted)' }}>
+                <div className="text-xs mb-2">
+                  {(flips.length || 0)} non-zero transitions detected. Quick preview below.
+                </div>
+                {topPreview.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {topPreview.map(([transition, rate]: [string, any]) => {
+                      const pct = (Number(rate) * 100).toFixed(1);
+                      return (
+                        <span
+                          key={transition}
+                          className="text-[10px] font-semibold px-2 py-1 rounded-full"
+                          style={{
+                            background: Number(rate) >= 0.1 ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                            color: Number(rate) >= 0.1 ? 'var(--danger)' : 'var(--accent)',
+                            border: `1px solid ${Number(rate) >= 0.1 ? 'rgba(239, 68, 68, 0.35)' : 'rgba(245, 158, 11, 0.35)'}`,
+                          }}
+                        >
+                          {transition}: {pct}%
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-xs" style={{ color: 'var(--placeholder)' }}>
+                    No risky transitions to preview.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isExpanded && flips.length > 0 ? (
               <table>
                 <thead><tr><th>Transition</th><th>Flip Rate</th><th>Indicator</th></tr></thead>
                 <tbody>
-                  {flips.slice(0, 10).map(([trans, rate]: [string, any]) => (
-                    <tr key={trans}>
-                      <td className="font-medium">{trans}</td>
-                      <td style={{ color: rate > 0.1 ? 'var(--danger)' : 'var(--success)' }}>{(rate * 100).toFixed(1)}%</td>
-                      <td>
-                        <div className="w-20 h-1.5 rounded-full" style={{ background: 'var(--surface-2)' }}>
-                          <div className="h-full rounded-full" style={{ width: `${Math.min(rate * 100, 100)}%`, background: rate > 0.1 ? 'var(--danger)' : 'var(--success)' }} />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {flips.slice(0, 10).map(([trans, rate]: [string, any], idx: number) => {
+                    const pct = Number(rate) * 100;
+                    const band = getFlipRateBand(Number(rate));
+                    return (
+                      <tr key={trans} className={idx % 2 === 0 ? 'flip-rate-row-even' : 'flip-rate-row-odd'}>
+                        <td className="font-medium">{trans}</td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <span className={band.cls}>{pct.toFixed(1)}%</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--placeholder)' }}>
+                              {band.label}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="w-20 h-1.5 rounded-full" style={{ background: 'var(--surface-2)' }}>
+                            <div className="h-full rounded-full" style={{ width: `${Math.min(rate * 100, 100)}%`, background: rate > 0.1 ? 'var(--danger)' : 'var(--success)' }} />
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
-            ) : (
+            ) : isExpanded ? (
               <div className="px-4 py-3 text-xs" style={{ color: 'var(--placeholder)' }}>
                 No prediction flips detected - model treats all {attr} groups equally.
               </div>
-            )}
+            ) : null}
             <div className="px-4 py-2 text-xs" style={{ color: 'var(--placeholder)', borderTop: '1px solid var(--border)' }}>
               Max: {(data.max_flip_rate * 100).toFixed(1)}% | Mean: {(data.mean_flip_rate * 100).toFixed(1)}%
               {flips.length > 10 && <span> | Showing top 10 of {flips.length}</span>}
@@ -1782,7 +3062,7 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
   const [open, setOpen] = useState(false);
   const criticalCount = items.filter((d: any) => d.severity === 'CRITICAL').length;
   const highCount = items.filter((d: any) => d.severity === 'HIGH').length;
-  
+
   return (
     <div style={{ borderBottom: '1px solid var(--border)' }}>
       <button
@@ -1893,6 +3173,50 @@ function IntersectionalTab({ audit }: { audit: any }) {
 function ExplainabilityTab({ audit }: { audit: any }) {
   const laundering = audit.featureLaundering || [];
   const explainability = audit.explainability || {};
+  const proxies = audit.proxies || [];
+
+  /* ---- Phase E: Group waterfall state ---- */
+  const availableGroups = useMemo(() => {
+    const groupSet = new Set<string>();
+    for (const data of Object.values(explainability) as any[]) {
+      for (const group of Object.keys(data?.shap_by_group || {})) {
+        groupSet.add(group);
+      }
+    }
+    return Array.from(groupSet).sort();
+  }, [explainability]);
+
+  const [selectedGroup, setSelectedGroup] = useState<string>(availableGroups[0] || '');
+
+  useEffect(() => {
+    if (availableGroups.length > 0 && !availableGroups.includes(selectedGroup)) {
+      setSelectedGroup(availableGroups[0]);
+    }
+  }, [availableGroups, selectedGroup]);
+
+  /* ---- Phase E2: Proxy-risk features ---- */
+  const proxyRiskFeatures = useMemo(() => {
+    const firstAttr = Object.values(explainability)[0] as any;
+    const topFeatures = firstAttr?.top_features;
+    if (!topFeatures || topFeatures.length === 0) return [];
+    return joinFeaturesWithProxyRisk(topFeatures, proxies, 10);
+  }, [explainability, proxies]);
+
+  /* ---- Phase E3: Group waterfall SHAP values ---- */
+  const groupShapValues = useMemo(() => {
+    const merged: Record<string, number> = {};
+    for (const data of Object.values(explainability) as any[]) {
+      const groupData = data?.shap_by_group?.[selectedGroup];
+      if (!groupData) continue;
+      for (const [feature, value] of Object.entries(groupData)) {
+        const current = merged[feature] ?? 0;
+        if (Math.abs(Number(value)) > Math.abs(current)) {
+          merged[feature] = Number(value);
+        }
+      }
+    }
+    return merged;
+  }, [explainability, selectedGroup]);
 
   return (
     <div className="space-y-3">
@@ -1933,37 +3257,55 @@ function ExplainabilityTab({ audit }: { audit: any }) {
         </div>
       ))}
 
-      {/* SHAP Analysis */}
+      {/* SHAP Analysis - Phase E restructured */}
       {explainability && Object.keys(explainability).length > 0 ? (
         <>
-          {/* SHAP Summary Chart */}
+          {/* ===== ZONE 1: GLOBAL IMPACT ===== */}
+          <div className="card">
+            <ProxyRiskFeatureBars features={proxyRiskFeatures} />
+          </div>
+
+          {/* SHAP Summary Chart (existing - kept for visual depth) */}
           <ShapSummaryChart explainability={explainability} />
-          {/* Global Top Features */}
-          {Object.values(explainability)[0] && (Object.values(explainability)[0] as any).top_features?.length > 0 && (
-            <div className="card space-y-3">
-              <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
-                <Zap size={14} style={{ color: 'var(--primary)' }} />
-                Global Top Features by Importance
-              </h3>
-              <div className="space-y-1">
-                {(Object.values(explainability)[0] as any).top_features.slice(0, 10).map((f: any) => {
-                  const maxImp = (Object.values(explainability)[0] as any).top_features[0]?.importance || 1;
-                  const pct = (f.importance / maxImp) * 100;
+
+          {/* ===== ZONE 2: LOCAL GROUP IMPACT ===== */}
+          <div className="card space-y-4">
+            {/* Demographic selector */}
+            <div>
+              <div className="text-xs font-semibold mb-2" style={{ color: 'var(--muted)' }}>
+                Select Demographic Group
+              </div>
+              <div className="flex flex-wrap gap-2" role="tablist" aria-label="Demographic group selector">
+                {availableGroups.map((g) => {
+                  const active = selectedGroup === g;
                   return (
-                    <div key={f.feature} className="flex items-center gap-2">
-                      <span className="text-xs w-32 truncate" style={{ color: 'var(--muted)' }}>{f.feature}</span>
-                      <div className="flex-1 h-3 rounded-full" style={{ background: 'var(--surface-2)' }}>
-                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--primary)' }} />
-                      </div>
-                      <span className="text-xs w-12 text-right" style={{ color: 'var(--placeholder)' }}>{f.importance.toFixed(4)}</span>
-                    </div>
+                    <button
+                      key={g}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setSelectedGroup(g)}
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                      style={{
+                        border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
+                        background: active ? 'var(--primary-dim)' : 'var(--surface)',
+                        color: active ? 'var(--primary)' : 'var(--muted)',
+                      }}
+                    >
+                      {g}
+                    </button>
                   );
                 })}
               </div>
             </div>
-          )}
 
-          {/* Per-attribute SHAP Disparities */}
+            {/* Waterfall */}
+            {selectedGroup && (
+              <GroupImpactWaterfall shapValues={groupShapValues} group={selectedGroup} />
+            )}
+          </div>
+
+          {/* Per-attribute SHAP Disparities (kept for completeness) */}
           {Object.entries(explainability).map(([attr, data]: [string, any]) => (
             <div key={attr} className="card space-y-3">
               <h3 className="text-sm font-semibold flex items-center gap-2">
@@ -2355,8 +3697,8 @@ function LegalTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
           <div>
             <div className="text-xs font-bold" style={{ color: 'var(--accent)' }}>DISCLAIMER: RISK INDICATORS ONLY</div>
             <div className="text-xs mt-1" style={{ color: 'var(--fg)' }}>
-              This report highlights statistical risks based on fairness metrics and maps them to relevant compliance frameworks for {audit.domain} targeting {audit.jurisdiction}. 
-              It does not constitute formal legal advice, nor does it definitively declare legal liability. 
+              This report highlights statistical risks based on fairness metrics and maps them to relevant compliance frameworks for {audit.domain} targeting {audit.jurisdiction}.
+              It does not constitute formal legal advice, nor does it definitively declare legal liability.
               Consult with legal counsel before making compliance determinations.
             </div>
           </div>
