@@ -3521,34 +3521,8 @@ input[type="range"]::-webkit-slider-thumb {
   }
 }
 
-/* ---- Right Sidebar (Audit Tabs) ---- */
-.right-sidebar {
-  position: fixed;
-  right: 4px;
-  top: 4px;
-  bottom: 4px;
-  width: 200px;
-  z-index: 38;
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
-  box-shadow: var(--card-shadow);
-  overflow: hidden;
-}
-
-.right-sidebar.collapsed {
-  width: 48px;
-}
-
-[data-theme="dark"] .right-sidebar {
-  background: color-mix(in srgb, var(--surface) 86%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 18px 36px -28px rgba(0, 0, 0, 0.72), 0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent);
-}
+/* ---- Right Sidebar (Audit Tabs) — visual styles ---- */
+/* Position/size rules are in the DASHBOARD SHELL section below */
 
 .right-sidebar-header {
   padding: 14px 12px 10px;
@@ -3646,34 +3620,130 @@ input[type="range"]::-webkit-slider-thumb {
   display: none;
 }
 
-/* Main layout wrapper */
-.main-content-wrapper {
-  margin-left: 0;
-  margin-right: 0;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 100%;
+/* ===================================================================
+   DASHBOARD SHELL — Flex layout (sidebar + main side-by-side)
+   =================================================================== */
+.dashboard-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ---- Left sidebar (desktop: sticky, mobile: fixed overlay) ---- */
+.sidebar-aside {
+  /* Mobile defaults — fixed overlay, hidden off-screen */
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  left: 12px;
+  top: 12px;
+  bottom: 12px;
+  width: 84vw;
+  max-width: 272px;
+  border-radius: 16px;
+  transform: translateX(-120%);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease,
+              width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-aside.sidebar-mobile-open {
+  transform: translateX(0);
+  opacity: 1;
 }
 
 @media (min-width: 1024px) {
-  .main-content-wrapper {
-    margin-left: 248px; /* 232px sidebar + 16px gap */
+  .sidebar-aside {
+    /* Desktop — sticky flex child, part of layout flow */
+    position: sticky;
+    top: 0;
+    left: auto;
+    bottom: auto;
+    height: 100vh;
+    width: 248px;
+    min-width: 248px;
+    max-width: none;
+    border-radius: 0;
+    border-right: 1px solid var(--border) !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    transform: none;
+    opacity: 1;
+    z-index: 30;
+    overflow-y: auto;
   }
 
-  body.left-sidebar-collapsed .main-content-wrapper {
-    margin-left: 80px; /* 64px sidebar + 16px gap */
+  .sidebar-aside.sidebar-collapsed {
+    width: 72px;
+    min-width: 72px;
   }
+}
 
-  body.has-right-sidebar .main-content-wrapper {
-    margin-right: 208px; /* 200px right sidebar + 8px gap */
-  }
+/* ---- Main content area ---- */
+.dashboard-main {
+  flex: 1;
+  min-width: 0; /* prevent flex blowout */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: none;
+}
 
-  body.has-right-sidebar.right-sidebar-collapsed .main-content-wrapper {
-    margin-right: 56px; /* 48px right sidebar + 8px gap */
-  }
+/* ---- Audit page: content + right sidebar side-by-side ---- */
+.audit-content-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
 
-  .right-sidebar {
-    display: flex;
+.audit-content-area {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fade-in 0.3s ease-out both;
+}
+
+@media (min-width: 640px) {
+  .audit-content-area {
+    padding: 24px;
   }
+}
+
+/* ---- Right Sidebar (Audit Tabs) ---- */
+.right-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 200px;
+  min-width: 200px;
+  z-index: 28;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.right-sidebar.collapsed {
+  width: 48px;
+  min-width: 48px;
+}
+
+[data-theme="dark"] .right-sidebar {
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 18px 36px -28px rgba(0, 0, 0, 0.72), 0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 @media (max-width: 1023px) {

@@ -118,13 +118,8 @@ export default function Sidebar() {
     };
   }, [mobileOpen]);
 
-  useEffect(() => {
-    if (collapsed) {
-      document.body.classList.add('left-sidebar-collapsed');
-    } else {
-      document.body.classList.remove('left-sidebar-collapsed');
-    }
-  }, [collapsed]);
+
+
 
   const handleSignOut = async () => {
     await signOutUser();
@@ -159,9 +154,9 @@ export default function Sidebar() {
       )}
 
       <aside
-        className={`fixed z-50 flex flex-col transition-all duration-300 left-3 top-3 bottom-3 rounded-2xl w-[84vw] max-w-[272px] lg:left-4 lg:top-4 lg:bottom-4 lg:rounded-3xl ${
-          mobileOpen ? 'translate-x-0 opacity-100' : '-translate-x-[120%] opacity-0 lg:translate-x-0 lg:opacity-100'
-        } ${collapsed ? 'lg:w-[64px]' : 'lg:w-[232px]'}`}
+        className={`sidebar-aside ${
+          mobileOpen ? 'sidebar-mobile-open' : ''
+        } ${collapsed ? 'sidebar-collapsed' : ''}`}
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--border)',

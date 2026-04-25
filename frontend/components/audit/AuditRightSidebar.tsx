@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 type TabDef = {
@@ -17,19 +17,6 @@ interface AuditRightSidebarProps {
 
 export default function AuditRightSidebar({ tabs, activeTab, onTabChange }: AuditRightSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    document.body.classList.add('has-right-sidebar');
-    if (collapsed) {
-      document.body.classList.add('right-sidebar-collapsed');
-    } else {
-      document.body.classList.remove('right-sidebar-collapsed');
-    }
-    return () => {
-      document.body.classList.remove('has-right-sidebar');
-      document.body.classList.remove('right-sidebar-collapsed');
-    };
-  }, [collapsed]);
 
   return (
     <>
@@ -68,8 +55,3 @@ export default function AuditRightSidebar({ tabs, activeTab, onTabChange }: Audi
   );
 }
 
-export function useRightSidebarMargin() {
-  // Hook for parent components to get the right margin class
-  const [collapsed] = useState(false);
-  return collapsed ? 'has-right-sidebar-collapsed' : 'has-right-sidebar';
-}

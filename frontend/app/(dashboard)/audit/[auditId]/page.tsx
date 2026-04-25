@@ -549,9 +549,8 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
         </div>
       )}
 
-      <AuditRightSidebar tabs={tabs} activeTab={tab} onTabChange={setTab} />
-
-      <div className="flex-1 p-4 sm:p-6 mx-auto w-full max-w-[1600px] space-y-6 animate-fade-in">
+      <div className="audit-content-shell">
+        <div className="audit-content-area">
         {redTeam?.worstCase && (
           <div className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.35)', background: 'var(--danger-dim)' }}>
             <div className="text-xs font-semibold mb-1" style={{ color: 'var(--danger)' }}>WORST CASE SCENARIO</div>
@@ -636,6 +635,9 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
         {visibleTabKeys.has('narratives') && tab === 'narratives' && <NarrativesTab audit={audit} mode={stakeholderMode} />}
         {visibleTabKeys.has('fixes') && tab === 'fixes' && <FixesTab audit={audit} stakeholderMode={stakeholderMode} />}
         {visibleTabKeys.has('legal') && tab === 'legal' && <LegalTab audit={audit} mode={stakeholderMode} />}
+        </div>
+
+        <AuditRightSidebar tabs={tabs} activeTab={tab} onTabChange={setTab} />
       </div>
     </>
   );
