@@ -45,7 +45,7 @@ jobs:
               
               # Check critical imports
               from services.analysis.pipeline import run_full_pipeline
-              from services.gemini.narrative_generator import generate_all_stakeholder_narratives_sync
+              from services.gemini.narrative_generator import generate_audit_narrative_sync
               from core.firebase_init import initialize_firebase
               print('✓ All critical modules import successfully')
               

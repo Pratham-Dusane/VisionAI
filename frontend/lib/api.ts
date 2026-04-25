@@ -259,6 +259,7 @@ export async function getOrgSettings(orgId: string) {
       benchmarking_opt_in: boolean;
       email_notifications: boolean;
       explain_rejection_enabled: boolean;
+      shadow_testing_enabled?: boolean;
       org_logo_url?: string;
     };
   }>;
@@ -268,6 +269,7 @@ export async function updateOrgSettings(orgId: string, settings: {
   benchmarking_opt_in?: boolean;
   email_notifications?: boolean;
   explain_rejection_enabled?: boolean;
+  shadow_testing_enabled?: boolean;
   org_logo_url?: string;
 }) {
   const res = await fetch(`${API_BASE}/api/orgs/${orgId}/settings`, {
