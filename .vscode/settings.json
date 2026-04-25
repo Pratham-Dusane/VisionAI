@@ -1,4 +1,4 @@
-﻿{
+{
     "kiroAgent.configureMCP": "Disabled",
     "files.watcherExclude": {
         "**/.git/objects/**": true,

@@ -81,6 +81,12 @@ Return ONLY a valid JSON object where keys are attribute names and values are ob
                 max_output_tokens=1024,
                 top_p=0.8,
             ),
+            safety_settings={
+                genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+            }
         )
 
         response_text = response.text.strip()
@@ -128,6 +134,8 @@ Return ONLY a valid JSON object where keys are attribute names and values are ob
 
     except Exception as e:
         print(f"[JUSTIFIED_BIAS] Classification error: {e}")
+        import traceback
+        traceback.print_exc()
         return _fallback_classify(bias_findings, domain)
 
 
@@ -152,10 +160,14 @@ def classify_bias_findings_sync(
 ) -> Dict[str, Dict[str, Any]]:
     """Synchronous wrapper for classify_bias_findings."""
     import asyncio
-    loop = asyncio.new_event_loop()
     try:
-        return loop.run_until_complete(
-            classify_bias_findings(bias_findings, domain)
-        )
-    finally:
-        loop.close()
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            raise RuntimeError("closed")
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    return loop.run_until_complete(
+        classify_bias_findings(bias_findings, domain)
+    )

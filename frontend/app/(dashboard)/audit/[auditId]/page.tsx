@@ -3046,7 +3046,13 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
       const data = await runShadowTest(auditId);
       setResult(data);
     } catch (e: any) {
-      setError(e?.message || 'Shadow testing failed');
+      const errorMsg = e?.message || 'Shadow testing failed';
+      // Check if it's a settings error
+      if (errorMsg.includes('disabled') || errorMsg.includes('Enable it in Settings')) {
+        setError('Shadow Testing is disabled. Enable it in Settings → Preferences.');
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       setLoading(false);
     }

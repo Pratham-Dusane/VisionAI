@@ -3621,18 +3621,20 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 /* ===================================================================
-   DASHBOARD SHELL — Flex layout (sidebar + main side-by-side)
+   DASHBOARD SHELL — Grid layout (sidebar + main)
    =================================================================== */
 .dashboard-shell {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   min-height: 100vh;
+  width: 100%;
 }
 
 /* ---- Left sidebar (desktop: sticky, mobile: fixed overlay) ---- */
 .sidebar-aside {
   /* Mobile defaults — fixed overlay, hidden off-screen */
   position: fixed;
-  z-index: 50;
+  z-index: 60;
   display: flex;
   flex-direction: column;
   left: 12px;
@@ -3655,7 +3657,7 @@ input[type="range"]::-webkit-slider-thumb {
 
 @media (min-width: 1024px) {
   .sidebar-aside {
-    /* Desktop — sticky flex child, part of layout flow */
+    /* Desktop — sticky grid child, part of layout flow */
     position: sticky;
     top: 0;
     left: auto;
@@ -3671,7 +3673,7 @@ input[type="range"]::-webkit-slider-thumb {
     border-left: none !important;
     transform: none;
     opacity: 1;
-    z-index: 30;
+    z-index: 40;
     overflow-y: auto;
   }
 
@@ -3683,17 +3685,24 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* ---- Main content area ---- */
 .dashboard-main {
-  flex: 1;
-  min-width: 0; /* prevent flex blowout */
+  grid-column: 2;
+  min-width: 0; /* prevent blowout */
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   transition: none;
 }
 
+@media (max-width: 1023px) {
+  .dashboard-main {
+    grid-column: 1 / -1; /* Take full width on mobile since sidebar is fixed */
+  }
+}
+
 /* ---- Audit page: content + right sidebar side-by-side ---- */
 .audit-content-shell {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   flex: 1;
   min-height: 0;
 }
@@ -3724,7 +3733,7 @@ input[type="range"]::-webkit-slider-thumb {
   height: 100vh;
   width: 200px;
   min-width: 200px;
-  z-index: 28;
+  z-index: 38;
   display: flex;
   flex-direction: column;
   background: var(--surface);
@@ -3785,4 +3794,4 @@ input[type="range"]::-webkit-slider-thumb {
 .justified-bias-badge:hover {
   filter: brightness(1.15);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-}
+}
