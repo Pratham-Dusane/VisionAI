@@ -118,6 +118,14 @@ export default function Sidebar() {
     };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    if (collapsed) {
+      document.body.classList.add('left-sidebar-collapsed');
+    } else {
+      document.body.classList.remove('left-sidebar-collapsed');
+    }
+  }, [collapsed]);
+
   const handleSignOut = async () => {
     await signOutUser();
     router.push('/login');

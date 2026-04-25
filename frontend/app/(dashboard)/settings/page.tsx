@@ -1,7 +1,7 @@
 'use client';
 
 import TopNav from '@/components/layout/TopNav';
-import { Settings as SettingsIcon, User, Building2, Key, Bell, ToggleLeft, ToggleRight, Shield, Globe, Moon, Sun, LayoutTemplate, Rows3, Copy, Trash2 } from 'lucide-react';
+import { Settings as SettingsIcon, User, Building2, Key, Bell, ToggleLeft, ToggleRight, Shield, Globe, Moon, Sun, LayoutTemplate, Rows3, Copy, Trash2, Ghost } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTheme } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
@@ -20,6 +20,7 @@ export default function SettingsPage() {
   const [benchOptIn, setBenchOptIn] = useState(false);
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [explainMode, setExplainMode] = useState(false);
+  const [shadowTesting, setShadowTesting] = useState(false);
   const [orgLogoUrl, setOrgLogoUrl] = useState('');
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
@@ -58,6 +59,7 @@ export default function SettingsPage() {
           setBenchOptIn(Boolean(data.settings.benchmarking_opt_in));
           setEmailNotifs(Boolean(data.settings.email_notifications));
           setExplainMode(Boolean(data.settings.explain_rejection_enabled));
+          setShadowTesting(Boolean(data.settings.shadow_testing_enabled));
           setOrgLogoUrl(data.settings.org_logo_url || '');
           await loadApiKeys(org.id);
         }
@@ -81,6 +83,7 @@ export default function SettingsPage() {
         benchmarking_opt_in: benchOptIn,
         email_notifications: emailNotifs,
         explain_rejection_enabled: explainMode,
+        shadow_testing_enabled: shadowTesting,
       });
       setSaveMessage('Preferences saved.');
     } catch (error: unknown) {
@@ -324,6 +327,7 @@ export default function SettingsPage() {
                 <Toggle label="Sector Benchmarking" sub="Share anonymized scores" icon={Globe} on={benchOptIn} onToggle={() => setBenchOptIn(!benchOptIn)} />
                 <Toggle label="Email Notifications" sub="Get alerts on drift" icon={Bell} on={emailNotifs} onToggle={() => setEmailNotifs(!emailNotifs)} />
                 <Toggle label="Explain My Rejection" sub="Enable public explanation URLs" icon={Shield} on={explainMode} onToggle={() => setExplainMode(!explainMode)} />
+                <Toggle label="Shadow Testing" sub="Generate synthetic rows for missing demographics" icon={Ghost} on={shadowTesting} onToggle={() => setShadowTesting(!shadowTesting)} />
                 <button className="btn btn-primary btn-sm" onClick={savePreferences} disabled={!org}>Save Preferences</button>
                 {saveMessage && <div className="text-xs" style={{ color: 'var(--muted)' }}>{saveMessage}</div>}
               </>

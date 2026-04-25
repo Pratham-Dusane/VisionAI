@@ -28,6 +28,7 @@ from services.analysis.explainability import compute_explainability_all
 from services.compliance.regulation_mapper import map_regulations
 from services.gemini.blind_spot_detector import detect_blind_spots_sync
 from services.gemini.stakeholder_formatter import generate_all_stakeholder_narratives_sync
+from services.gemini.justified_bias import classify_bias_findings_sync
 from core.firebase_init import download_from_storage, cleanup_temp_file
 
 
@@ -183,6 +184,19 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
         )
         results["dataBias"] = data_bias
         _update_progress(db, audit_id, "data_bias_scan", "complete")
+
+        # --- Step 5b: Justified bias classification (Gemini AI) ---
+        _update_progress(db, audit_id, "justified_bias", "running")
+        try:
+            justified = classify_bias_findings_sync(
+                data_bias, config.get("domain", "Other")
+            )
+            results["justifiedBias"] = justified
+            logger.info(f"[PIPELINE] Classified {len(justified)} bias findings for justification")
+        except Exception as e:
+            results["justifiedBias"] = {}
+            logger.error(f"[PIPELINE] Justified bias classification error: {e}")
+        _update_progress(db, audit_id, "justified_bias", "complete")
 
         # --- Step 6: Model evaluation (skip if dataOnly) ---
         model = None

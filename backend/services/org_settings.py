@@ -9,6 +9,7 @@ DEFAULT_ORG_SETTINGS = {
     "benchmarking_opt_in": False,
     "email_notifications": True,
     "explain_rejection_enabled": False,
+    "shadow_testing_enabled": False,
     "org_logo_url": "",
 }
 

@@ -1,6 +1,6 @@
 """
 Audit router - Create, retrieve, list audits.
-Runs full analysis pipeline (Phase 4) async via BackgroundTasks.
+Runs full analysis pipeline via Cloud Run Job (Phase 10).
 """
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks
@@ -10,10 +10,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 from itertools import combinations
+import asyncio
+import json
+import logging
 import numpy as np
 import pandas as pd
 import traceback
 import math
+import os
 
 from services.analysis.pipeline import run_full_pipeline
 from services.analysis.model_bias_evaluator import load_model
@@ -32,10 +36,21 @@ try:
 except Exception:
     bigquery = None
 
+try:
+    from google.cloud import run_v2
+except Exception:
+    run_v2 = None
+
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 router = APIRouter()
+
+# Cloud Run Job configuration
+GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID", "visionai-prod")
+GCP_REGION = os.getenv("GCP_REGION", "asia-south1")
+WORKER_JOB_NAME = os.getenv("WORKER_JOB_NAME", "visionai-worker")
+USE_CLOUD_RUN_JOBS = os.getenv("USE_CLOUD_RUN_JOBS", "false").lower() == "true"
 
 
 def _build_pdf_branding(db, audit: dict) -> dict:
@@ -800,26 +815,27 @@ def _run_pipeline_background(config: dict, audit_id: str, doc_ref):
             "status": "COMPLETE",
             "rowCount": results.get("schema", {}).get("row_count", 0),
             "columnCount": results.get("schema", {}).get("column_count", 0),
-            "schema": results.get("schema"),
+            "schema": json.dumps(results.get("schema") or {}),
             "binning": results.get("binning"),
             "proxies": results.get("proxies"),
-            "profiles": results.get("profiles"),
-            "dataBias": results.get("dataBias"),
-            "modelBias": results.get("modelBias"),
+            "profiles": json.dumps(results.get("profiles") or []),
+            "dataBias": json.dumps(results.get("dataBias") or {}),
+            "modelBias": json.dumps(results.get("modelBias") or {}),
             "flipSensitivity": results.get("flipSensitivity"),
-            "explainability": results.get("explainability"),
-            "intersectional": results.get("intersectional"),
-            "featureLaundering": results.get("featureLaundering"),
-            "historicalHarm": results.get("historicalHarm"),
-            "regulationMap": results.get("regulationMap"),
+            "explainability": json.dumps(results.get("explainability") or {}),
+            "intersectional": json.dumps(results.get("intersectional") or []),
+            "featureLaundering": json.dumps(results.get("featureLaundering") or []),
+            "historicalHarm": json.dumps(results.get("historicalHarm") or {}),
+            "regulationMap": json.dumps(results.get("regulationMap") or {}),
             "severity": results.get("severity"),
             "fairnessScore": results.get("severity", {}).get("fairness_score", 0),
             "letterGrade": results.get("severity", {}).get("letter_grade", "?"),
-            "blindSpots": results.get("blindSpots", []),
-            "narratives": results.get("narratives", {}),
-            "biasOriginTracer": results.get("biasOriginTracer", []),
-            "modelDecisionBias": results.get("modelDecisionBias", {}),
-            "benchmarking": benchmark,
+            "blindSpots": json.dumps(results.get("blindSpots") or []),
+            "narratives": json.dumps(results.get("narratives") or {}),
+            "biasOriginTracer": json.dumps(results.get("biasOriginTracer") or []),
+            "modelDecisionBias": json.dumps(results.get("modelDecisionBias") or {}),
+            "justifiedBias": json.dumps(results.get("justifiedBias") or {}),
+            "benchmarking": json.dumps(benchmark or {}),
             "modelError": results.get("modelError"),
             "explainabilityError": results.get("explainabilityError"),
         }
@@ -835,11 +851,49 @@ def _run_pipeline_background(config: dict, audit_id: str, doc_ref):
             pass
 
 
+def _dispatch_cloud_run_job(audit_id: str, config: dict) -> None:
+    """
+    Dispatch analysis job to Cloud Run Job worker.
+    This replaces the FastAPI background task for Phase 10.
+    """
+    if not run_v2:
+        raise ImportError("google-cloud-run package not installed")
+    
+    try:
+        client = run_v2.JobsClient()
+        job_name = f"projects/{GCP_PROJECT_ID}/locations/{GCP_REGION}/jobs/{WORKER_JOB_NAME}"
+        
+        # Create execution request with environment variables
+        request = run_v2.RunJobRequest(
+            name=job_name,
+            overrides=run_v2.RunJobRequest.Overrides(
+                container_overrides=[
+                    run_v2.RunJobRequest.Overrides.ContainerOverride(
+                        env=[
+                            run_v2.EnvVar(name="VISIONAI_JOB_KIND", value="analysis"),
+                            run_v2.EnvVar(name="VISIONAI_AUDIT_ID", value=audit_id),
+                            run_v2.EnvVar(name="VISIONAI_CONFIG", value=json.dumps(config)),
+                        ]
+                    )
+                ]
+            )
+        )
+        
+        # Execute job asynchronously
+        operation = client.run_job(request=request)
+        logging.info(f"Dispatched Cloud Run Job for audit {audit_id}: {operation.name}")
+        
+    except Exception as e:
+        logging.error(f"Failed to dispatch Cloud Run Job: {str(e)}")
+        # Fall back to background task if Cloud Run Job fails
+        raise
+
+
 @router.post("")
 async def create_audit(req: CreateAuditRequest, background_tasks: BackgroundTasks):
     """
-    Create audit doc → immediately return audit ID.
-    Pipeline runs async in background, updates Firestore when done.
+    Create audit doc → dispatch to Cloud Run Job or background task.
+    Pipeline runs async, updates Firestore when done.
     Frontend polls GET /api/audits/{id} for status.
     """
     try:
@@ -869,9 +923,19 @@ async def create_audit(req: CreateAuditRequest, background_tasks: BackgroundTask
         doc_ref.set(audit_doc)
         audit_id = doc_ref.id
 
-        # Run pipeline async - returns immediately
+        # Dispatch to Cloud Run Job or background task
         config = req.model_dump()
-        background_tasks.add_task(_run_pipeline_background, config, audit_id, doc_ref)
+        
+        if USE_CLOUD_RUN_JOBS:
+            try:
+                _dispatch_cloud_run_job(audit_id, config)
+                logging.info(f"Dispatched audit {audit_id} to Cloud Run Job")
+            except Exception as e:
+                logging.warning(f"Cloud Run Job dispatch failed, falling back to background task: {str(e)}")
+                background_tasks.add_task(_run_pipeline_background, config, audit_id, doc_ref)
+        else:
+            # Local development - use background task
+            background_tasks.add_task(_run_pipeline_background, config, audit_id, doc_ref)
 
         return {
             "auditId": audit_id,
@@ -892,6 +956,19 @@ async def get_audit(audit_id: str):
             raise HTTPException(status_code=404, detail="Audit not found")
         data = doc.to_dict()
         data["id"] = doc.id
+        
+        # Deserialize JSON fields
+        json_fields = ["schema", "profiles", "dataBias", "modelBias", "explainability", 
+                       "intersectional", "featureLaundering", "historicalHarm", "regulationMap",
+                       "blindSpots", "narratives", "biasOriginTracer", "modelDecisionBias", 
+                       "justifiedBias", "benchmarking"]
+        for field in json_fields:
+            if field in data and isinstance(data[field], str):
+                try:
+                    data[field] = json.loads(data[field])
+                except Exception:
+                    pass
+                    
         return data
     except HTTPException:
         raise
@@ -904,16 +981,27 @@ async def list_audits(orgId: str):
     """List all audits for org, newest first."""
     try:
         db = firestore.client()
-        docs = (
-            db.collection("audits")
-            .where(filter=FieldFilter("orgId", "==", orgId))
-            .stream()
-        )
+        query = db.collection("audits").where(filter=FieldFilter("orgId", "==", orgId))
+        docs = query.stream()
         audits = []
+        
+        json_fields = ["schema", "profiles", "dataBias", "modelBias", "explainability", 
+                       "intersectional", "featureLaundering", "historicalHarm", "regulationMap",
+                       "blindSpots", "narratives", "biasOriginTracer", "modelDecisionBias", 
+                       "justifiedBias", "benchmarking"]
+                       
         for doc in docs:
-            data = doc.to_dict()
-            data["id"] = doc.id
-            audits.append(data)
+            d = doc.to_dict()
+            d["id"] = doc.id
+            
+            for field in json_fields:
+                if field in d and isinstance(d[field], str):
+                    try:
+                        d[field] = json.loads(d[field])
+                    except Exception:
+                        pass
+                        
+            audits.append(d)
         audits.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
         return audits
     except Exception as e:
@@ -1343,3 +1431,154 @@ async def explain_rejection(audit_id: str, row_index: int):
             cleanup_temp_file(local_data_path)
         if local_model_path:
             cleanup_temp_file(local_model_path)
+
+
+@router.post("/{audit_id}/shadow-test")
+async def run_shadow_test(audit_id: str):
+    """
+    Generative Shadow Testing - Zero-Shot Fairness.
+    Generate synthetic rows for missing demographic intersections,
+    run through model, report potential bias.
+    Requires shadow_testing_enabled in org settings.
+    """
+    local_data_path = None
+    local_model_path = None
+    try:
+        db = firestore.client()
+        doc = db.collection("audits").document(audit_id).get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Audit not found")
+
+        audit = doc.to_dict()
+        org_id = audit.get("orgId")
+
+        # Check opt-in
+        settings = get_org_settings(db, org_id) if org_id else {}
+        if not settings.get("shadow_testing_enabled", False):
+            raise HTTPException(
+                status_code=403,
+                detail="Shadow Testing is disabled. Enable it in Settings → Preferences."
+            )
+
+        if audit.get("dataOnly") or not audit.get("modelStoragePath"):
+            raise HTTPException(
+                status_code=400,
+                detail="Shadow testing requires a model-backed audit."
+            )
+
+        local_data_path = download_from_storage(audit["storagePath"])
+        local_model_path = download_from_storage(audit["modelStoragePath"])
+
+        df = _load_dataframe(local_data_path)
+        model = load_model(str(local_model_path))
+        if model is None:
+            raise HTTPException(status_code=400, detail="Unable to load model")
+
+        label_col = audit["labelCol"]
+        protected_cols = [c for c in audit.get("protectedCols", []) if c in df.columns]
+        threshold = float(audit.get("threshold", 0.5))
+        domain = audit.get("domain", "General")
+
+        if not protected_cols:
+            raise HTTPException(status_code=400, detail="No protected columns found in dataset.")
+
+        # Get existing intersections
+        from services.gemini.shadow_testing import generate_shadow_rows, get_existing_intersections
+
+        existing = get_existing_intersections(df, protected_cols)
+
+        # Build schema info
+        column_names = [c for c in df.columns if c != label_col]
+        column_types = {c: str(df[c].dtype) for c in column_names}
+        sample_vals = {}
+        for c in column_names:
+            vals = df[c].dropna().head(5).tolist()
+            sample_vals[c] = [_pythonize(v) for v in vals]
+
+        # Generate shadow rows
+        shadow_rows = await generate_shadow_rows(
+            column_names=column_names,
+            column_types=column_types,
+            sample_values=sample_vals,
+            protected_cols=protected_cols,
+            existing_intersections=existing,
+            domain=domain,
+            count=10,
+        )
+
+        if not shadow_rows:
+            return {
+                "auditId": audit_id,
+                "shadowRows": [],
+                "results": [],
+                "summary": "No shadow rows could be generated.",
+            }
+
+        # Run each shadow row through model
+        feature_cols = _get_feature_columns(df, label_col)
+        df_features = df[feature_cols].copy()
+        results = []
+
+        for i, row in enumerate(shadow_rows):
+            try:
+                profile = _build_input_profile(df, label_col, row)
+                score, decision = _predict_single_profile(model, df_features, profile, threshold)
+
+                # Extract protected attribute values
+                demo = {c: _pythonize(row.get(c)) for c in protected_cols}
+
+                results.append({
+                    "index": i,
+                    "demographics": demo,
+                    "score": round(float(score), 4),
+                    "decision": "ACCEPT" if decision == 1 else "REJECT",
+                    "profile": _to_json_row(profile),
+                })
+            except Exception as e:
+                results.append({
+                    "index": i,
+                    "demographics": {c: row.get(c) for c in protected_cols},
+                    "error": str(e),
+                })
+
+        # Compute summary
+        total = len(results)
+        rejects = sum(1 for r in results if r.get("decision") == "REJECT")
+        accepts = sum(1 for r in results if r.get("decision") == "ACCEPT")
+        reject_rate = round(rejects / total, 4) if total > 0 else 0
+
+        # Compare to dataset baseline
+        baseline_positive_rate = 0
+        if label_col in df.columns:
+            pos_label = audit.get("positiveLabel", "1")
+            baseline_positive_rate = round(
+                float((df[label_col].astype(str) == str(pos_label)).mean()), 4
+            )
+
+        summary = {
+            "totalGenerated": total,
+            "accepts": accepts,
+            "rejects": rejects,
+            "shadowRejectRate": reject_rate,
+            "baselinePositiveRate": baseline_positive_rate,
+            "disparityFlag": reject_rate > (1 - baseline_positive_rate) * 1.25,
+        }
+
+        return {
+            "auditId": audit_id,
+            "shadowRows": [_to_json_row(r) for r in shadow_rows],
+            "results": results,
+            "summary": summary,
+            "existingIntersections": len(existing),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Shadow testing failed: {str(e)}")
+    finally:
+        if local_data_path:
+            cleanup_temp_file(local_data_path)
+        if local_model_path:
+            cleanup_temp_file(local_model_path)
+

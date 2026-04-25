@@ -12,13 +12,14 @@ import {
   predictAuditDecision,
   findMinimumFlip,
   getOrgSettings,
+  runShadowTest,
 } from '@/lib/api';
 import { useState, useEffect, use, useRef, useMemo } from 'react';
 import {
   Download, AlertTriangle, Shield, BarChart3,
   Brain, Wrench, Scale, CheckCircle2, Loader2, XCircle,
   Zap, Users, Eye, FileText, Layers, Info, Sparkles, Command, ArrowRight,
-  MessageSquareText, Send, MessageCircle, Trash2,
+  MessageSquareText, Send, MessageCircle, Trash2, Ghost,
 } from 'lucide-react';
 import ProxyNetworkGraph from '@/components/charts/ProxyNetworkGraph';
 import ShapSummaryChart from '@/components/charts/ShapSummaryChart';
@@ -35,6 +36,8 @@ import { buildDimensionOptions, CanonicalDimensionKey, getDimensionLabel, normal
 import { joinFeaturesWithProxyRisk } from '@/lib/analysis/proxy-risk';
 import ProxyRiskFeatureBars from '@/components/charts/ProxyRiskFeatureBars';
 import GroupImpactWaterfall from '@/components/charts/GroupImpactWaterfall';
+import AuditRightSidebar from '@/components/audit/AuditRightSidebar';
+import JustifiedBiasBadge from '@/components/audit/JustifiedBiasBadge';
 import Image from 'next/image';
 
 const BASE_TABS = [
@@ -56,7 +59,7 @@ const MODE_TAB_KEYS: Record<StakeholderMode, string[]> = {
 };
 
 const MODE_DEFAULT_TAB: Record<StakeholderMode, string> = {
-  technical: 'model',
+  technical: 'overview',
   executive: 'overview',
   legal: 'legal',
 };
@@ -328,6 +331,7 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   const { auditId } = use(params);
   const [tab, setTab] = useState(getDefaultTabForMode('technical'));
   const [stakeholderMode, setStakeholderMode] = useState<StakeholderMode>('technical');
+  const [rsCollapsed, setRsCollapsed] = useState(false);
   const [audit, setAudit] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -545,17 +549,9 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
         </div>
       )}
 
-      <div className="guided-sandbox-retrigger-wrap">
-        <button
-          type="button"
-          className="guided-sandbox-retrigger"
-          onClick={guidedSandboxActive ? skipGuidedSandbox : retriggerGuidedSandbox}
-        >
-          {guidedSandboxActive ? 'Skip Guided Sandbox' : 'Replay Guided Sandbox'}
-        </button>
-      </div>
+      <AuditRightSidebar tabs={tabs} activeTab={tab} onTabChange={setTab} />
 
-      <div className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
+      <div className="flex-1 p-4 sm:p-6 mx-auto w-full max-w-[1600px] space-y-6 animate-fade-in">
         {redTeam?.worstCase && (
           <div className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.35)', background: 'var(--danger-dim)' }}>
             <div className="text-xs font-semibold mb-1" style={{ color: 'var(--danger)' }}>WORST CASE SCENARIO</div>
@@ -599,28 +595,19 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button className="btn btn-outline btn-sm" onClick={onRunRedTeam} disabled={redTeamLoading || audit.dataOnly}>
-              {redTeamLoading ? <Loader2 size={13} className="animate-spin" /> : <Shield size={13} />} Red Team
-            </button>
-            <button className="btn btn-outline btn-sm" onClick={() => exportPDF(auditId)}><Download size={13} /> PDF</button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--muted)' }}>Stakeholder Mode</div>
+          <div className="flex flex-col items-end gap-2 shrink-0">
             <StakeholderToggle value={stakeholderMode} onChange={setStakeholderMode} />
-          </div>
-          {stakeholderMode === 'executive' && (
-            <div className="text-xs px-3 py-2 rounded-lg" style={{ background: 'var(--surface-2)', color: 'var(--muted)', border: '1px solid var(--border)' }}>
-              Executive mode active: Explainability tab is hidden and high-level business framing is prioritized.
+            <div className="flex items-center gap-2">
+              <button className="btn btn-outline btn-sm" onClick={onRunRedTeam} disabled={redTeamLoading || audit.dataOnly}>
+                {redTeamLoading ? <Loader2 size={13} className="animate-spin" /> : <Shield size={13} />} Red Team
+              </button>
+              <button className="btn btn-outline btn-sm" onClick={() => exportPDF(auditId)}><Download size={13} /> PDF</button>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="tab-bar" style={{ overflowX: 'auto' }}>
+        {/* Mobile Tabs fallback (hidden on desktop where right sidebar shows) */}
+        <div className="tab-bar audit-mobile-tabs" style={{ overflowX: 'auto' }}>
           {tabs.map((t) => {
             const Icon = t.icon;
             return (
@@ -1234,26 +1221,10 @@ function OverviewTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: 
     );
   }
 
-  const primaryMetricLabel = stakeholderMode === 'executive'
-    ? 'Fairness Risk'
-    : stakeholderMode === 'legal'
-      ? 'Primary Compliance Signal'
-      : 'Disparate Impact (worst)';
-  const primaryMetricValue = stakeholderMode === 'executive'
-    ? fairnessRisk
-    : stakeholderMode === 'legal'
-      ? regs.length > 0 ? `${regs.length}` : '0'
-      : worstDI ? worstDI.di.toFixed(2) : '-';
-  const primaryMetricSub = stakeholderMode === 'executive'
-    ? `Business fairness risk is currently ${fairnessRisk}`
-    : stakeholderMode === 'legal'
-      ? legalHeadline
-      : worstDI ? `${worstDI.attr} - ${worstDI.sev}` : 'No violations';
-  const primaryMetricColor = stakeholderMode === 'executive'
-    ? fairnessRisk === 'HIGH' ? 'var(--danger)' : fairnessRisk === 'MEDIUM' ? 'var(--accent)' : 'var(--success)'
-    : stakeholderMode === 'legal'
-      ? regs.length > 0 ? 'var(--accent)' : 'var(--success)'
-      : worstDI && worstDI.di < 0.8 ? 'var(--danger)' : 'var(--success)';
+  const primaryMetricLabel = 'Primary Compliance Signal';
+  const primaryMetricValue = regs.length > 0 ? `${regs.length}` : '0';
+  const primaryMetricSub = legalHeadline;
+  const primaryMetricColor = regs.length > 0 ? 'var(--accent)' : 'var(--success)';
 
   return (
     <div className="space-y-3">
@@ -1269,18 +1240,6 @@ function OverviewTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: 
           sub={`of ${laundering.length} tested`}
           color={laundering.some((l: any) => l.laundering_detected) ? 'var(--danger)' : 'var(--success)'} />
       </div>
-
-      {stakeholderMode === 'executive' && (
-        <div className="card" style={{ borderColor: 'var(--primary-dim)', background: 'var(--primary-dim)' }}>
-          <div className="text-xs font-semibold mb-2" style={{ color: 'var(--primary)' }}>Executive One-Pager</div>
-          <div className="text-sm mb-2" style={{ color: 'var(--fg)' }}>
-            Overall fairness score is <strong>{fairnessScore}</strong> with risk level <strong>{fairnessRisk}</strong>.
-          </div>
-          <div className="text-xs" style={{ color: 'var(--muted)' }}>
-            Top risks: {worstDI ? `${worstDI.attr} DI ${worstDI.di.toFixed(2)}` : 'No major DI violations'}, {proxies.length} proxy warnings, {regs.length} compliance indicators.
-          </div>
-        </div>
-      )}
 
       {benchmarking?.message && (
         <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
@@ -1425,6 +1384,7 @@ function DataTab({
   onGuidedMetricClick?: () => void;
 }) {
   const dataBias = audit.dataBias || {};
+  const justifiedBias = audit.justifiedBias || {};
   const schema = audit.schema;
   const proxies = audit.proxies || [];
   const profiles = audit.profiles || [];
@@ -1613,7 +1573,7 @@ function DataTab({
           </div>
           <table>
             <thead><tr>
-              <th>Attribute</th><th>Privileged Group</th><th>DI Ratio</th><th>SPD</th><th>Pos Rate (Priv)</th><th>Pos Rate (Unpriv)</th><th>Verdict</th>
+              <th>Attribute</th><th>Privileged Group</th><th>DI Ratio</th><th>SPD</th><th>Pos Rate (Priv)</th><th>Pos Rate (Unpriv)</th><th>Verdict</th><th>Classification</th>
             </tr></thead>
             <tbody>
               {Object.values(dataBias).map((b: any) => (
@@ -1627,6 +1587,15 @@ function DataTab({
                   <td>{(b.metrics.positive_rate_privileged * 100).toFixed(1)}%</td>
                   <td>{(b.metrics.positive_rate_unprivileged * 100).toFixed(1)}%</td>
                   <td><span className={`badge ${sevBadge(b.severity)}`}>{b.verdict}</span></td>
+                  <td>
+                    {justifiedBias[b.attribute] ? (
+                      <JustifiedBiasBadge
+                        classification={justifiedBias[b.attribute].classification}
+                        rationale={justifiedBias[b.attribute].rationale}
+                        confidence={justifiedBias[b.attribute].confidence}
+                      />
+                    ) : null}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -3053,6 +3022,124 @@ function ModelTab({ audit }: { audit: any }) {
           </div>
         </div>
       )}
+
+      {/* Shadow Testing */}
+      {!audit.dataOnly && audit.modelStoragePath && (
+        <ShadowTestingCard auditId={audit.id} />
+      )}
+    </div>
+  );
+}
+
+function ShadowTestingCard({ auditId }: { auditId: string }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState('');
+
+  async function onRun() {
+    setLoading(true);
+    setError('');
+    setResult(null);
+    try {
+      const data = await runShadowTest(auditId);
+      setResult(data);
+    } catch (e: any) {
+      setError(e?.message || 'Shadow testing failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const summary = result?.summary;
+  const results = result?.results || [];
+
+  return (
+    <div className="card" style={{ borderColor: 'color-mix(in srgb, var(--primary) 25%, var(--border))' }}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Ghost size={14} style={{ color: 'var(--primary)' }} />
+          <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>Generative Shadow Testing</span>
+          <span className="badge badge-neutral" style={{ fontSize: 9 }}>ZERO-SHOT</span>
+        </div>
+        <button className="btn btn-outline btn-sm" onClick={onRun} disabled={loading}>
+          {loading ? <><Loader2 size={12} className="animate-spin" /> Running...</> : <><Ghost size={12} /> Run Shadow Test</>}
+        </button>
+      </div>
+
+      <div className="text-xs mb-3" style={{ color: 'var(--muted)' }}>
+        Generates synthetic profiles for demographic combinations missing from your dataset, then tests how your model treats unseen groups.
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3" style={{ background: 'var(--danger-dim)', border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)' }}>
+          <AlertTriangle size={12} style={{ color: 'var(--danger)' }} />
+          <span className="text-xs" style={{ color: 'var(--danger)' }}>{error}</span>
+        </div>
+      )}
+
+      {summary && (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+              <div className="text-xs" style={{ color: 'var(--muted)' }}>Generated</div>
+              <div className="text-lg font-bold" style={{ color: 'var(--fg)' }}>{summary.totalGenerated}</div>
+            </div>
+            <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+              <div className="text-xs" style={{ color: 'var(--muted)' }}>Accepted</div>
+              <div className="text-lg font-bold" style={{ color: 'var(--success)' }}>{summary.accepts}</div>
+            </div>
+            <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+              <div className="text-xs" style={{ color: 'var(--muted)' }}>Rejected</div>
+              <div className="text-lg font-bold" style={{ color: 'var(--danger)' }}>{summary.rejects}</div>
+            </div>
+            <div className="p-3 rounded-lg" style={{ background: summary.disparityFlag ? 'var(--danger-dim)' : 'var(--surface-2)', border: summary.disparityFlag ? '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' : 'none' }}>
+              <div className="text-xs" style={{ color: 'var(--muted)' }}>Reject Rate</div>
+              <div className="text-lg font-bold" style={{ color: summary.disparityFlag ? 'var(--danger)' : 'var(--fg)' }}>
+                {(summary.shadowRejectRate * 100).toFixed(1)}%
+              </div>
+              {summary.disparityFlag && <div className="text-[10px] font-semibold" style={{ color: 'var(--danger)' }}>⚠ DISPARITY</div>}
+            </div>
+          </div>
+
+          <div className="text-xs mb-2" style={{ color: 'var(--placeholder)' }}>
+            Baseline positive rate: {(summary.baselinePositiveRate * 100).toFixed(1)}% • {result.existingIntersections} existing intersections
+          </div>
+
+          {results.length > 0 && (
+            <div style={{ borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Demographics</th>
+                    <th>Score</th>
+                    <th>Decision</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((r: any) => (
+                    <tr key={r.index}>
+                      <td className="text-xs">{r.index + 1}</td>
+                      <td className="text-xs">
+                        {r.demographics ? Object.entries(r.demographics).map(([k, v]) => (
+                          <span key={k} className="badge badge-neutral" style={{ marginRight: 4, fontSize: 10 }}>{k}: {String(v)}</span>
+                        )) : '-'}
+                      </td>
+                      <td className="text-xs font-mono">{r.error ? '—' : r.score?.toFixed(4)}</td>
+                      <td>
+                        {r.error
+                          ? <span className="badge badge-neutral">Error</span>
+                          : <span className={`badge ${r.decision === 'ACCEPT' ? 'badge-pass' : 'badge-critical'}`}>{r.decision}</span>
+                        }
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -3360,6 +3447,7 @@ function ExplainabilityTab({ audit }: { audit: any }) {
 /* ==================== FIXES ==================== */
 function FixesTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: StakeholderMode }) {
   const dataBias = audit.dataBias || {};
+  const justifiedBias = audit.justifiedBias || {};
   const laundering = audit.featureLaundering || [];
   const proxies = audit.proxies || [];
   const profiles = audit.profiles || [];
@@ -3384,9 +3472,11 @@ function FixesTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: Sta
 
   const projectedGain = (severity: string) => improvementBySeverity[severity] ?? 5;
 
-  // DI fixes
+  // DI fixes — skip findings classified as JUSTIFIED by Gemini
   Object.values(dataBias).forEach((b: any) => {
     if (b.severity === 'CRITICAL' || b.severity === 'HIGH') {
+      const jb = justifiedBias[b.attribute];
+      if (jb?.classification === 'JUSTIFIED') return; // Domain-appropriate variance, skip fix
       fixes.push({
         title: `Disparate Impact - ${b.attribute}`,
         severity: b.severity,

@@ -1,0 +1,143 @@
+name: Deploy Backend to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: visionai-prod-aea95
+  REGION: asia-south1
+  SERVICE_NAME: visionai-api
+  
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+      
+      - name: Run health check test
+        run: |
+          cd backend
+          python -c "
+          import sys
+          try:
+              from main import app
+              print('✓ FastAPI app imports successfully')
+              
+              # Check critical imports
+              from services.analysis.pipeline import run_full_pipeline
+              from services.gemini.narrative_generator import generate_all_stakeholder_narratives_sync
+              from core.firebase_init import initialize_firebase
+              print('✓ All critical modules import successfully')
+              
+              sys.exit(0)
+          except Exception as e:
+              print(f'✗ Import failed: {e}')
+              sys.exit(1)
+          "
+      
+      - name: Lint check (optional)
+        continue-on-error: true
+        run: |
+          cd backend
+          pip install ruff
+          ruff check . --select E,F --ignore F401,F841
+
+  deploy:
+    name: Deploy to Cloud Run
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+      
+      - name: Build and Push Docker Image
+        run: |
+          cd backend
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.SERVICE_NAME }}:latest .
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.SERVICE_NAME }}:latest
+      
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --service-account visionai-api-sa@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-env-vars "GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
+            --set-env-vars "GCP_REGION=${{ env.REGION }}" \
+            --set-env-vars "USE_CLOUD_RUN_JOBS=true" \
+            --set-env-vars "WORKER_JOB_NAME=visionai-worker" \
+            --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest" \
+            --set-secrets "FIREBASE_STORAGE_BUCKET=FIREBASE_STORAGE_BUCKET:latest" \
+            --memory 2Gi \
+            --cpu 2 \
+            --timeout 300 \
+            --max-instances 20 \
+            --min-instances 1
+      
+      - name: Get Service URL
+        id: get-url
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --format 'value(status.url)')
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Backend deployed to: $URL"
+      
+      - name: Health Check
+        run: |
+          sleep 10
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.get-url.outputs.url }}/health || echo "000")
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✓ Health check passed"
+          else
+            echo "✗ Health check failed with status: $RESPONSE"
+            exit 1
+          fi
+      
+      - name: Deployment Summary
+        run: |
+          echo "## Backend Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: ${{ env.SERVICE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: ${{ env.REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: ${{ steps.get-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

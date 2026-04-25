@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { listAudits, exportPDF } from '@/lib/api';
 import TopNav from '@/components/layout/TopNav';
-import { FileText, Download, Filter, RefreshCw, AlertCircle, CircleDot, CheckCircle2 } from 'lucide-react';
+import { FileText, Download, Filter, RefreshCw, AlertCircle, CircleDot, CheckCircle2, X } from 'lucide-react';
 import { getScoreColor } from '@/lib/mock-data';
 
 function formatAuditDate(value: unknown) {
@@ -26,6 +26,9 @@ export default function ReportsPage() {
   const [audits, setAudits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterDomain, setFilterDomain] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   useEffect(() => {
     if (orgLoading) return;
@@ -41,7 +44,7 @@ export default function ReportsPage() {
 
     async function loadAudits() {
       try {
-        const data = await listAudits(org.id);
+        const data = await listAudits(org!.id);
         if (cancelled) return;
         setAudits(Array.isArray(data) ? data : []);
         setError('');
@@ -65,22 +68,45 @@ export default function ReportsPage() {
     };
   }, [org?.id, orgLoading]);
 
+  // Derive available domains from audits
+  const availableDomains = useMemo(() => {
+    const domains = new Set<string>();
+    audits.forEach((a) => { if (a.domain) domains.add(a.domain); });
+    return Array.from(domains).sort();
+  }, [audits]);
+
+  // Apply filters
+  const filteredAudits = useMemo(() => {
+    return audits.filter((audit) => {
+      if (filterDomain && audit.domain !== filterDomain) return false;
+      if (filterStatus && audit.status !== filterStatus) return false;
+      return true;
+    });
+  }, [audits, filterDomain, filterStatus]);
+
   const completedAudits = useMemo(
-    () => audits.filter((audit) => audit.status === 'COMPLETE'),
-    [audits],
+    () => filteredAudits.filter((audit) => audit.status === 'COMPLETE'),
+    [filteredAudits],
   );
   const processingAudits = useMemo(
-    () => audits.filter((audit) => audit.status === 'PROCESSING'),
-    [audits],
+    () => filteredAudits.filter((audit) => audit.status === 'PROCESSING'),
+    [filteredAudits],
   );
   const failedAudits = useMemo(
-    () => audits.filter((audit) => audit.status === 'FAILED'),
-    [audits],
+    () => filteredAudits.filter((audit) => audit.status === 'FAILED'),
+    [filteredAudits],
   );
 
   const avgScore = completedAudits.length > 0
     ? Math.round(completedAudits.reduce((sum, audit) => sum + (audit.fairnessScore || 0), 0) / completedAudits.length)
     : 0;
+
+  const activeFilterCount = (filterDomain ? 1 : 0) + (filterStatus ? 1 : 0);
+
+  function clearFilters() {
+    setFilterDomain('');
+    setFilterStatus('');
+  }
 
   return (
     <>
@@ -91,17 +117,66 @@ export default function ReportsPage() {
             <h1 className="text-lg font-bold">Audit Reports</h1>
             <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
               Live reports from {org?.name || 'your organization'}.
+              {activeFilterCount > 0 && (
+                <span style={{ color: 'var(--primary)' }}> ({filteredAudits.length} of {audits.length} shown)</span>
+              )}
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <button className="btn btn-outline btn-sm" onClick={() => window.location.reload()}>
               <RefreshCw size={13} /> Refresh
             </button>
-            <button className="btn btn-outline btn-sm" disabled>
-              <Filter size={13} /> Filter
+            <button
+              className="btn btn-outline btn-sm"
+              style={activeFilterCount > 0 ? { borderColor: 'var(--primary)', color: 'var(--primary)' } : {}}
+              onClick={() => setFilterOpen(!filterOpen)}
+            >
+              <Filter size={13} /> Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
             </button>
+            {activeFilterCount > 0 && (
+              <button className="btn btn-outline btn-sm" onClick={clearFilters} style={{ color: 'var(--muted)' }}>
+                <X size={13} /> Clear
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Filter panel */}
+        {filterOpen && (
+          <div className="card" style={{ borderColor: 'var(--primary-dim)', background: 'var(--surface)' }}>
+            <div className="flex flex-wrap gap-4 items-end">
+              <div>
+                <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--muted)' }}>Domain</label>
+                <select
+                  className="input"
+                  value={filterDomain}
+                  onChange={(e) => setFilterDomain(e.target.value)}
+                  style={{ minWidth: 180 }}
+                >
+                  <option value="">All Domains</option>
+                  {availableDomains.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--muted)' }}>Status</label>
+                <select
+                  className="input"
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  style={{ minWidth: 180 }}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="COMPLETE">Complete</option>
+                  <option value="PROCESSING">Processing</option>
+                  <option value="FAILED">Failed</option>
+                </select>
+              </div>
+              <button className="btn btn-outline btn-sm" onClick={clearFilters}>Reset</button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="card">
@@ -145,14 +220,16 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {!loading && !error && completedAudits.length === 0 && (
+        {!loading && !error && filteredAudits.length === 0 && (
           <div className="card text-sm" style={{ color: 'var(--muted)' }}>
-            No completed audits yet. Finished audits will appear here automatically.
+            {activeFilterCount > 0
+              ? 'No audits match the current filters. Try adjusting or clearing filters.'
+              : 'No completed audits yet. Finished audits will appear here automatically.'}
           </div>
         )}
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {completedAudits.map((audit) => {
+          {filteredAudits.map((audit) => {
             const score = audit.fairnessScore || audit.results?.fairnessScore || 0;
             return (
               <div key={audit.id} className="card card-glow flex items-start gap-3">
@@ -184,3 +261,4 @@ export default function ReportsPage() {
     </>
   );
 }
+

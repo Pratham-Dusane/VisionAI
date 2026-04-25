@@ -18,6 +18,18 @@ VISIONAI_BACKEND_RELOAD=1 python dev_server.py
 
 Reload mode uses constrained watch paths and excludes heavy directories.
 
+## Phase 10A Cloud Run Foundation
+
+Phase 10A infrastructure files live in `../infra`:
+
+- `../infra/cloudrun.yaml` - FastAPI Cloud Run service manifest
+- `../infra/cloudrun-worker-job.yaml` - Cloud Run Job manifest
+- `../infra/firestore.rules` - Firestore security rules
+- `../infra/README.md` - detailed setup commands
+
+Firebase Admin now uses `backend/serviceAccountKey.json` for local dev when present,
+and Application Default Credentials on Cloud Run.
+
 ## One-command install from repo root
 
 From the repository root, install Python dependencies with:

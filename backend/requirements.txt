@@ -12,6 +12,7 @@ numpy>=1.24
 shap>=0.42
 google-cloud-aiplatform==1.148.1
 google-cloud-bigquery==3.41.0
+google-cloud-run==0.10.12
 google-generativeai==0.8.3
 google-genai==1.73.1
 protobuf==5.29.6

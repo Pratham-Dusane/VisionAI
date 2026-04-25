@@ -1,0 +1,11 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - worker/Dockerfile
+      - -t
+      - gcr.io/$PROJECT_ID/visionai-worker:latest
+      - .
+images:
+  - gcr.io/$PROJECT_ID/visionai-worker:latest

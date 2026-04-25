@@ -1,0 +1,36 @@
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: visionai-worker
+spec:
+  template:
+    spec:
+      taskCount: 1
+      template:
+        spec:
+          serviceAccountName: visionai-worker-sa@visionai-prod.iam.gserviceaccount.com
+          timeoutSeconds: 3600
+          maxRetries: 1
+          containers:
+            - image: gcr.io/visionai-prod/visionai-worker:latest
+              resources:
+                limits:
+                  cpu: "2"
+                  memory: "4Gi"
+              env:
+                - name: GCP_PROJECT_ID
+                  value: visionai-prod
+                - name: GCP_REGION
+                  value: asia-south1
+                - name: FIRESTORE_DATABASE
+                  value: "(default)"
+                - name: GCS_BUCKET_NAME
+                  value: visionai-uploads-visionai-prod
+                - name: BIGQUERY_DATASET
+                  value: visionai_analytics
+                - name: VERTEX_AI_LOCATION
+                  value: us-central1
+                - name: GEMINI_MODEL
+                  value: gemini-1.5-pro
+                - name: VISIONAI_JOB_KIND
+                  value: infrastructure_smoke

@@ -1,0 +1,135 @@
+name: Deploy Worker to Cloud Run Jobs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'worker/**'
+      - 'backend/services/**'
+      - 'backend/core/**'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: visionai-prod-aea95
+  REGION: asia-south1
+  JOB_NAME: visionai-worker
+  
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          cd worker
+          pip install -r requirements.txt
+      
+      - name: Run import test
+        run: |
+          cd worker
+          python -c "
+          import sys
+          import os
+          sys.path.insert(0, os.path.join(os.getcwd(), '..', 'backend'))
+          try:
+              from job import main, run_infrastructure_smoke, run_analysis, run_regulatory_sync
+              print('✓ Worker modules import successfully')
+              sys.exit(0)
+          except Exception as e:
+              print(f'✗ Import failed: {e}')
+              sys.exit(1)
+          "
+
+  deploy:
+    name: Deploy to Cloud Run Jobs
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+      
+      - name: Build and Push Docker Image
+        run: |
+          docker build \
+            -f worker/Dockerfile \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.JOB_NAME }}:${{ github.sha }} \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.JOB_NAME }}:latest .
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.JOB_NAME }}:${{ github.sha }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.JOB_NAME }}:latest
+      
+      - name: Update Cloud Run Job
+        run: |
+          gcloud run jobs update ${{ env.JOB_NAME }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.JOB_NAME }}:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --service-account visionai-worker-sa@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-env-vars "GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
+            --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest" \
+            --set-secrets "FIREBASE_STORAGE_BUCKET=FIREBASE_STORAGE_BUCKET:latest" \
+            --memory 4Gi \
+            --cpu 2 \
+            --max-retries 1 \
+            --task-timeout 3600 || \
+          gcloud run jobs create ${{ env.JOB_NAME }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.JOB_NAME }}:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --service-account visionai-worker-sa@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-env-vars "GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
+            --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest" \
+            --set-secrets "FIREBASE_STORAGE_BUCKET=FIREBASE_STORAGE_BUCKET:latest" \
+            --memory 4Gi \
+            --cpu 2 \
+            --max-retries 1 \
+            --task-timeout 3600
+      
+      - name: Test Worker Job
+        run: |
+          echo "Testing worker with infrastructure_smoke..."
+          EXECUTION=$(gcloud run jobs execute ${{ env.JOB_NAME }} \
+            --region ${{ env.REGION }} \
+            --wait \
+            --format='value(metadata.name)')
+          
+          echo "Execution: $EXECUTION"
+          
+          # Check logs
+          sleep 5
+          gcloud logging read "resource.type=cloud_run_job AND resource.labels.job_name=${{ env.JOB_NAME }}" \
+            --limit 50 \
+            --format="table(timestamp,textPayload)" \
+            --freshness=5m
+      
+      - name: Deployment Summary
+        run: |
+          echo "## Worker Deployment Successful! ⚙️" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Job**: ${{ env.JOB_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: ${{ env.REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

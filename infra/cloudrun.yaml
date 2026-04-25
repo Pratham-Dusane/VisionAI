@@ -1,0 +1,40 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: visionai-api
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "20"
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      serviceAccountName: visionai-api-sa@visionai-prod.iam.gserviceaccount.com
+      containers:
+        - image: gcr.io/visionai-prod/visionai-api:latest
+          resources:
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+          env:
+            - name: GCP_PROJECT_ID
+              value: visionai-prod
+            - name: GCP_REGION
+              value: asia-south1
+            - name: FIRESTORE_DATABASE
+              value: "(default)"
+            - name: GCS_BUCKET_NAME
+              value: visionai-uploads-visionai-prod
+            - name: BIGQUERY_DATASET
+              value: visionai_analytics
+            - name: VERTEX_AI_LOCATION
+              value: us-central1
+            - name: GEMINI_MODEL
+              value: gemini-1.5-pro
+            - name: CLOUD_TASKS_QUEUE
+              value: visionai-analysis-queue

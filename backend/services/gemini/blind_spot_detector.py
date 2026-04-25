@@ -64,7 +64,8 @@ For each blind spot you identify, explain:
 - Why this matters in a {domain} context
 - Your confidence level (HIGH/MEDIUM/LOW)
 
-Return ONLY a JSON array with no other text or markdown formatting:
+Return ONLY a valid JSON array with no other text, markdown formatting, or trailing commas. 
+CRITICAL: You MUST use double quotes for all keys and string values. Do not use single quotes.
 [
   {{
     "column": "zip_code",
@@ -99,28 +100,32 @@ If no blind spots are found, return an empty array: []
         
         # Try to parse JSON
         try:
-            blind_spots = json.loads(response_text)
+            # Sometime gemini returns malformed json, or trailing commas. Try simple cleanup
+            clean_text = response_text.replace("'", '"')
+            blind_spots = json.loads(clean_text)
         except json.JSONDecodeError:
             # If parsing fails, try to extract JSON array from partial response
             import re
             json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
             if json_match:
-                response_text = json_match.group(0)
-                blind_spots = json.loads(response_text)
+                clean_text = json_match.group(0).replace("'", '"')
+                try:
+                    blind_spots = json.loads(clean_text)
+                except:
+                    blind_spots = []
             else:
-                raise
+                blind_spots = []
         
         # Filter out already flagged columns
         filtered_spots = [
             bs for bs in blind_spots
-            if bs.get('column') not in already_flagged
+            if isinstance(bs, dict) and bs.get('column') not in already_flagged
         ]
         
         return filtered_spots
     
     except json.JSONDecodeError as e:
         print(f"[GEMINI] Blind spot JSON parse error: {e}")
-        print(f"[GEMINI] Response text: {response_text if 'response_text' in locals() else 'N/A'}")
         return []
     
     except Exception as e:

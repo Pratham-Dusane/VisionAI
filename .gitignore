@@ -1,4 +1,6 @@
 .agent/
+__pycache__/
+*.py[cod]
 *.csv
 loan_approval_dataset.csv
 uiuxplan.md

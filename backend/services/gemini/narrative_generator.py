@@ -132,11 +132,12 @@ async def generate_audit_narrative(
         model = genai.GenerativeModel("gemini-2.5-flash")
         
         SYSTEM_PROMPTS = {
-            'technical': """You are a senior ML fairness engineer writing an internal audit report.
+            'technical': """You are a senior ML fairness engineer writing a concise internal audit report.
 Use precise statistical language. Reference specific metrics (DI ratios, SHAP values, p-values).
 Be specific about which features, groups, and magnitudes are involved.
 Output structured markdown with sections for each finding.
-Use headers (##), bullet points, and code blocks where appropriate.""",
+Use headers (##), bullet points, and code blocks where appropriate.
+Keep total output under 400 words. Be direct and data-driven.""",
             
             'executive': """You are a chief risk officer writing a 1-page summary for the board.
 Translate all technical findings into business risk language.
@@ -147,13 +148,14 @@ Output exactly 3 sections:
 3. **Recommended Action** - Specific next steps
 
 Give a letter grade (A-F) for overall fairness at the top.
-Be concise and decisive. Maximum 300 words.""",
+Be concise and decisive. Maximum 200 words total.""",
             
             'legal': """You are a compliance lawyer writing for a regulatory audit file.
 Map each finding to specific legal regulations.
 Reference EU AI Act articles, US EEOC guidelines, and Indian IT Act provisions where relevant.
 Structure as: Finding -> Applicable Regulation -> Liability Assessment -> Required Action.
-Use formal legal language. Be thorough and cite specific regulation numbers.""",
+Use formal legal language. Cite specific regulation numbers.
+Keep total output under 400 words. Prioritize the most critical violations.""",
         }
         
         findings_summary = format_findings_for_gemini(audit_results)
@@ -172,7 +174,7 @@ Focus on actionable insights and concrete recommendations.
             [SYSTEM_PROMPTS.get(stakeholder_type, SYSTEM_PROMPTS['technical']) + "\n\n" + prompt],
             generation_config=genai.types.GenerationConfig(
                 temperature=0.2,
-                max_output_tokens=8192,
+                max_output_tokens=1024,
                 top_p=0.8,
                 top_k=40,
             ),

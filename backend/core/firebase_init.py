@@ -1,37 +1,59 @@
+import os
+import tempfile
+from pathlib import Path
+
 import firebase_admin
 from firebase_admin import credentials, storage
-from pathlib import Path
-import tempfile
-from core.config import SERVICE_ACCOUNT_PATH, FIREBASE_STORAGE_BUCKET, TEMP_UPLOAD_DIR
+
+from core.config import FIREBASE_STORAGE_BUCKET, SERVICE_ACCOUNT_PATH, TEMP_UPLOAD_DIR
 
 
 _initialized = False
 
 
 def initialize_firebase():
-    """Initialize Firebase Admin SDK with service account credentials."""
+    """Initialize Firebase Admin SDK.
+
+    Local dev can use backend/serviceAccountKey.json. Cloud Run should use
+    Application Default Credentials from its service account, matching PRD Phase 10.
+    """
     global _initialized
     if _initialized:
         return
 
-    if not SERVICE_ACCOUNT_PATH.exists():
-        raise FileNotFoundError(
-            f"Service account key not found at {SERVICE_ACCOUNT_PATH}. "
-            "Download it from Firebase Console → Project Settings → Service accounts."
-        )
+    try:
+        firebase_admin.get_app()
+        _initialized = True
+        return
+    except ValueError:
+        pass
 
     if not FIREBASE_STORAGE_BUCKET:
         raise ValueError(
-            "FIREBASE_STORAGE_BUCKET not set in .env. "
-            "Set it to your Firebase Storage bucket name (e.g., visionai-prod-xxx.firebasestorage.app)."
+            "Storage bucket not set. Define FIREBASE_STORAGE_BUCKET for local dev "
+            "or GCS_BUCKET_NAME for Cloud Run."
         )
 
-    cred = credentials.Certificate(str(SERVICE_ACCOUNT_PATH))
-    firebase_admin.initialize_app(cred, {
+    configured_key_path = (
+        os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
+        or os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        or str(SERVICE_ACCOUNT_PATH)
+    )
+    key_path = Path(configured_key_path)
+    options = {
         "storageBucket": FIREBASE_STORAGE_BUCKET,
-    })
+    }
+
+    if key_path.exists():
+        cred = credentials.Certificate(str(key_path))
+        firebase_admin.initialize_app(cred, options)
+        auth_source = f"service account file: {key_path}"
+    else:
+        firebase_admin.initialize_app(options=options)
+        auth_source = "Application Default Credentials"
+
     _initialized = True
-    print(f"[OK] Firebase Admin initialized - bucket: {FIREBASE_STORAGE_BUCKET}")
+    print(f"[OK] Firebase Admin initialized - bucket: {FIREBASE_STORAGE_BUCKET}; auth: {auth_source}")
 
 
 def download_from_storage(storage_path: str) -> Path:

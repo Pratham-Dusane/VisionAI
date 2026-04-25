@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 const appRoot = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  output: 'standalone', // Enable standalone output for Docker
   turbopack: {
     root: appRoot,
   },
