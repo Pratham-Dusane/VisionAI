@@ -4,7 +4,21 @@ from dotenv import load_dotenv
 from core.firebase_init import initialize_firebase
 from routers import uploads, audits, org_settings, benchmarks, cicd, drift
 
+import os
+
 load_dotenv()
+
+# Determine CORS origins based on environment
+CORS_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+]
+
+# Add production frontend URL if in production
+if os.getenv("FRONTEND_URL"):
+    CORS_ORIGINS.append(os.getenv("FRONTEND_URL"))
 
 app = FastAPI(
     title="VisionAI API",
@@ -12,15 +26,10 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# CORS - allow frontend
+# CORS - allow frontend (local and production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-    ],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,8 +40,12 @@ app.add_middleware(
 async def startup():
     initialize_firebase()
 
-# Health check
+# Health check endpoints
 @app.get("/")
+async def root():
+    return {"status": "ok", "service": "visionai-api"}
+
+@app.get("/health")
 async def health():
     return {"status": "ok", "service": "visionai-api"}
 
