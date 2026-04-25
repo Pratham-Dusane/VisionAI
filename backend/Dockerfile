@@ -20,7 +20,7 @@ EXPOSE 8000
 
 # Health check - increased start-period for Cloud Run cold starts
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)"
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application - Cloud Run uses PORT env var (default 8080)
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
