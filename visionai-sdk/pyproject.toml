@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "visionai-fairness"
+version = "0.1.0"
+description = "AI Fairness Auditing Toolkit — detect, measure, and fix bias in ML models and datasets"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.9"
+authors = [
+    {name = "VisionAI Team"}
+]
+keywords = [
+    "fairness", "bias", "ml", "audit", "ai", "ethics",
+    "shap", "disparate-impact", "machine-learning",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "pandas>=1.5",
+    "numpy>=1.23",
+    "scikit-learn>=1.2",
+    "scipy>=1.9",
+    "joblib>=1.2",
+]
+
+[project.optional-dependencies]
+shap = ["shap>=0.42"]
+all = ["shap>=0.42"]
+dev = ["pytest>=7.0", "shap>=0.42"]
+
+[project.urls]
+Homepage = "https://github.com/Pratham-Dusane/VisionAI"
+Documentation = "https://github.com/Pratham-Dusane/VisionAI#readme"
+Issues = "https://github.com/Pratham-Dusane/VisionAI/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
