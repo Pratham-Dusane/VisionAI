@@ -26,26 +26,13 @@ async def detect_blind_spots(
     Returns:
         List of blind spot warnings with column, encodes, reason, confidence
     """
-    try:
-        import google.generativeai as genai
-        
-        # Configure Gemini API
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            return _generate_fallback_blind_spots(column_names, already_flagged, sample_values_per_col)
-        
-        genai.configure(api_key=api_key)
-        
-        # Use gemini-2.5-flash model
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        
-        # Format sample values for readability
-        samples_formatted = {}
-        for col, values in sample_values_per_col.items():
-            if col not in already_flagged:
-                samples_formatted[col] = values[:5]  # First 5 samples
-        
-        prompt = f"""
+    # Format sample values for readability
+    samples_formatted = {}
+    for col, values in sample_values_per_col.items():
+        if col not in already_flagged:
+            samples_formatted[col] = values[:5]
+
+    prompt = f"""
 You are an AI fairness expert auditing a machine learning dataset.
 
 Domain: {domain}
@@ -77,62 +64,87 @@ CRITICAL: You MUST use double quotes for all keys and string values. Do not use 
 
 If no blind spots are found, return an empty array: []
 """
-        
-        response = await model.generate_content_async(
-            [prompt],
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.1,
-                max_output_tokens=2048,  # Increased from 1024
-                top_p=0.8,
-            ),
-        )
-        
-        # Parse JSON response
-        response_text = response.text.strip()
-        
-        # Remove markdown code blocks if present
-        if response_text.startswith("```json"):
-            lines = response_text.split("\n")
-            response_text = "\n".join(lines[1:-1])  # Remove first and last line
-        elif response_text.startswith("```"):
-            lines = response_text.split("\n")
-            response_text = "\n".join(lines[1:-1])  # Remove first and last line
-        
-        # Try to parse JSON
+
+    def _parse_blind_spot_response(response_text):
+        """Parse JSON array from LLM response."""
+        text = response_text.strip()
+        if text.startswith("```json"):
+            lines = text.split("\n")
+            text = "\n".join(lines[1:-1])
+        elif text.startswith("```"):
+            lines = text.split("\n")
+            text = "\n".join(lines[1:-1])
+
         try:
-            # Sometime gemini returns malformed json, or trailing commas. Try simple cleanup
-            clean_text = response_text.replace("'", '"')
-            blind_spots = json.loads(clean_text)
+            clean_text = text.replace("'", '"')
+            return json.loads(clean_text)
         except json.JSONDecodeError:
-            # If parsing fails, try to extract JSON array from partial response
             import re
-            json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
+            json_match = re.search(r'\[.*\]', text, re.DOTALL)
             if json_match:
                 clean_text = json_match.group(0).replace("'", '"')
-                try:
-                    blind_spots = json.loads(clean_text)
-                except:
-                    blind_spots = []
-            else:
-                blind_spots = []
-        
-        # Filter out already flagged columns
-        filtered_spots = [
-            bs for bs in blind_spots
-            if isinstance(bs, dict) and bs.get('column') not in already_flagged
-        ]
-        
-        return filtered_spots
-    
-    except json.JSONDecodeError as e:
-        print(f"[GEMINI] Blind spot JSON parse error: {e}")
-        return []
-    
-    except Exception as e:
-        print(f"[GEMINI] Blind spot detection error: {e}")
-        import traceback
-        traceback.print_exc()
-        return _generate_fallback_blind_spots(column_names, already_flagged, sample_values_per_col)
+                return json.loads(clean_text)
+            return []
+
+    # --- Attempt 1: Gemini with bias key ---
+    bias_key = os.getenv("GEMINI_BIAS_API_KEY")
+    if bias_key:
+        try:
+            import google.generativeai as genai
+            print("[BLIND_SPOT] Trying GEMINI_BIAS_API_KEY...")
+            genai.configure(api_key=bias_key)
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = await model.generate_content_async(
+                [prompt],
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.1, max_output_tokens=2048, top_p=0.8,
+                ),
+            )
+            blind_spots = _parse_blind_spot_response(response.text)
+            return [bs for bs in blind_spots if isinstance(bs, dict) and bs.get('column') not in already_flagged]
+        except Exception as e:
+            print(f"[BLIND_SPOT] GEMINI_BIAS_API_KEY failed: {e}")
+
+    # --- Attempt 2: Gemini with main key ---
+    main_key = os.getenv("GEMINI_API_KEY")
+    if main_key and main_key != bias_key:
+        try:
+            import google.generativeai as genai
+            print("[BLIND_SPOT] Trying GEMINI_API_KEY...")
+            genai.configure(api_key=main_key)
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = await model.generate_content_async(
+                [prompt],
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.1, max_output_tokens=2048, top_p=0.8,
+                ),
+            )
+            blind_spots = _parse_blind_spot_response(response.text)
+            return [bs for bs in blind_spots if isinstance(bs, dict) and bs.get('column') not in already_flagged]
+        except Exception as e:
+            print(f"[BLIND_SPOT] GEMINI_API_KEY failed: {e}")
+
+    # --- Attempt 3: Groq fallback ---
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key:
+        try:
+            from groq import AsyncGroq
+            print("[BLIND_SPOT] Trying GROQ_API_KEY (fallback)...")
+            client = AsyncGroq(api_key=groq_key)
+            response = await client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_completion_tokens=2048,
+            )
+            blind_spots = _parse_blind_spot_response(response.choices[0].message.content)
+            return [bs for bs in blind_spots if isinstance(bs, dict) and bs.get('column') not in already_flagged]
+        except Exception as e:
+            print(f"[BLIND_SPOT] GROQ_API_KEY failed: {e}")
+
+    # --- All failed ---
+    print("[BLIND_SPOT] All providers exhausted. Using heuristic fallback.")
+    return _generate_fallback_blind_spots(column_names, already_flagged, sample_values_per_col)
 
 
 def _generate_fallback_blind_spots(

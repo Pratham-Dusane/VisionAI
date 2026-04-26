@@ -118,28 +118,15 @@ async def generate_audit_narrative(
     Returns:
         Markdown-formatted narrative string
     """
-    try:
-        import google.generativeai as genai
-        
-        # Configure Gemini API
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            return _generate_fallback_narrative(audit_results, domain, stakeholder_type)
-        
-        genai.configure(api_key=api_key)
-        
-        # Use gemini-2.5-flash model
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        
-        SYSTEM_PROMPTS = {
-            'technical': """You are a senior ML fairness engineer writing a concise internal audit report.
+    SYSTEM_PROMPTS = {
+        'technical': """You are a senior ML fairness engineer writing a concise internal audit report.
 Use precise statistical language. Reference specific metrics (DI ratios, SHAP values, p-values).
 Be specific about which features, groups, and magnitudes are involved.
 Output structured markdown with sections for each finding.
 Use headers (##), bullet points, and code blocks where appropriate.
-Keep total output under 400 words. Be direct and data-driven.""",
-            
-            'executive': """You are a chief risk officer writing a 1-page summary for the board.
+Keep total output under 300 words. Be direct and data-driven. Finish all sentences.""",
+        
+        'executive': """You are a chief risk officer writing a 1-page summary for the board.
 Translate all technical findings into business risk language.
 Use concrete impact numbers (people affected, legal risk, reputational risk).
 Output exactly 3 sections:
@@ -148,45 +135,88 @@ Output exactly 3 sections:
 3. **Recommended Action** - Specific next steps
 
 Give a letter grade (A-F) for overall fairness at the top.
-Be concise and decisive. Maximum 200 words total.""",
-            
-            'legal': """You are a compliance lawyer writing for a regulatory audit file.
+Be concise and decisive. Maximum 200 words total. Finish all sentences.""",
+        
+        'legal': """You are a compliance lawyer writing for a regulatory audit file.
 Map each finding to specific legal regulations.
 Reference EU AI Act articles, US EEOC guidelines, and Indian IT Act provisions where relevant.
 Structure as: Finding -> Applicable Regulation -> Liability Assessment -> Required Action.
 Use formal legal language. Cite specific regulation numbers.
-Keep total output under 400 words. Prioritize the most critical violations.""",
-        }
-        
-        findings_summary = format_findings_for_gemini(audit_results)
-        
-        prompt = f"""
+Keep total output under 300 words. Prioritize the most critical violations. Finish all sentences.""",
+    }
+    
+    findings_summary = format_findings_for_gemini(audit_results)
+    system_prompt = SYSTEM_PROMPTS.get(stakeholder_type, SYSTEM_PROMPTS['technical'])
+    
+    prompt = f"""{system_prompt}
+
 Domain: {domain}
 
 Audit Findings:
 {findings_summary}
 
-Write an audit narrative for the above findings. Be specific, use the actual numbers.
+Write a comprehensive but concise audit narrative for the above findings. Be specific, use the actual numbers.
 Focus on actionable insights and concrete recommendations.
+
+CRITICAL INSTRUCTION: You MUST complete your entire response in under 300 words. Do not cut off mid-sentence. Summarize aggressively if needed to fit the limit.
 """
-        
-        response = await model.generate_content_async(
-            [SYSTEM_PROMPTS.get(stakeholder_type, SYSTEM_PROMPTS['technical']) + "\n\n" + prompt],
-            generation_config=genai.types.GenerationConfig(
+
+    # --- Attempt 1: Gemini with main key ---
+    main_key = os.getenv("GEMINI_API_KEY")
+    if main_key:
+        try:
+            import google.generativeai as genai
+            print(f"[NARRATIVE] Trying GEMINI_API_KEY for {stakeholder_type}...")
+            genai.configure(api_key=main_key)
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = await model.generate_content_async(
+                [prompt],
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.2, max_output_tokens=2048, top_p=0.8, top_k=40,
+                ),
+            )
+            return response.text
+        except Exception as e:
+            print(f"[NARRATIVE] GEMINI_API_KEY failed: {e}")
+
+    # --- Attempt 2: Gemini with bias key ---
+    bias_key = os.getenv("GEMINI_BIAS_API_KEY")
+    if bias_key and bias_key != main_key:
+        try:
+            import google.generativeai as genai
+            print(f"[NARRATIVE] Trying GEMINI_BIAS_API_KEY for {stakeholder_type}...")
+            genai.configure(api_key=bias_key)
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = await model.generate_content_async(
+                [prompt],
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.2, max_output_tokens=2048, top_p=0.8, top_k=40,
+                ),
+            )
+            return response.text
+        except Exception as e:
+            print(f"[NARRATIVE] GEMINI_BIAS_API_KEY failed: {e}")
+
+    # --- Attempt 3: Groq fallback ---
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key:
+        try:
+            from groq import AsyncGroq
+            print(f"[NARRATIVE] Trying GROQ_API_KEY for {stakeholder_type}...")
+            client = AsyncGroq(api_key=groq_key)
+            response = await client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
                 temperature=0.2,
-                max_output_tokens=1024,
-                top_p=0.8,
-                top_k=40,
-            ),
-        )
-        
-        return response.text
-    
-    except Exception as e:
-        print(f"[GEMINI] Narrative generation error: {e}")
-        import traceback
-        traceback.print_exc()
-        return _generate_fallback_narrative(audit_results, domain, stakeholder_type)
+                max_completion_tokens=2048,
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"[NARRATIVE] GROQ_API_KEY failed: {e}")
+
+    # --- All failed ---
+    print(f"[NARRATIVE] All providers exhausted for {stakeholder_type}. Using heuristic.")
+    return _generate_fallback_narrative(audit_results, domain, stakeholder_type)
 
 
 def _generate_fallback_narrative(

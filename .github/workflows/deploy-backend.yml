@@ -108,6 +108,8 @@ jobs:
             --set-env-vars "WORKER_JOB_NAME=visionai-worker" \
             --set-env-vars "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" \
             --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest" \
+            --set-secrets "GEMINI_BIAS_API_KEY=GEMINI_BIAS_API_KEY:latest" \
+            --set-secrets "GROQ_API_KEY=GROQ_API_KEY:latest" \
             --set-secrets "FIREBASE_STORAGE_BUCKET=FIREBASE_STORAGE_BUCKET:latest" \
             --memory 2Gi \
             --cpu 2 \

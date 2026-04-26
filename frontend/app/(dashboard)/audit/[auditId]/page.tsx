@@ -2000,7 +2000,7 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
     setFullNarrativeOpen(false);
   };
 
-  const sendChat = (questionOverride?: string, options?: { keepTalkingAuto?: boolean }) => {
+  const sendChat = async (questionOverride?: string, options?: { keepTalkingAuto?: boolean }) => {
     const question = (questionOverride ?? chatInput).trim();
     if (!question) return;
     const keepTalkingAuto = options?.keepTalkingAuto === true;
@@ -2015,13 +2015,50 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
       window.clearTimeout(chatReplyTimerRef.current);
     }
 
-    chatReplyTimerRef.current = window.setTimeout(() => {
+    try {
+      // Local overrides for UI specific actions
+      const lower = question.toLowerCase();
+      if (/(change|update|edit).*(date)|date.*(change|update|edit)|20 april 2026/.test(lower)) {
+        setChatMessages((prev) => [...prev, { id: Date.now() + 1, role: 'assistant', text: 'I cannot directly edit stored audit artifacts from this chat panel. I can draft the exact update note: "Change internal audit report date to 20 April 2026" and you can keep it as a comment/ticket for follow-through.', createdAt: Date.now() }]);
+        setContinuePrompt('Draft the final comment text for this date change with owner and due date.');
+        setChatLoading(false);
+        return;
+      }
+
+      // Format history for backend
+      const historyForBackend = chatMessages.map(m => ({
+        role: m.role,
+        content: m.text
+      }));
+
+      // Call backend
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/audits/${audit.id}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question,
+          stakeholderMode: mode,
+          history: historyForBackend
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('API Error');
+      }
+
+      const data = await res.json();
+      
+      setChatMessages((prev) => [...prev, { id: Date.now() + 1, role: 'assistant', text: data.reply, createdAt: Date.now() }]);
+      setContinuePrompt(keepTalkingAuto ? '' : 'Any other questions?');
+      setChatLoading(false);
+    } catch (err) {
+      console.error(err);
+      // Fallback to local mock if backend fails
       const reply = buildNarrativeAssistantReply(question, audit, mode);
       setChatMessages((prev) => [...prev, { id: Date.now() + 1, role: 'assistant', text: reply.reply, createdAt: Date.now() }]);
       setContinuePrompt(keepTalkingAuto ? '' : (reply.continuePrompt || ''));
       setChatLoading(false);
-      chatReplyTimerRef.current = null;
-    }, 420);
+    }
   };
 
   const askFromSelection = () => {
@@ -2146,7 +2183,7 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
         <>
           <div
             onClick={closeFullNarrative}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 70 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 200 }}
           />
           <aside
             className="ai-narrative-drawer"
@@ -2158,7 +2195,7 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
               height: '100vh',
               background: 'var(--surface)',
               borderLeft: '1px solid var(--border)',
-              zIndex: 71,
+              zIndex: 201,
               padding: '20px 20px 28px 20px',
               overflowY: 'auto',
             }}
@@ -2294,7 +2331,43 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
                               </span>
                             ) : 'You'}
                           </div>
-                          {msg.text}
+                          {msg.role === 'assistant' ? (
+                            <div className="chat-md-content" dangerouslySetInnerHTML={{ __html: (() => {
+                              const raw = msg.text || '';
+                              const lines = raw.split('\n');
+                              const htmlParts: string[] = [];
+                              let inList = false;
+
+                              const fmt = (t: string) => t
+                                .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--fg)">$1</strong>')
+                                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                                .replace(/`(.+?)`/g, '<code style="background:var(--surface-2);padding:1px 4px;border-radius:3px;font-size:11px;color:var(--primary);border:1px solid var(--border)">$1</code>');
+
+                              for (const line of lines) {
+                                const trimmed = line.trim();
+                                if (!trimmed) {
+                                  if (inList) { htmlParts.push('</ul>'); inList = false; }
+                                  continue;
+                                }
+                                if (trimmed.startsWith('## ')) {
+                                  if (inList) { htmlParts.push('</ul>'); inList = false; }
+                                  htmlParts.push(`<div style="font-weight:700;color:var(--primary);margin:6px 0 3px;font-size:12px">${fmt(trimmed.slice(3))}</div>`);
+                                } else if (trimmed.startsWith('# ')) {
+                                  if (inList) { htmlParts.push('</ul>'); inList = false; }
+                                  htmlParts.push(`<div style="font-weight:700;color:var(--fg);margin:6px 0 3px;font-size:13px">${fmt(trimmed.slice(2))}</div>`);
+                                } else if (/^[-*]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
+                                  if (!inList) { htmlParts.push('<ul style="margin:4px 0;padding-left:16px;list-style:disc">'); inList = true; }
+                                  const content = trimmed.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '');
+                                  htmlParts.push(`<li style="margin:2px 0">${fmt(content)}</li>`);
+                                } else {
+                                  if (inList) { htmlParts.push('</ul>'); inList = false; }
+                                  htmlParts.push(`<p style="margin:3px 0">${fmt(trimmed)}</p>`);
+                                }
+                              }
+                              if (inList) htmlParts.push('</ul>');
+                              return htmlParts.join('');
+                            })() }} />
+                          ) : msg.text}
                         </div>
                       ))}
 
@@ -3037,17 +3110,19 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  async function onRun() {
+  async function onRun(requestPage = 1) {
     setLoading(true);
     setError('');
-    setResult(null);
+    if (requestPage === 1) setResult(null);
     try {
-      const data = await runShadowTest(auditId);
+      const data = await runShadowTest(auditId, requestPage, pageSize);
       setResult(data);
+      setPage(requestPage);
     } catch (e: any) {
       const errorMsg = e?.message || 'Shadow testing failed';
-      // Check if it's a settings error
       if (errorMsg.includes('disabled') || errorMsg.includes('Enable it in Settings')) {
         setError('Shadow Testing is disabled. Enable it in Settings → Preferences.');
       } else {
@@ -3060,6 +3135,10 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
 
   const summary = result?.summary;
   const results = result?.results || [];
+  const pagination = result?.pagination;
+  const intersections = summary?.intersections || [];
+  const totalRows = pagination?.totalRows || 0;
+  const totalPages = Math.ceil(totalRows / pageSize);
 
   return (
     <div className="card" style={{ borderColor: 'color-mix(in srgb, var(--primary) 25%, var(--border))' }}>
@@ -3067,15 +3146,16 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
         <div className="flex items-center gap-2">
           <Ghost size={14} style={{ color: 'var(--primary)' }} />
           <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>Generative Shadow Testing</span>
-          <span className="badge badge-neutral" style={{ fontSize: 9 }}>ZERO-SHOT</span>
+          <span className="badge badge-neutral" style={{ fontSize: 9 }}>ZERO-SHOT v2</span>
         </div>
-        <button className="btn btn-outline btn-sm" onClick={onRun} disabled={loading}>
+        <button className="btn btn-outline btn-sm" onClick={() => onRun(1)} disabled={loading}>
           {loading ? <><Loader2 size={12} className="animate-spin" /> Running...</> : <><Ghost size={12} /> Run Shadow Test</>}
         </button>
       </div>
 
       <div className="text-xs mb-3" style={{ color: 'var(--muted)' }}>
-        Generates synthetic profiles for demographic combinations missing from your dataset, then tests how your model treats unseen groups.
+        Generates 100 synthetic profiles per missing intersection using approved-applicant median baselines.
+        Tests how your model treats unseen demographic groups with statistically significant sample sizes.
       </div>
 
       {error && (
@@ -3087,63 +3167,157 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
 
       {summary && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
             <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
-              <div className="text-xs" style={{ color: 'var(--muted)' }}>Generated</div>
-              <div className="text-lg font-bold" style={{ color: 'var(--fg)' }}>{summary.totalGenerated}</div>
+              <div className="text-[10px]" style={{ color: 'var(--muted)' }}>Profiles Generated</div>
+              <div className="text-lg font-bold" style={{ color: 'var(--fg)' }}>{summary.totalGenerated?.toLocaleString()}</div>
             </div>
             <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
-              <div className="text-xs" style={{ color: 'var(--muted)' }}>Accepted</div>
+              <div className="text-[10px]" style={{ color: 'var(--muted)' }}>Baseline Positive Rate</div>
+              <div className="text-lg font-bold" style={{ color: 'var(--fg)' }}>{(summary.baselinePositiveRate * 100).toFixed(1)}%</div>
+            </div>
+            <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+              <div className="text-[10px]" style={{ color: 'var(--muted)' }}>Shadow Accepted</div>
               <div className="text-lg font-bold" style={{ color: 'var(--success)' }}>{summary.accepts}</div>
             </div>
             <div className="p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
-              <div className="text-xs" style={{ color: 'var(--muted)' }}>Rejected</div>
+              <div className="text-[10px]" style={{ color: 'var(--muted)' }}>Shadow Rejected</div>
               <div className="text-lg font-bold" style={{ color: 'var(--danger)' }}>{summary.rejects}</div>
             </div>
-            <div className="p-3 rounded-lg" style={{ background: summary.disparityFlag ? 'var(--danger-dim)' : 'var(--surface-2)', border: summary.disparityFlag ? '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' : 'none' }}>
-              <div className="text-xs" style={{ color: 'var(--muted)' }}>Reject Rate</div>
-              <div className="text-lg font-bold" style={{ color: summary.disparityFlag ? 'var(--danger)' : 'var(--fg)' }}>
-                {(summary.shadowRejectRate * 100).toFixed(1)}%
+            <div className="p-3 rounded-lg" style={{
+              background: summary.flaggedCount > 0 ? 'var(--danger-dim)' : 'var(--surface-2)',
+              border: summary.flaggedCount > 0 ? '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' : 'none'
+            }}>
+              <div className="text-[10px]" style={{ color: 'var(--muted)' }}>Disparities Flagged</div>
+              <div className="text-lg font-bold" style={{ color: summary.flaggedCount > 0 ? 'var(--danger)' : 'var(--success)' }}>
+                {summary.flaggedCount}
               </div>
-              {summary.disparityFlag && <div className="text-[10px] font-semibold" style={{ color: 'var(--danger)' }}>⚠ DISPARITY</div>}
             </div>
           </div>
 
-          <div className="text-xs mb-2" style={{ color: 'var(--placeholder)' }}>
-            Baseline positive rate: {(summary.baselinePositiveRate * 100).toFixed(1)}% • {result.existingIntersections} existing intersections
-          </div>
-
-          {results.length > 0 && (
-            <div style={{ borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Demographics</th>
-                    <th>Score</th>
-                    <th>Decision</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.map((r: any) => (
-                    <tr key={r.index}>
-                      <td className="text-xs">{r.index + 1}</td>
-                      <td className="text-xs">
-                        {r.demographics ? Object.entries(r.demographics).map(([k, v]) => (
-                          <span key={k} className="badge badge-neutral" style={{ marginRight: 4, fontSize: 10 }}>{k}: {String(v)}</span>
-                        )) : '-'}
-                      </td>
-                      <td className="text-xs font-mono">{r.error ? '—' : r.score?.toFixed(4)}</td>
-                      <td>
-                        {r.error
-                          ? <span className="badge badge-neutral">Error</span>
-                          : <span className={`badge ${r.decision === 'ACCEPT' ? 'badge-pass' : 'badge-critical'}`}>{r.decision}</span>
-                        }
-                      </td>
+          {/* Intersection Summary Table */}
+          {intersections.length > 0 && (
+            <div className="mb-4">
+              <div className="text-xs font-semibold mb-2" style={{ color: 'var(--muted)' }}>
+                Per-Intersection Disparate Impact Analysis
+              </div>
+              <div style={{ borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Intersection</th>
+                      <th style={{ textAlign: 'center' }}>n</th>
+                      <th style={{ textAlign: 'center' }}>Approval Rate</th>
+                      <th style={{ textAlign: 'center' }}>DI vs Baseline</th>
+                      <th style={{ textAlign: 'center' }}>Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {intersections.map((ix: any, idx: number) => (
+                      <tr key={idx}>
+                        <td className="text-xs font-medium">{ix.name}</td>
+                        <td className="text-xs text-center font-mono">{ix.n}</td>
+                        <td className="text-xs text-center font-mono">{(ix.approvalRate * 100).toFixed(1)}%</td>
+                        <td className="text-xs text-center font-mono" style={{
+                          color: ix.di < 0.8 ? 'var(--danger)' : ix.di < 1.0 ? 'var(--accent)' : 'var(--success)',
+                          fontWeight: 700,
+                        }}>
+                          {ix.di?.toFixed(3)}
+                        </td>
+                        <td className="text-center">
+                          {ix.disparity ? (
+                            <span className="badge badge-critical" style={{ fontSize: 9 }}>⚠ DISPARITY</span>
+                          ) : ix.n < 30 ? (
+                            <span className="badge badge-neutral" style={{ fontSize: 9 }}>LOW n</span>
+                          ) : (
+                            <span className="badge badge-pass" style={{ fontSize: 9 }}>PASS</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="text-[10px] mt-1" style={{ color: 'var(--placeholder)' }}>
+                Disparity flagged only when DI &lt; 0.80 AND n ≥ 30 (statistical significance threshold).
+              </div>
+            </div>
+          )}
+
+          {/* Detail Table — Paginated */}
+          {results.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold mb-2" style={{ color: 'var(--muted)' }}>
+                Individual Shadow Profiles
+              </div>
+              <div style={{ borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Demographics</th>
+                      <th>Key Financials</th>
+                      <th>Score</th>
+                      <th>Decision</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((r: any) => (
+                      <tr key={r.index}>
+                        <td className="text-xs">{r.index + 1}</td>
+                        <td className="text-xs">
+                          {r.demographics ? Object.entries(r.demographics).map(([k, v]) => (
+                            <span key={k} className="badge badge-neutral" style={{ marginRight: 4, fontSize: 10 }}>{k}: {String(v)}</span>
+                          )) : '-'}
+                        </td>
+                        <td className="text-xs">
+                          {r.financials ? Object.entries(r.financials).slice(0, 3).map(([k, v]) => (
+                            <span key={k} className="text-[10px] mr-2" style={{ color: 'var(--muted)' }}>
+                              {k.replace(/_/g, ' ')}: <strong style={{ color: 'var(--fg)' }}>{typeof v === 'number' ? v.toLocaleString() : String(v)}</strong>
+                            </span>
+                          )) : '-'}
+                        </td>
+                        <td className="text-xs font-mono">{r.error ? '—' : r.score?.toFixed(4)}</td>
+                        <td>
+                          {r.error
+                            ? <span className="badge badge-neutral">Error</span>
+                            : <span className={`badge ${r.decision === 'ACCEPT' ? 'badge-pass' : 'badge-critical'}`}>{r.decision}</span>
+                          }
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex items-center justify-between mt-3 px-1">
+                <div className="text-[11px]" style={{ color: 'var(--placeholder)' }}>
+                  Showing {((page - 1) * pageSize) + 1}–{Math.min(page * pageSize, totalRows)} of {totalRows.toLocaleString()} profiles
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="btn btn-outline btn-sm"
+                    disabled={page <= 1 || loading}
+                    onClick={() => onRun(page - 1)}
+                    style={{ fontSize: 11, padding: '2px 10px' }}
+                  >
+                    ← Prev
+                  </button>
+                  <span className="text-[11px]" style={{ color: 'var(--muted)' }}>
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    className="btn btn-outline btn-sm"
+                    disabled={page >= totalPages || loading}
+                    onClick={() => onRun(page + 1)}
+                    style={{ fontSize: 11, padding: '2px 10px' }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </>
@@ -3214,7 +3388,17 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
 
 /* ==================== INTERSECTIONAL ==================== */
 function IntersectionalTab({ audit }: { audit: any }) {
-  const data = audit.intersectional || [];
+  const data = (audit.intersectional || []).map((d: any) => {
+    if (d.sample_size < 30 && d.severity !== 'PASS') {
+      return {
+        ...d,
+        severity: 'LOW_CONFIDENCE',
+        low_confidence: true,
+        statistical_note: 'Sample size below statistical significance threshold (n<30).'
+      };
+    }
+    return d;
+  });
 
   if (data.length === 0) return (
     <div className="card text-center py-8 text-sm" style={{ color: 'var(--placeholder)' }}>

@@ -117,7 +117,7 @@ export default function JustifiedBiasBadge({
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             boxShadow: '0 8px 24px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.1)',
-            zIndex: 100,
+            zIndex: 999,
             whiteSpace: 'normal',
             cursor: 'default',
             animation: 'justified-tooltip-enter 0.18s ease-out',

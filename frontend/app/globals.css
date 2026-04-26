@@ -3691,6 +3691,8 @@ input[type="range"]::-webkit-slider-thumb {
   flex-direction: column;
   min-height: 100vh;
   transition: none;
+  position: relative;
+  z-index: 41; /* above left sidebar (z:40) so tooltips in content paint on top */
 }
 
 @media (max-width: 1023px) {

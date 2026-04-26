@@ -53,6 +53,23 @@ WORKER_JOB_NAME = os.getenv("WORKER_JOB_NAME", "visionai-worker")
 USE_CLOUD_RUN_JOBS = os.getenv("USE_CLOUD_RUN_JOBS", "false").lower() == "true"
 
 
+_JSON_FIELDS = ["schema", "profiles", "dataBias", "modelBias", "explainability",
+                "intersectional", "featureLaundering", "historicalHarm", "regulationMap",
+                "blindSpots", "narratives", "biasOriginTracer", "modelDecisionBias",
+                "justifiedBias", "benchmarking", "severity", "proxies"]
+
+
+def _deserialize_audit_fields(audit: dict) -> dict:
+    """Ensure all JSON string fields from Firestore are parsed into dicts/lists."""
+    for field in _JSON_FIELDS:
+        if field in audit and isinstance(audit[field], str):
+            try:
+                audit[field] = json.loads(audit[field])
+            except Exception:
+                pass
+    return audit
+
+
 def _build_pdf_branding(db, audit: dict) -> dict:
     org_name = "Organization"
     org_logo_url = ""
@@ -1041,7 +1058,7 @@ async def export_legal_json(audit_id: str):
         if not doc.exists:
             raise HTTPException(status_code=404, detail="Audit not found")
 
-        audit = doc.to_dict()
+        audit = _deserialize_audit_fields(doc.to_dict())
         payload = serialize_legal_export(audit_id, audit)
         return JSONResponse(
             content=payload,
@@ -1064,7 +1081,7 @@ async def export_pdf_report(audit_id: str):
         if not doc.exists:
             raise HTTPException(status_code=404, detail="Audit not found")
 
-        audit = doc.to_dict()
+        audit = _deserialize_audit_fields(doc.to_dict())
         branding = _build_pdf_branding(db, audit)
         pdf_bytes = generate_audit_pdf_bytes(audit_id, audit, branding=branding)
         return Response(
@@ -1089,7 +1106,7 @@ async def export_anonymized_report(audit_id: str):
         if not doc.exists:
             raise HTTPException(status_code=404, detail="Audit not found")
 
-        audit = doc.to_dict()
+        audit = _deserialize_audit_fields(doc.to_dict())
         branding = _build_pdf_branding(db, audit)
         pdf_bytes = generate_anonymized_audit_pdf_bytes(audit_id, audit, branding=branding)
         return Response(
@@ -1152,6 +1169,56 @@ async def get_narrative(audit_id: str, stakeholder_type: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class ChatRequest(BaseModel):
+    question: str
+    stakeholderMode: str = "technical"
+    history: list = []
+
+@router.post("/{audit_id}/chat")
+async def chat_with_audit(audit_id: str, req: ChatRequest):
+    """
+    Chat with the audit context using triple fallback Gemini logic.
+    """
+    try:
+        db = firestore.client()
+        audit_doc = db.collection("audits").document(audit_id).get()
+        if not audit_doc.exists:
+            raise HTTPException(status_code=404, detail="Audit not found")
+            
+        audit = audit_doc.to_dict()
+        
+        # Deserialize JSON string fields (same as get_audit)
+        json_fields = ["schema", "profiles", "dataBias", "modelBias", "explainability", 
+                       "intersectional", "featureLaundering", "historicalHarm", "regulationMap",
+                       "blindSpots", "narratives", "biasOriginTracer", "modelDecisionBias", 
+                       "justifiedBias", "benchmarking"]
+        for field in json_fields:
+            if field in audit and isinstance(audit[field], str):
+                try:
+                    audit[field] = json.loads(audit[field])
+                except Exception:
+                    pass
+        
+        from services.gemini.chatbot import chat_with_audit_context
+        
+        reply = await chat_with_audit_context(
+            audit=audit,
+            chat_history=req.history,
+            question=req.question,
+            stakeholder_mode=req.stakeholderMode
+        )
+        
+        return {
+            "auditId": audit_id,
+            "reply": reply,
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
 
 
 @router.get("/{audit_id}/narrative")
@@ -1434,12 +1501,12 @@ async def explain_rejection(audit_id: str, row_index: int):
 
 
 @router.post("/{audit_id}/shadow-test")
-async def run_shadow_test(audit_id: str):
+async def run_shadow_test(audit_id: str, page: int = 1, page_size: int = 10):
     """
-    Generative Shadow Testing - Zero-Shot Fairness.
-    Generate synthetic rows for missing demographic intersections,
-    run through model, report potential bias.
-    Requires shadow_testing_enabled in org settings.
+    Generative Shadow Testing v2 - Zero-Shot Fairness.
+    Generates 100 synthetic profiles per missing demographic intersection
+    using approved-applicant median baselines, runs through model,
+    computes per-intersection DI summary with significance threshold.
     """
     local_data_path = None
     local_model_path = None
@@ -1475,101 +1542,115 @@ async def run_shadow_test(audit_id: str):
             raise HTTPException(status_code=400, detail="Unable to load model")
 
         label_col = audit["labelCol"]
+        positive_label = audit.get("positiveLabel", "1")
         protected_cols = [c for c in audit.get("protectedCols", []) if c in df.columns]
         threshold = float(audit.get("threshold", 0.5))
-        domain = audit.get("domain", "General")
 
         if not protected_cols:
             raise HTTPException(status_code=400, detail="No protected columns found in dataset.")
 
-        # Get existing intersections
-        from services.gemini.shadow_testing import generate_shadow_rows, get_existing_intersections
-
-        existing = get_existing_intersections(df, protected_cols)
-
-        # Build schema info
-        column_names = [c for c in df.columns if c != label_col]
-        column_types = {c: str(df[c].dtype) for c in column_names}
-        sample_vals = {}
-        for c in column_names:
-            vals = df[c].dropna().head(5).tolist()
-            sample_vals[c] = [_pythonize(v) for v in vals]
-
-        # Generate shadow rows
-        shadow_rows = await generate_shadow_rows(
-            column_names=column_names,
-            column_types=column_types,
-            sample_values=sample_vals,
-            protected_cols=protected_cols,
-            existing_intersections=existing,
-            domain=domain,
-            count=10,
+        # --- Generate shadow profiles ---
+        from services.gemini.shadow_testing import (
+            generate_shadow_profiles, get_existing_intersections, compute_shadow_summary
         )
 
-        if not shadow_rows:
+        existing = get_existing_intersections(df, protected_cols)
+        shadow_df, missing_intersections = generate_shadow_profiles(
+            df=df,
+            label_col=label_col,
+            positive_label=positive_label,
+            protected_cols=protected_cols,
+            existing_intersections=existing,
+        )
+
+        if shadow_df.empty:
             return {
                 "auditId": audit_id,
-                "shadowRows": [],
+                "summary": {
+                    "totalGenerated": 0,
+                    "baselinePositiveRate": 0,
+                    "intersections": [],
+                    "flaggedCount": 0,
+                    "accepts": 0,
+                    "rejects": 0,
+                    "overallApprovalRate": 0,
+                },
                 "results": [],
-                "summary": "No shadow rows could be generated.",
+                "pagination": {"page": 1, "pageSize": page_size, "totalRows": 0},
             }
 
-        # Run each shadow row through model
+        # --- Batch prediction ---
         feature_cols = _get_feature_columns(df, label_col)
         df_features = df[feature_cols].copy()
-        results = []
 
-        for i, row in enumerate(shadow_rows):
+        all_results = []
+        for i, row_dict in enumerate(shadow_df.to_dict(orient="records")):
             try:
-                profile = _build_input_profile(df, label_col, row)
+                profile = _build_input_profile(df, label_col, row_dict)
                 score, decision = _predict_single_profile(model, df_features, profile, threshold)
 
-                # Extract protected attribute values
-                demo = {c: _pythonize(row.get(c)) for c in protected_cols}
+                demo = {c: _pythonize(row_dict.get(c)) for c in protected_cols}
 
-                results.append({
+                # Build financials summary for UI display
+                financials = {}
+                for col in feature_cols:
+                    if col not in protected_cols and pd.api.types.is_numeric_dtype(df[col]):
+                        val = profile.get(col)
+                        if val is not None:
+                            financials[col] = round(float(val), 2)
+
+                all_results.append({
                     "index": i,
                     "demographics": demo,
+                    "financials": financials,
                     "score": round(float(score), 4),
                     "decision": "ACCEPT" if decision == 1 else "REJECT",
-                    "profile": _to_json_row(profile),
                 })
             except Exception as e:
-                results.append({
+                all_results.append({
                     "index": i,
-                    "demographics": {c: row.get(c) for c in protected_cols},
+                    "demographics": {c: _pythonize(row_dict.get(c)) for c in protected_cols},
+                    "financials": {},
                     "error": str(e),
                 })
 
-        # Compute summary
-        total = len(results)
-        rejects = sum(1 for r in results if r.get("decision") == "REJECT")
-        accepts = sum(1 for r in results if r.get("decision") == "ACCEPT")
-        reject_rate = round(rejects / total, 4) if total > 0 else 0
-
-        # Compare to dataset baseline
+        # --- Compute baseline ---
         baseline_positive_rate = 0
         if label_col in df.columns:
-            pos_label = audit.get("positiveLabel", "1")
-            baseline_positive_rate = round(
-                float((df[label_col].astype(str) == str(pos_label)).mean()), 4
-            )
+            col = df[label_col]
+            mask = col == positive_label
+            if mask.sum() == 0:
+                try:
+                    mask = col.astype(float) == float(positive_label)
+                except (ValueError, TypeError):
+                    pass
+            if mask.sum() == 0:
+                try:
+                    mask = col.astype(str).str.lower() == str(positive_label).lower()
+                except Exception:
+                    pass
+            baseline_positive_rate = round(float(mask.mean()), 4)
 
-        summary = {
-            "totalGenerated": total,
-            "accepts": accepts,
-            "rejects": rejects,
-            "shadowRejectRate": reject_rate,
-            "baselinePositiveRate": baseline_positive_rate,
-            "disparityFlag": reject_rate > (1 - baseline_positive_rate) * 1.25,
-        }
+        # --- Build summary ---
+        summary = compute_shadow_summary(all_results, baseline_positive_rate, protected_cols)
+
+        # --- Pagination ---
+        total_rows = len(all_results)
+        start = (page - 1) * page_size
+        end = start + page_size
+        paginated_results = all_results[start:end]
 
         return {
             "auditId": audit_id,
-            "shadowRows": [_to_json_row(r) for r in shadow_rows],
-            "results": results,
             "summary": summary,
+            "results": paginated_results,
+            "pagination": {
+                "page": page,
+                "pageSize": page_size,
+                "totalRows": total_rows,
+            },
             "existingIntersections": len(existing),
+            "missingIntersections": len(missing_intersections),
         }
 
     except HTTPException:

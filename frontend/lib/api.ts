@@ -496,8 +496,9 @@ export async function markAllDriftNotificationsRead(orgId: string) {
  * Run generative shadow testing on a model-backed audit.
  * Generates synthetic rows for missing demographics and tests model decisions.
  */
-export async function runShadowTest(auditId: string) {
-  const res = await fetch(`${API_BASE}/api/audits/${auditId}/shadow-test`, {
+export async function runShadowTest(auditId: string, page: number = 1, pageSize: number = 10) {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  const res = await fetch(`${API_BASE}/api/audits/${auditId}/shadow-test?${params}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
