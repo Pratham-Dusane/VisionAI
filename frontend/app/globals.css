@@ -1141,15 +1141,18 @@ input[type="range"]::-webkit-slider-thumb {
 
 .model-compare-hero-text {
   margin: 0;
-  letter-spacing: -0.03em;
-  background: linear-gradient(96deg, color-mix(in srgb, var(--fg) 92%, #7cd3ff 8%) 0%, color-mix(in srgb, var(--fg) 92%, #9be8ff 8%) 34%, color-mix(in srgb, var(--fg) 92%, #7af0d8 8%) 66%, color-mix(in srgb, var(--fg) 92%, #7db6ff 8%) 100%);
+  /* Tighten letter spacing for a modern, structural look */
+  letter-spacing: -0.02em; 
+  /* Slate-800 to Blue-600 */
+  background: linear-gradient(135deg, #1e293b 0%, #2563eb 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 [data-theme="dark"] .model-compare-hero-text {
-  background: linear-gradient(96deg, #d8e8ff 0%, #d7f2ff 40%, #cae4ff 100%);
+  /* Crisp White to Blue-300 */
+  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -2031,7 +2034,7 @@ input[type="range"]::-webkit-slider-thumb {
   transition: transform 200ms ease, opacity 200ms ease;
 }
 
-/* ---- Window Chrome Bar (4 dots + icons) ---- */
+/* ---- Window Chrome Bar (3 dots + icons) ---- */
 .soft-gate-chrome {
   display: flex;
   align-items: center;
@@ -2064,10 +2067,6 @@ input[type="range"]::-webkit-slider-thumb {
 
 .dot-green {
   background: #28C840;
-}
-
-.dot-blue {
-  background: #4A90D9;
 }
 
 .soft-gate-chrome-icons {

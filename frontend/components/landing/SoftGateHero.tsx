@@ -15,13 +15,12 @@ export default function SoftGateHero({
 }: SoftGateHeroProps) {
   return (
     <section className={`soft-gate-hero ${isExiting ? 'is-exiting' : ''}`}>
-      {/* macOS-style window chrome: 4 dots + utility icons */}
+      {/* macOS-style window chrome: 3 dots + utility icons */}
       <div className="soft-gate-chrome">
         <div className="soft-gate-chrome-dots">
           <span className="soft-gate-dot dot-red" />
           <span className="soft-gate-dot dot-yellow" />
           <span className="soft-gate-dot dot-green" />
-          <span className="soft-gate-dot dot-blue" />
         </div>
         <div className="soft-gate-chrome-icons">
           <Settings size={13} strokeWidth={1.8} />
