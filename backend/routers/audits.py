@@ -964,7 +964,7 @@ async def create_audit(req: CreateAuditRequest, background_tasks: BackgroundTask
 
 
 @router.get("/{audit_id}")
-async def get_audit(audit_id: str):
+def get_audit(audit_id: str):
     """Retrieve single audit by ID. Frontend polls this for status."""
     try:
         db = firestore.client()
@@ -994,7 +994,7 @@ async def get_audit(audit_id: str):
 
 
 @router.get("")
-async def list_audits(orgId: str):
+def list_audits(orgId: str):
     """List all audits for org, newest first."""
     try:
         db = firestore.client()

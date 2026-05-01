@@ -321,7 +321,7 @@ async def upload_drift_batch(
 
 
 @router.get("/{org_id}")
-async def get_drift_history(org_id: str):
+def get_drift_history(org_id: str):
     try:
         db = firestore.client()
         docs = (
@@ -354,7 +354,7 @@ async def get_drift_history(org_id: str):
 
 
 @router.get("/{org_id}/notifications/count")
-async def get_drift_notification_count(org_id: str):
+def get_drift_notification_count(org_id: str):
     try:
         db = firestore.client()
         return {
@@ -366,7 +366,7 @@ async def get_drift_notification_count(org_id: str):
 
 
 @router.get("/{org_id}/notifications")
-async def list_drift_notifications(org_id: str):
+def list_drift_notifications(org_id: str):
     try:
         db = firestore.client()
         notifications = _list_org_drift_notifications(db, org_id)
@@ -380,7 +380,7 @@ async def list_drift_notifications(org_id: str):
 
 
 @router.post("/{org_id}/notifications/{notification_id}/read")
-async def mark_drift_notification_read(org_id: str, notification_id: str):
+def mark_drift_notification_read(org_id: str, notification_id: str):
     try:
         db = firestore.client()
         ref = db.collection("notifications").document(notification_id)
@@ -409,7 +409,7 @@ async def mark_drift_notification_read(org_id: str, notification_id: str):
 
 
 @router.post("/{org_id}/notifications/read-all")
-async def mark_all_drift_notifications_read(org_id: str):
+def mark_all_drift_notifications_read(org_id: str):
     try:
         db = firestore.client()
         notifications = _list_org_drift_notifications(db, org_id)

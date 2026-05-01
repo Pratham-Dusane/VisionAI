@@ -4,6 +4,8 @@ import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, Mail, Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 const GUIDED_SANDBOX_ARMED_KEY = 'visionai-guided-sandbox-armed';
 const GUIDED_SANDBOX_DISABLED_KEY = 'visionai-guided-sandbox-disabled';
@@ -67,6 +69,38 @@ export default function LoginPage() {
         setError(err?.message || 'Something went wrong');
       }
       setSubmitting(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setError('');
+    setSubmitting(true);
+    try {
+      await signIn('guest@gmail.com', 'guest123');
+    } catch (err: any) {
+      if (err?.code === 'auth/user-not-found' || err?.code === 'auth/wrong-password' || err?.code === 'auth/invalid-credential') {
+        try {
+          await signUp('guest@gmail.com', 'guest123', 'Guest');
+          if (auth?.currentUser && db) {
+            const orgRef = doc(collection(db, 'organizations'));
+            await setDoc(orgRef, {
+              name: 'GuestOrg',
+              industry: 'Technology',
+              teamSize: null,
+              ownerId: auth.currentUser.uid,
+              members: [auth.currentUser.uid],
+              createdAt: serverTimestamp(),
+            });
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (signUpErr: any) {
+          setError(signUpErr?.message || 'Failed to create guest account');
+          setSubmitting(false);
+        }
+      } else {
+        setError(err?.message || 'Guest login failed');
+        setSubmitting(false);
+      }
     }
   };
 
@@ -224,6 +258,24 @@ export default function LoginPage() {
             {submitting && <div className="login-spinner-sm" />}
           </button>
         </form>
+
+        <div className="flex items-center gap-3 my-4">
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+          <span className="text-xs font-medium" style={{ color: 'var(--placeholder)' }}>
+            or
+          </span>
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+        </div>
+
+        <button
+          onClick={handleGuestLogin}
+          type="button"
+          disabled={submitting}
+          className="login-submit-btn"
+          style={{ background: 'var(--surface-2)', color: 'var(--fg)', border: '1px solid color-mix(in srgb, var(--border) 60%, transparent)' }}
+        >
+          <span>Guest Login - Solutions Challenge Exclusive</span>
+        </button>
 
         {/* Toggle */}
         <p className="text-center text-xs mt-4" style={{ color: 'var(--muted)' }}>

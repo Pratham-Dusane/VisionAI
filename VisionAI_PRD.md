@@ -2022,4 +2022,49 @@ At step 4, you have a fully functional and demoable MVP for the April 24 submiss
 
 ---
 
+## 17. More Features
+
+As development has progressed beyond the initial planning phases, several advanced capabilities have been implemented into the production environment. These features significantly enhance the platform's ability to handle edge cases, automate compliance, and integrate directly into ML engineering workflows.
+
+### 17.1 Generative Shadow Testing
+**Problem:** Statistical fairness metrics often fail when a dataset lacks sufficient representation for specific demographic intersections (e.g., zero or very few applicants who are *Native American + Female*).
+**Solution:** Generative Shadow Testing uses Gemini 1.5 Pro to synthesize "shadow profiles."
+- **Baseline Generation:** Creates a highly qualified domain baseline.
+- **Synthetic Profiles:** Generates realistic, plausible applicant profiles for missing intersections by sampling from the baseline while adjusting demographic anchors.
+- **Evaluation:** Runs the live model against the synthetic shadow profiles and compares the approval rate to the baseline positive rate to compute a Zero-Shot Disparate Impact (DI) score.
+
+### 17.2 Justified Bias API
+**Problem:** Not all statistical bias is illegal or unethical. For instance, a medical triage model might correctly flag older patients as higher risk for certain age-related conditions, which is clinically justified.
+**Solution:** The Justified Bias pipeline automatically reviews statistical disparities flagged by the Fairness Engine.
+- Uses Gemini to analyze the context of the domain, the specific feature, and the outcome.
+- Classifies whether the bias is an artifact of historical discrimination or a valid, justified business/domain necessity.
+- Surfaces a "Justified Bias" status to prevent false-alarm fatigue for compliance teams.
+
+### 17.3 CI/CD Audit Gate Integration
+**Problem:** ML teams need to prevent biased models from reaching production automatically, without manual dashboard reviews.
+**Solution:** The CI/CD Fairness Gate (`/api/cicd/audit-gate`).
+- Provides a fairness gate that can be embedded in GitHub Actions, GitLab CI, or Jenkins.
+- Uploads the model and a test dataset, evaluates against the organization's pre-defined fairness thresholds (e.g., DI >= 0.8), and returns a hard pass/fail payload.
+- Automatically fails the deployment pipeline if critical bias or proxy features are detected.
+
+### 17.4 VisionAI Python SDK
+**Problem:** Integrating with REST APIs is brittle for data scientists working in Python environments (Jupyter, Airflow, MLflow).
+**Solution:** A dedicated Python client library (`visionai-sdk`).
+- Allows data scientists to trigger audits, upload datasets, and push models directly from their Python code.
+- Seamlessly integrates with the CI/CD API Gate for automated pipeline blocking.
+- Supports polling for asynchronous audit results and fetching detailed regulatory summaries.
+### 17.5 Dynamic Regulatory Sync Engine
+**Problem:** AI laws and algorithmic fairness regulations are passing rapidly across different jurisdictions (e.g., EU AI Act, Colorado SB24-205). Compliance teams cannot manually track all legal thresholds.
+**Solution:** The Regulatory Sync Engine (`sync_engine.py`).
+- A background cron job that uses Gemini 1.5 Pro to autonomously search for new AI regulations globally.
+- Parses legal texts to extract key fairness thresholds (e.g., "disparate impact < 0.85") and protected classes.
+- Stores the regulations in Firestore and automatically generates compliance alerts/action items for affected organizations.
+
+### 17.6 Follow-up Audit Chatbot
+**Problem:** Executive and legal stakeholders often have specific questions about an audit that aren't covered in the static report.
+**Solution:** An interactive LLM-powered chatbot (`chatbot.py`).
+- Allows users to interrogate the specific context of their audit results.
+- Dynamically adjusts its tone based on the active stakeholder mode (Technical, Executive, Legal).
+- Features a highly resilient triple-fallback LLM architecture: attempts to use a dedicated Gemini Bias key, falls back to a primary Gemini key, and finally falls back to Groq (Llama-3 70b) if Google services are unavailable.
+
 *VisionAI PRD v1.0 - Google Solutions Challenge 2026 - Build with AI*

@@ -11,6 +11,10 @@ on:
       - '.github/workflows/deploy-worker.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+
 env:
   PROJECT_ID: visionai-prod-aea95
   REGION: asia-south1
@@ -64,7 +68,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
       
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
