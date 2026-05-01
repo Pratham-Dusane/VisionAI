@@ -5,4 +5,6 @@ __pycache__/
 loan_approval_dataset.csv
 uiuxplan.md
 .env*
+!**/.env.example
+!**/.env.local.example
 **/serviceAccountKey.json
