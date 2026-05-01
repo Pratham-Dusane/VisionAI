@@ -85,5 +85,6 @@ Note: This is public by design but should be restricted.
 
 - Never commit .env files or serviceAccountKey.json.
 - Add .env* and **/serviceAccountKey.json to .gitignore.
+- Use backend/.env.example and frontend/.env.local.example as templates.
 - Rotate any key that was ever committed.
 - Use Workload Identity Federation for GitHub Actions (no JSON key in GitHub).
