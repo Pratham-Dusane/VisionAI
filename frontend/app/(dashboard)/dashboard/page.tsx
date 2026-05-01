@@ -295,12 +295,12 @@ export default function DashboardPage() {
           </div>
 
           {!loading && audits.length >= 2 && (
-            <div className="lg:col-start-1 lg:row-start-3 self-start w-full min-h-[120px] flex items-center px-1">
-              <p className="model-compare-hero-text font-lora-italic w-full text-2xl sm:text-3xl lg:text-4xl font-black leading-tight">
-                Benchmarking accuracy is easy. Compare your previous and next.
-              </p>
-            </div>
-          )}
+  <div className="lg:col-start-1 lg:row-start-3 h-full w-full flex flex-col justify-center px-4 py-8">
+    <p className="model-compare-hero-text font-sans w-full text-3xl sm:text-4xl lg:text-4xl font-semibold leading-snug text-gray-800 dark:text-gray-200">
+      Benchmarking accuracy is easy. Compare your previous and next.
+    </p>
+  </div>
+)}
 
           {!loading && audits.length >= 2 && (
             <div
