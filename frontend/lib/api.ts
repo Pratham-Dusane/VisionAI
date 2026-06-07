@@ -510,3 +510,75 @@ export async function runShadowTest(auditId: string, page: number = 1, pageSize:
 
   return res.json();
 }
+
+/**
+ * Fetch (or generate on-demand) a narrative for a specific stakeholder type.
+ * Narratives are lazy-loaded — generated only when the user opens the AI Narratives tab.
+ */
+export async function fetchNarrative(auditId: string, stakeholderType: 'technical' | 'executive' | 'legal') {
+  const res = await fetch(`${API_BASE}/api/audits/${auditId}/narrative/${stakeholderType}`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to fetch narrative (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    auditId: string;
+    stakeholderType: string;
+    narrative: string;
+    cached: boolean;
+  }>;
+}
+
+/**
+ * Fetch (or compute on-demand) feature laundering detection.
+ * Also returns updated severity and regulationMap if computed lazily.
+ */
+export async function fetchFeatureLaundering(auditId: string) {
+  const res = await fetch(`${API_BASE}/api/audits/${auditId}/feature-laundering`, {
+    method: 'POST',
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to fetch feature laundering (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    auditId: string;
+    featureLaundering: Array<Record<string, unknown>>;
+    severity: Record<string, unknown>;
+    regulationMap?: Record<string, unknown>;
+    cached: boolean;
+  }>;
+}
+
+/**
+ * Generate a bias-mitigated (balanced) dataset for an audit.
+ */
+export async function remediateBias(auditId: string) {
+  const res = await fetch(`${API_BASE}/api/audits/${auditId}/remediate-bias`, {
+    method: 'POST',
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Dataset bias remediation failed (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    success: boolean;
+    mitigatedStoragePath: string;
+    mitigatedProfiles: Array<Record<string, unknown>>;
+    mitigatedDataBias: Record<string, unknown>;
+  }>;
+}
+
+/**
+ * Get the download URL for the mitigated dataset.
+ */
+export function getDownloadMitigatedUrl(auditId: string): string {
+  return `${API_BASE}/api/audits/${auditId}/download-mitigated`;
+}
+

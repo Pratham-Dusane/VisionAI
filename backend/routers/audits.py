@@ -27,7 +27,7 @@ from services.reporting.audit_serializer import serialize_legal_export
 from services.reporting.audit_serializer import serialize_anonymized_export
 from services.reporting.pdf_generator import generate_audit_pdf_bytes
 from services.reporting.pdf_generator import generate_anonymized_audit_pdf_bytes
-from services.gemini.stakeholder_formatter import get_cached_narrative_sync
+from services.gemini.stakeholder_formatter import get_cached_narrative
 from services.org_settings import get_org_settings
 from core.firebase_init import download_from_storage, cleanup_temp_file
 
@@ -841,7 +841,7 @@ def _run_pipeline_background(config: dict, audit_id: str, doc_ref):
             "flipSensitivity": results.get("flipSensitivity"),
             "explainability": json.dumps(results.get("explainability") or {}),
             "intersectional": json.dumps(results.get("intersectional") or []),
-            "featureLaundering": json.dumps(results.get("featureLaundering") or []),
+            "featureLaundering": json.dumps(results.get("featureLaundering")) if results.get("featureLaundering") is not None else None,
             "historicalHarm": json.dumps(results.get("historicalHarm") or {}),
             "regulationMap": json.dumps(results.get("regulationMap") or {}),
             "severity": results.get("severity"),
@@ -1126,6 +1126,7 @@ async def export_anonymized_report(audit_id: str):
 async def get_narrative(audit_id: str, stakeholder_type: str):
     """
     Retrieve narrative for a specific stakeholder type.
+    If not cached, generate it on-demand (lazy loading).
     stakeholder_type: one of "technical", "executive", "legal"
     """
     if stakeholder_type not in ["technical", "executive", "legal"]:
@@ -1135,40 +1136,204 @@ async def get_narrative(audit_id: str, stakeholder_type: str):
         )
     
     try:
-        # Check if audit exists
         db = firestore.client()
         audit_doc = db.collection("audits").document(audit_id).get()
         if not audit_doc.exists:
             raise HTTPException(status_code=404, detail="Audit not found")
         
-        # Try to get cached narrative
-        narrative = get_cached_narrative_sync(audit_id, stakeholder_type)
+        # Try to get cached narrative first
+        narrative = await get_cached_narrative(audit_id, stakeholder_type)
         
+        audit_data = audit_doc.to_dict()
         if narrative:
+            # Update main audit document if this narrative is not already in the 'narratives' field
+            narratives_field = audit_data.get("narratives") or {}
+            if isinstance(narratives_field, str):
+                try:
+                    narratives_field = json.loads(narratives_field)
+                except Exception:
+                    narratives_field = {}
+            if stakeholder_type not in narratives_field:
+                narratives_field[stakeholder_type] = narrative
+                db.collection("audits").document(audit_id).update({
+                    "narratives": json.dumps(narratives_field)
+                })
+
             return {
                 "auditId": audit_id,
                 "stakeholderType": stakeholder_type,
                 "narrative": narrative,
+                "cached": True,
             }
-        else:
-            # Check if audit is complete
-            audit_data = audit_doc.to_dict()
-            if audit_data.get("status") != "COMPLETE":
-                raise HTTPException(
-                    status_code=400,
-                    detail="Audit is not complete yet. Narratives are generated after analysis completes."
-                )
-            
-            # Narrative should exist but doesn't - return error
+        
+        # Not cached — generate on demand if audit is complete
+        if audit_data.get("status") != "COMPLETE":
             raise HTTPException(
-                status_code=404,
-                detail=f"Narrative for {stakeholder_type} not found. It may not have been generated yet."
+                status_code=400,
+                detail="Audit is not complete yet. Narratives are generated after analysis completes."
             )
+        
+        # Deserialize audit results for narrative generation
+        audit_for_gen = dict(audit_data)
+        for field in _JSON_FIELDS:
+            if field in audit_for_gen and isinstance(audit_for_gen[field], str):
+                try:
+                    audit_for_gen[field] = json.loads(audit_for_gen[field])
+                except Exception:
+                    pass
+        
+        # Generate narrative on demand
+        from services.gemini.stakeholder_formatter import generate_single_narrative_async
+        narrative = await generate_single_narrative_async(
+            audit_id=audit_id,
+            audit_results=audit_for_gen,
+            domain=audit_data.get("domain", "Other"),
+            stakeholder_type=stakeholder_type,
+        )
+        
+        # Save to main audit document's narratives field as well
+        narratives_field = audit_data.get("narratives") or {}
+        if isinstance(narratives_field, str):
+            try:
+                narratives_field = json.loads(narratives_field)
+            except Exception:
+                narratives_field = {}
+        narratives_field[stakeholder_type] = narrative
+        db.collection("audits").document(audit_id).update({
+            "narratives": json.dumps(narratives_field)
+        })
+
+        return {
+            "auditId": audit_id,
+            "stakeholderType": stakeholder_type,
+            "narrative": narrative,
+            "cached": False,
+        }
     
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{audit_id}/feature-laundering")
+async def generate_feature_laundering(audit_id: str):
+    """
+    Lazy load feature laundering detection.
+    Downloads dataset, runs GBM reconstruction attacks, updates Firestore, and recomputes severity score.
+    """
+    try:
+        db = firestore.client()
+        audit_ref = db.collection("audits").document(audit_id)
+        audit_doc = audit_ref.get()
+        if not audit_doc.exists:
+            raise HTTPException(status_code=404, detail="Audit not found")
+        
+        audit_data = audit_doc.to_dict()
+        
+        # If already computed and it's not None, return it
+        existing_laundering = audit_data.get("featureLaundering")
+        if existing_laundering is not None:
+            if isinstance(existing_laundering, str):
+                existing_laundering = json.loads(existing_laundering)
+            
+            severity = audit_data.get("severity")
+            if isinstance(severity, str):
+                severity = json.loads(severity)
+                
+            return {
+                "auditId": audit_id,
+                "featureLaundering": existing_laundering,
+                "severity": severity,
+                "cached": True
+            }
+        
+        # Read fields from top-level audit document (NOT from a nested "config")
+        storage_path = audit_data.get("storagePath")
+        if not storage_path:
+            raise HTTPException(status_code=400, detail="Missing storagePath in audit document")
+            
+        label_col = audit_data.get("labelCol")
+        protected_cols = audit_data.get("protectedCols", [])
+        domain = audit_data.get("domain", "Other")
+        jurisdiction = audit_data.get("jurisdiction", "Global")
+
+        local_path = download_from_storage(storage_path)
+        if not local_path:
+            raise HTTPException(status_code=500, detail="Failed to download dataset")
+            
+        try:
+            # Load dataset
+            ext = Path(local_path).suffix.lower()
+            if ext == ".csv":
+                df = pd.read_csv(local_path)
+            elif ext in [".xls", ".xlsx"]:
+                df = pd.read_excel(local_path)
+            elif ext == ".parquet":
+                df = pd.read_parquet(local_path)
+            else:
+                raise HTTPException(status_code=400, detail="Unsupported file format")
+                
+            # Run Feature Laundering Detection
+            from services.analysis.feature_laundering import detect_feature_laundering
+            feature_cols_for_launder = [
+                c for c in df.columns
+                if c != label_col and c not in protected_cols
+            ]
+            laundering = detect_feature_laundering(
+                df, protected_cols, feature_cols_for_launder,
+            )
+            
+            # Recalculate severity and regulation map with laundering data
+            def parse_json(field):
+                val = audit_data.get(field)
+                if isinstance(val, str):
+                    try:
+                        return json.loads(val)
+                    except Exception:
+                        pass
+                return val or ({} if field in ["dataBias", "modelBias"] else [])
+                
+            data_bias = parse_json("dataBias")
+            proxies = parse_json("proxies")
+            intersectional = parse_json("intersectional")
+            model_bias = parse_json("modelBias")
+            
+            from services.analysis.severity_scorer import compute_severity_score
+            severity = compute_severity_score(
+                data_bias, proxies, intersectional, laundering, model_bias
+            )
+            
+            from services.compliance.regulation_mapper import map_regulations
+            regulations = map_regulations(
+                data_bias, laundering, intersectional, proxies, model_bias,
+                domain=domain,
+                jurisdiction=jurisdiction,
+            )
+            
+            updates = {
+                "featureLaundering": json.dumps(laundering),
+                "severity": severity,
+                "regulationMap": json.dumps(regulations),
+            }
+            audit_ref.update(updates)
+            
+            return {
+                "auditId": audit_id,
+                "featureLaundering": laundering,
+                "severity": severity,
+                "regulationMap": regulations,
+                "cached": False
+            }
+        finally:
+            cleanup_temp_file(local_path)
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Feature laundering failed: {str(e)}")
 
 
 class ChatRequest(BaseModel):
@@ -1662,4 +1827,315 @@ async def run_shadow_test(audit_id: str, page: int = 1, page_size: int = 10):
             cleanup_temp_file(local_data_path)
         if local_model_path:
             cleanup_temp_file(local_model_path)
+
+
+@router.post("/{audit_id}/remediate-bias")
+async def remediate_bias(audit_id: str):
+    """
+    Generate a mitigated (balanced) dataset by applying synthetic data balancing
+    across protected columns and label groups.
+    """
+    local_data_path = None
+    local_mitigated_path = None
+    try:
+        db = firestore.client()
+        doc = db.collection("audits").document(audit_id).get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Audit not found")
+
+        audit = doc.to_dict()
+        if audit.get("status") != "COMPLETE":
+            raise HTTPException(status_code=400, detail="Audit is not complete yet")
+
+        original_storage_path = audit.get("storagePath")
+        if not original_storage_path:
+            raise HTTPException(status_code=400, detail="Original dataset storage path is missing")
+
+        protected_cols = audit.get("protectedCols", [])
+        label_col = audit.get("labelCol")
+        positive_label = str(audit.get("positiveLabel", "1"))
+
+        if not protected_cols or not label_col:
+            raise HTTPException(status_code=400, detail="Protected columns or label column not configured")
+
+        # Download original dataset
+        local_data_path = download_from_storage(original_storage_path)
+        df = _load_dataframe(local_data_path)
+
+        # Determine all unique values of protected columns present
+        valid_cols = [c for c in protected_cols if c in df.columns]
+        if not valid_cols:
+            raise HTTPException(status_code=400, detail="Protected columns not found in dataset")
+
+        # Get unique label values to determine negative label
+        all_labels = df[label_col].dropna().unique().tolist()
+        negative_labels = [str(l) for l in all_labels if str(l) != positive_label]
+        negative_label = negative_labels[0] if negative_labels else "0"
+
+        # Separate approved vs rejected dfs to calculate class-specific medians/modes
+        approved_mask = df[label_col].astype(str) == positive_label
+        approved_df = df[approved_mask]
+        rejected_df = df[~approved_mask]
+
+        if len(approved_df) == 0:
+            approved_df = df
+        if len(rejected_df) == 0:
+            rejected_df = df
+
+        # Compute approved and rejected medians for numeric columns
+        approved_medians = {}
+        rejected_medians = {}
+        for c in df.columns:
+            if c == label_col:
+                continue
+            if pd.api.types.is_numeric_dtype(df[c]):
+                approved_medians[c] = float(approved_df[c].median()) if len(approved_df[c].dropna()) > 0 else 0.0
+                rejected_medians[c] = float(rejected_df[c].median()) if len(rejected_df[c].dropna()) > 0 else 0.0
+
+        # Modes for categorical features (excluding protected columns)
+        approved_modes = {}
+        rejected_modes = {}
+        for c in df.columns:
+            if c == label_col or c in valid_cols:
+                continue
+            if not pd.api.types.is_numeric_dtype(df[c]):
+                app_mode_vals = approved_df[c].dropna().mode()
+                rej_mode_vals = rejected_df[c].dropna().mode()
+                approved_modes[c] = app_mode_vals.iloc[0] if len(app_mode_vals) > 0 else None
+                rejected_modes[c] = rej_mode_vals.iloc[0] if len(rej_mode_vals) > 0 else None
+
+        # Group by protected attributes to compute size and positive outcome rate
+        group_dfs = {}
+        group_counts = {}
+        group_pos_rates = {}
+
+        grouped = df.groupby(valid_cols)
+        for name, group in grouped:
+            key_tuple = name if isinstance(name, tuple) else (name,)
+            key_str = "|".join(str(v) for v in key_tuple)
+            group_dfs[key_str] = group
+            group_counts[key_str] = len(group)
+
+            # Count positive outcomes
+            pos_count = sum(group[label_col].astype(str) == positive_label)
+            group_pos_rates[key_str] = pos_count / len(group) if len(group) > 0 else 0.0
+
+        # Target representation count and positive rate
+        max_count = max(group_counts.values()) if group_counts else len(df)
+        target_pos_rate = max(group_pos_rates.values()) if group_pos_rates else 0.5
+
+        # We'll generate synthetic rows using Cartesian product of unique protected column values
+        value_lists = [df[c].dropna().unique().tolist() for c in valid_cols]
+        from itertools import product
+        all_combos = list(product(*value_lists))
+
+        rng = np.random.default_rng(42)
+        import uuid
+        synthetic_rows = []
+
+        for combo in all_combos:
+            combo_str = "|".join(str(v) for v in combo)
+            combo_dict = dict(zip(valid_cols, combo))
+
+            # Current counts
+            current_df = group_dfs.get(combo_str, pd.DataFrame(columns=df.columns))
+            current_n = len(current_df)
+            current_pos = sum(current_df[label_col].astype(str) == positive_label) if current_n > 0 else 0
+
+            # Target count for this intersection: max_count
+            needed = max_count - current_n
+            if needed < 0:
+                needed = 0
+
+            # Target positive counts: max_count * target_pos_rate
+            target_p = round(max_count * target_pos_rate)
+            needed_p = max(0, target_p - current_pos)
+            if needed_p > needed:
+                needed_p = needed
+
+            needed_n = needed - needed_p
+
+            # Type coercion helper for positive/negative label
+            label_sample = df[label_col].dropna().iloc[0] if len(df[label_col].dropna()) > 0 else positive_label
+            def _coerce_label(val_str):
+                try:
+                    if isinstance(label_sample, (int, np.integer)):
+                        return int(float(val_str))
+                    elif isinstance(label_sample, (float, np.floating)):
+                        return float(val_str)
+                    elif isinstance(label_sample, bool):
+                        return val_str.lower() in ('true', '1', 'yes')
+                    return str(val_str)
+                except Exception:
+                    return val_str
+
+            # Generate positive rows (using approved medians/modes)
+            for _ in range(needed_p):
+                row = {}
+                for col in df.columns:
+                    if col in combo_dict:
+                        row[col] = combo_dict[col]
+                    elif col == label_col:
+                        row[col] = _coerce_label(positive_label)
+                    elif col.lower() in ('applicant_id', 'id', 'application_id', 'loan_id'):
+                        row[col] = f"MITIGATED-{uuid.uuid4().hex[:8].upper()}"
+                    elif col in approved_medians:
+                        median_val = approved_medians[col]
+                        noise = rng.normal(0, abs(median_val) * 0.10) if median_val != 0 else 0
+                        val = median_val + noise
+                        col_min = float(df[col].min())
+                        col_max = float(df[col].max())
+                        val = max(col_min, min(col_max, val))
+                        if pd.api.types.is_integer_dtype(df[col]):
+                            row[col] = int(round(val))
+                        else:
+                            row[col] = round(val, 4)
+                    elif col in approved_modes:
+                        row[col] = approved_modes[col]
+                    else:
+                        row[col] = None
+                synthetic_rows.append(row)
+
+            # Generate negative rows (using rejected medians/modes)
+            for _ in range(needed_n):
+                row = {}
+                for col in df.columns:
+                    if col in combo_dict:
+                        row[col] = combo_dict[col]
+                    elif col == label_col:
+                        row[col] = _coerce_label(negative_label)
+                    elif col.lower() in ('applicant_id', 'id', 'application_id', 'loan_id'):
+                        row[col] = f"MITIGATED-{uuid.uuid4().hex[:8].upper()}"
+                    elif col in rejected_medians:
+                        median_val = rejected_medians[col]
+                        noise = rng.normal(0, abs(median_val) * 0.10) if median_val != 0 else 0
+                        val = median_val + noise
+                        col_min = float(df[col].min())
+                        col_max = float(df[col].max())
+                        val = max(col_min, min(col_max, val))
+                        if pd.api.types.is_integer_dtype(df[col]):
+                            row[col] = int(round(val))
+                        else:
+                            row[col] = round(val, 4)
+                    elif col in rejected_modes:
+                        row[col] = rejected_modes[col]
+                    else:
+                        row[col] = None
+                synthetic_rows.append(row)
+
+        if synthetic_rows:
+            synthetic_df = pd.DataFrame(synthetic_rows, columns=df.columns)
+            mitigated_df = pd.concat([df, synthetic_df], ignore_index=True)
+        else:
+            mitigated_df = df.copy()
+
+        # Save the new dataframe locally
+        ext = Path(local_data_path).suffix
+        import tempfile
+        from core.config import TEMP_UPLOAD_DIR
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext, dir=TEMP_UPLOAD_DIR) as tmp:
+            local_mitigated_path = Path(tmp.name)
+
+        if ext == ".csv":
+            mitigated_df.to_csv(local_mitigated_path, index=False)
+        elif ext == ".json":
+            mitigated_df.to_json(local_mitigated_path, orient="records")
+        elif ext == ".parquet":
+            mitigated_df.to_parquet(local_mitigated_path, index=False)
+
+        # Upload the new dataset to Firebase Storage
+        from core.firebase_init import _parse_storage_path
+        bucket_name, object_path = _parse_storage_path(original_storage_path)
+
+        path_obj = Path(object_path)
+        new_object_path = f"mitigated/{path_obj.stem}_mitigated_{uuid.uuid4().hex[:6]}{path_obj.suffix}".replace("\\", "/")
+
+        from firebase_admin import storage
+        bucket = storage.bucket(bucket_name) if bucket_name else storage.bucket()
+        blob = bucket.blob(new_object_path)
+        blob.upload_from_filename(str(local_mitigated_path))
+
+        mitigated_storage_path = f"gs://{bucket.name}/{new_object_path}" if original_storage_path.startswith("gs://") else new_object_path
+
+        # Run profiler and scanner on mitigated dataset
+        from services.preprocessing.data_profiler import profile_data
+        from services.analysis.data_bias_scanner import scan_data_bias
+
+        mitigated_profiles = profile_data(
+            mitigated_df, protected_cols, label_col, positive_label
+        )
+        mitigated_data_bias = scan_data_bias(
+            mitigated_df, label_col, positive_label, protected_cols
+        )
+
+        # Update Firestore
+        db.collection("audits").document(audit_id).update({
+            "mitigatedStoragePath": mitigated_storage_path,
+            "mitigatedProfiles": mitigated_profiles,
+            "mitigatedDataBias": mitigated_data_bias,
+        })
+
+        return {
+            "success": True,
+            "mitigatedStoragePath": mitigated_storage_path,
+            "mitigatedProfiles": mitigated_profiles,
+            "mitigatedDataBias": mitigated_data_bias,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Dataset remediation failed: {str(e)}")
+    finally:
+        if local_data_path:
+            cleanup_temp_file(local_data_path)
+        if local_mitigated_path:
+            cleanup_temp_file(local_mitigated_path)
+
+
+@router.get("/{audit_id}/download-mitigated")
+def download_mitigated_dataset(audit_id: str):
+    """
+    Download the generated mitigated dataset for an audit.
+    """
+    local_path = None
+    try:
+        db = firestore.client()
+        doc = db.collection("audits").document(audit_id).get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Audit not found")
+        
+        audit = doc.to_dict()
+        storage_path = audit.get("mitigatedStoragePath")
+        if not storage_path:
+            raise HTTPException(status_code=400, detail="Mitigated dataset has not been generated yet")
+
+        local_path = download_from_storage(storage_path)
+
+        with open(local_path, "rb") as f:
+            content = f.read()
+
+        ext = Path(local_path).suffix.lower()
+        if ext == ".csv":
+            media_type = "text/csv"
+        elif ext == ".json":
+            media_type = "application/json"
+        elif ext == ".parquet":
+            media_type = "application/octet-stream"
+        else:
+            media_type = "application/octet-stream"
+
+        filename = f"mitigated_dataset_{audit_id}{ext}"
+        from fastapi import Response
+        return Response(
+            content=content,
+            media_type=media_type,
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if local_path:
+            cleanup_temp_file(local_path)
 

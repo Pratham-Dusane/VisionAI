@@ -13,6 +13,10 @@ import {
   findMinimumFlip,
   getOrgSettings,
   runShadowTest,
+  fetchNarrative,
+  fetchFeatureLaundering,
+  remediateBias,
+  getDownloadMitigatedUrl,
 } from '@/lib/api';
 import { useState, useEffect, use, useRef, useMemo } from 'react';
 import {
@@ -339,6 +343,8 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   const [redTeamLoading, setRedTeamLoading] = useState(false);
   const [guidedSandboxActive, setGuidedSandboxActive] = useState(false);
   const [guidedBannerVisible, setGuidedBannerVisible] = useState(false);
+  const [isFetchingLaundering, setIsFetchingLaundering] = useState(false);
+  const isFetchingLaunderingRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -396,6 +402,39 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
       // Ignore storage access issues and continue normal render flow.
     }
   }, [audit?.id]);
+
+  useEffect(() => {
+    // Lazy fetch feature laundering if missing
+    if (audit && audit.status === 'COMPLETE' && audit.featureLaundering === null && !isFetchingLaunderingRef.current) {
+      isFetchingLaunderingRef.current = true;
+      setIsFetchingLaundering(true);
+      let cancelled = false;
+
+      (async () => {
+        try {
+          const data = await fetchFeatureLaundering(audit.id);
+          if (!cancelled) {
+            setAudit((prev: any) => ({
+              ...prev,
+              featureLaundering: data.featureLaundering || [],
+              severity: data.severity || prev.severity,
+              regulationMap: data.regulationMap || prev.regulationMap,
+            }));
+          }
+        } catch (e) {
+          console.error('Failed to load feature laundering', e);
+          if (!cancelled) {
+            setAudit((prev: any) => ({ ...prev, featureLaundering: [] }));
+          }
+        } finally {
+          isFetchingLaunderingRef.current = false;
+          if (!cancelled) setIsFetchingLaundering(false);
+        }
+      })();
+
+      return () => { cancelled = true; };
+    }
+  }, [audit?.id, audit?.status, audit?.featureLaundering]);
 
   // Show processing state - skeleton shimmer layout
   if (loading || (audit && audit.status === 'PROCESSING')) {
@@ -564,17 +603,21 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
         {/* Header */}
         <div className="flex items-start gap-4">
           {/* Score ring */}
-          <div className="relative shrink-0">
-            <svg width="88" height="88" viewBox="0 0 88 88">
-              <circle cx="44" cy="44" r="38" fill="none" stroke="var(--surface-2)" strokeWidth="6" />
-              <circle cx="44" cy="44" r="38" fill="none" stroke={scoreColor(score)} strokeWidth="6"
-                strokeDasharray={`${score * 2.39} 239`} strokeLinecap="round" transform="rotate(-90 44 44)" />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-black" style={{ color: gradeColor(grade) }}>{grade}</span>
-              <span className="text-xs font-bold" style={{ color: scoreColor(score) }}>{score}/100</span>
+          {isFetchingLaundering ? (
+            <div className="skeleton shrink-0" style={{ width: 88, height: 88, borderRadius: '50%' }} title="Recomputing score with laundering data..." />
+          ) : (
+            <div className="relative shrink-0">
+              <svg width="88" height="88" viewBox="0 0 88 88">
+                <circle cx="44" cy="44" r="38" fill="none" stroke="var(--surface-2)" strokeWidth="6" />
+                <circle cx="44" cy="44" r="38" fill="none" stroke={scoreColor(score)} strokeWidth="6"
+                  strokeDasharray={`${score * 2.39} 239`} strokeLinecap="round" transform="rotate(-90 44 44)" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-black" style={{ color: gradeColor(grade) }}>{grade}</span>
+                <span className="text-xs font-bold" style={{ color: scoreColor(score) }}>{score}/100</span>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1">
@@ -632,8 +675,31 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
         {visibleTabKeys.has('intersectional') && tab === 'intersectional' && <IntersectionalTab audit={audit} />}
         {visibleTabKeys.has('explainability') && tab === 'explainability' && <ExplainabilityTab audit={audit} />}
         {visibleTabKeys.has('results') && tab === 'results' && <ResultsTab audit={audit} onNavigateTab={setTab} visibleTabKeys={visibleTabKeys} />}
-        {visibleTabKeys.has('narratives') && tab === 'narratives' && <NarrativesTab audit={audit} mode={stakeholderMode} />}
-        {visibleTabKeys.has('fixes') && tab === 'fixes' && <FixesTab audit={audit} stakeholderMode={stakeholderMode} />}
+        {visibleTabKeys.has('narratives') && tab === 'narratives' && (
+          <NarrativesTab
+            audit={audit}
+            mode={stakeholderMode}
+            onNarrativeGenerated={(modeStr, narrativeStr) => {
+              setAudit((prev: any) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  narratives: {
+                    ...(prev.narratives || {}),
+                    [modeStr]: narrativeStr,
+                  },
+                };
+              });
+            }}
+          />
+        )}
+        {visibleTabKeys.has('fixes') && tab === 'fixes' && (
+          <FixesTab
+            audit={audit}
+            stakeholderMode={stakeholderMode}
+            onAuditUpdated={(updatedAudit: any) => setAudit(updatedAudit)}
+          />
+        )}
         {visibleTabKeys.has('legal') && tab === 'legal' && <LegalTab audit={audit} mode={stakeholderMode} />}
         </div>
 
@@ -1238,9 +1304,10 @@ function OverviewTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: 
         <Mini label="Proxy Variables" value={String(proxies.length)}
           sub={`${proxies.filter((p: any) => p.risk_level === 'HIGH').length} HIGH risk`}
           color={proxies.length > 0 ? 'var(--accent)' : 'var(--success)'} />
-        <Mini label="Feature Laundering" value={String(laundering.filter((l: any) => l.laundering_detected).length)}
-          sub={`of ${laundering.length} tested`}
-          color={laundering.some((l: any) => l.laundering_detected) ? 'var(--danger)' : 'var(--success)'} />
+        <Mini label="Feature Laundering" 
+          value={audit.featureLaundering === null ? '...' : String(laundering.filter((l: any) => l.laundering_detected).length)}
+          sub={audit.featureLaundering === null ? 'Loading...' : `of ${laundering.length} tested`}
+          color={audit.featureLaundering === null ? 'var(--muted)' : laundering.some((l: any) => l.laundering_detected) ? 'var(--danger)' : 'var(--success)'} />
       </div>
 
       {benchmarking?.message && (
@@ -1905,7 +1972,15 @@ function buildNarrativeAssistantReply(question: string, audit: any, mode: Stakeh
   };
 }
 
-function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
+function NarrativesTab({
+  audit,
+  mode,
+  onNarrativeGenerated,
+}: {
+  audit: any;
+  mode: StakeholderMode;
+  onNarrativeGenerated?: (mode: string, narrative: string) => void;
+}) {
   const narratives = audit.narratives || {};
   const [fullNarrativeOpen, setFullNarrativeOpen] = useState(false);
   const [fullNarrativeLoading, setFullNarrativeLoading] = useState(false);
@@ -1945,11 +2020,56 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
     legal: { label: 'Legal', desc: 'Compliance assessment' },
   } as const;
 
-  const currentNarrative = narratives[mode] || '';
+  const [currentNarrative, setCurrentNarrative] = useState<string>(narratives[mode] || '');
+  const [isFetchingNarrative, setIsFetchingNarrative] = useState(false);
+  const isFetchingNarrativeRef = useRef(false);
+  const fetchedNarratives = useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    setCurrentNarrative(fetchedNarratives.current[mode] || audit.narratives?.[mode] || '');
+    // Reset the ref when mode changes so a new fetch can happen
+    isFetchingNarrativeRef.current = false;
+  }, [mode, audit.narratives]);
+
+  useEffect(() => {
+    // If we don't have the narrative for this mode, fetch it lazy
+    const alreadyHave = fetchedNarratives.current[mode] || audit.narratives?.[mode];
+    if (!alreadyHave && !isFetchingNarrativeRef.current && audit?.id && audit?.status === 'COMPLETE') {
+      isFetchingNarrativeRef.current = true;
+      setIsFetchingNarrative(true);
+      let cancelled = false;
+
+      (async () => {
+        try {
+          const data = await fetchNarrative(audit.id, mode);
+          if (!cancelled) {
+            const nar = data.narrative || 'No narrative available.';
+            fetchedNarratives.current[mode] = nar;
+            setCurrentNarrative(nar);
+            if (onNarrativeGenerated) {
+              onNarrativeGenerated(mode, nar);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to load narrative', e);
+          if (!cancelled) {
+            const errText = 'Narrative generation failed. Please try refreshing.';
+            fetchedNarratives.current[mode] = errText;
+            setCurrentNarrative(errText);
+          }
+        } finally {
+          isFetchingNarrativeRef.current = false;
+          if (!cancelled) setIsFetchingNarrative(false);
+        }
+      })();
+
+      return () => { cancelled = true; };
+    }
+  }, [mode, audit?.id, audit?.status, audit.narratives]);
+
   const chatContext = useMemo(() => buildAuditChatContext(audit), [audit]);
   const suggestedPrompts = useMemo(() => buildChatSuggestedPrompts(chatContext, mode), [chatContext, mode]);
-  const tldr = extractNarrativeTldr(currentNarrative || '', mode);
-  const hasNarratives = Object.keys(narratives).length > 0 && Object.values(narratives).some((v: any) => v && v.length > 0);
+  const tldr = extractNarrativeTldr(currentNarrative, mode);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -2082,12 +2202,22 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
     setComments((prev) => prev.filter((c) => c.id !== id));
   };
 
-  if (!hasNarratives) return (
+  if (isFetchingNarrative) return (
+    <div className="card text-center py-12">
+      <Loader2 size={28} className="mx-auto mb-3 animate-spin" style={{ color: 'var(--primary)' }} />
+      <div className="text-sm font-semibold mb-1" style={{ color: 'var(--fg)' }}>Generating AI Narrative...</div>
+      <div className="text-xs" style={{ color: 'var(--muted)' }}>
+        Analyzing bias metrics and synthesizing the {mode} briefing. This takes about 5-15 seconds.
+      </div>
+    </div>
+  );
+
+  if (!currentNarrative) return (
     <div className="card text-center py-12">
       <Sparkles size={28} className="mx-auto mb-3" style={{ color: 'var(--primary)', opacity: 0.5 }} />
-      <div className="text-sm font-semibold mb-1" style={{ color: 'var(--muted)' }}>No AI Narratives Generated</div>
+      <div className="text-sm font-semibold mb-1" style={{ color: 'var(--muted)' }}>No AI Narrative Available</div>
       <div className="text-xs" style={{ color: 'var(--placeholder)' }}>
-        Narratives are generated by Gemini AI during the audit pipeline. Check that your GEMINI_API_KEY is configured.
+        Narratives are generated by Gemini AI. Check that your GEMINI_API_KEY is configured.
       </div>
     </div>
   );
@@ -3504,7 +3634,12 @@ function ExplainabilityTab({ audit }: { audit: any }) {
         <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
           Feature Laundering Detection
         </div>
-        {laundering.length === 0 ? (
+        {audit.featureLaundering === null ? (
+          <div className="px-4 py-6 text-center text-sm" style={{ color: 'var(--placeholder)' }}>
+            <Loader2 size={24} className="mx-auto mb-3 animate-spin" style={{ color: 'var(--primary)' }} />
+            Detecting proxy reconstruction via GBM...
+          </div>
+        ) : laundering.length === 0 ? (
           <div className="px-4 py-6 text-center text-sm" style={{ color: 'var(--placeholder)' }}>No laundering analysis available.</div>
         ) : (
           <table>
@@ -3637,13 +3772,76 @@ function ExplainabilityTab({ audit }: { audit: any }) {
 }
 
 /* ==================== FIXES ==================== */
-function FixesTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: StakeholderMode }) {
+function FixesTab({
+  audit,
+  stakeholderMode,
+  onAuditUpdated,
+}: {
+  audit: any;
+  stakeholderMode: StakeholderMode;
+  onAuditUpdated: (updatedAudit: any) => void;
+}) {
   const dataBias = audit.dataBias || {};
   const justifiedBias = audit.justifiedBias || {};
   const laundering = audit.featureLaundering || [];
   const proxies = audit.proxies || [];
   const profiles = audit.profiles || [];
   const biasOrigin = audit.biasOriginTracer || [];
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [selectedAttribute, setSelectedAttribute] = useState<string>('');
+
+  useEffect(() => {
+    if (audit.protectedCols && audit.protectedCols.length > 0 && !selectedAttribute) {
+      setSelectedAttribute(audit.protectedCols[0]);
+    }
+  }, [audit.protectedCols, selectedAttribute]);
+
+  const handleRemediate = async () => {
+    setIsGenerating(true);
+    setGenerationError(null);
+    try {
+      const res = await remediateBias(audit.id);
+      if (res.success) {
+        onAuditUpdated({
+          ...audit,
+          mitigatedStoragePath: res.mitigatedStoragePath,
+          mitigatedProfiles: res.mitigatedProfiles,
+          mitigatedDataBias: res.mitigatedDataBias,
+        });
+      } else {
+        setGenerationError("Failed to generate balanced dataset.");
+      }
+    } catch (err: any) {
+      setGenerationError(err?.message || "An error occurred during dataset bias remediation.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const originalAttrData = audit.dataBias?.[selectedAttribute] || {};
+  const originalDI = originalAttrData?.metrics?.disparate_impact;
+  const originalSPD = originalAttrData?.metrics?.statistical_parity_difference;
+
+  const originalProfile = audit.profiles?.find((p: any) => p.attribute === selectedAttribute) || {};
+  const originalCounts = originalProfile?.group_counts || {};
+  const originalPcts = originalProfile?.group_percentages || {};
+  const originalLabelDist = originalProfile?.label_distribution_per_group || {};
+
+  const mitigatedAttrData = audit.mitigatedDataBias?.[selectedAttribute] || {};
+  const mitigatedDI = mitigatedAttrData?.metrics?.disparate_impact;
+  const mitigatedSPD = mitigatedAttrData?.metrics?.statistical_parity_difference;
+
+  const mitigatedProfile = audit.mitigatedProfiles?.find((p: any) => p.attribute === selectedAttribute) || {};
+  const mitigatedCounts = mitigatedProfile?.group_counts || {};
+  const mitigatedPcts = mitigatedProfile?.group_percentages || {};
+  const mitigatedLabelDist = mitigatedProfile?.label_distribution_per_group || {};
+
+  const allGroups = Array.from(new Set([
+    ...Object.keys(originalCounts),
+    ...Object.keys(mitigatedCounts)
+  ])).sort();
 
   const fixes: any[] = [];
   const improvementBySeverity: Record<string, number> = {
@@ -3757,9 +3955,222 @@ function FixesTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: Sta
     }
   });
 
+  const renderRemediationSection = () => {
+    const isMitigated = !!audit.mitigatedStoragePath;
+    
+    return (
+      <div className="card space-y-4" style={{ borderColor: isMitigated ? 'var(--primary-dim)' : 'var(--border)' }}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Scale size={15} style={{ color: 'var(--primary)' }} />
+            <span className="text-sm font-semibold">Dataset Bias Remediation</span>
+            <span className="badge badge-medium">Generative Mitigation</span>
+          </div>
+          {isMitigated && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs" style={{ color: 'var(--muted)' }}>Inspect Attribute:</span>
+              <select 
+                value={selectedAttribute} 
+                onChange={(e) => setSelectedAttribute(e.target.value)}
+                className="text-xs rounded border px-2 py-1"
+                style={{ 
+                  background: 'var(--surface-2)', 
+                  borderColor: 'var(--border)', 
+                  color: 'var(--fg)',
+                  outline: 'none'
+                }}
+              >
+                {audit.protectedCols?.map((col: string) => (
+                  <option key={col} value={col}>{col}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {!isMitigated ? (
+          <div className="space-y-3">
+            <p className="text-xs text-slate-300" style={{ color: 'var(--fg)' }}>
+              Automatically mitigate representation and label bias in the original dataset using Generative Synthetic Balancing. This process identifies demographic intersections and generates synthetic samples (with controlled Gaussian noise) for underrepresented cohorts to equalize representation and positive outcomes.
+            </p>
+            <div className="p-3 rounded-lg border space-y-2 text-xs" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
+              <div className="font-semibold" style={{ color: 'var(--primary)' }}>Generative Logic & Calibration Details:</div>
+              <ul className="list-disc list-inside space-y-1" style={{ color: 'var(--muted)' }}>
+                <li>Identifies demographic intersections (e.g. Race × Gender).</li>
+                <li>Generates synthetic rows targeting balanced cohort counts (<code style={{ color: 'var(--accent)' }}>max_count</code>).</li>
+                <li>Coerces positive/negative features using class-specific medians (with ±10% noise) and modes.</li>
+                <li>Ensures outcome labels align with the highest observed positive rate to mitigate historical bias.</li>
+              </ul>
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <button 
+                className="btn btn-outline btn-sm flex items-center gap-1.5"
+                disabled={isGenerating}
+                onClick={handleRemediate}
+                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    Generating Balanced Dataset...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={13} />
+                    Generate Balanced Dataset
+                  </>
+                )}
+              </button>
+            </div>
+            {generationError && (
+              <div className="text-xs mt-2" style={{ color: 'var(--danger)' }}>
+                {generationError}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4 p-3 rounded-lg border" style={{ background: 'rgba(6, 214, 160, 0.04)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} style={{ color: 'var(--success)' }} />
+                <div>
+                  <div className="text-xs font-semibold" style={{ color: 'var(--success)' }}>Mitigated Dataset Ready</div>
+                  <div className="text-[10px]" style={{ color: 'var(--muted)' }}>Saved as a new dataset in the cloud storage bucket.</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a 
+                  href={getDownloadMitigatedUrl(audit.id)} 
+                  className="btn btn-outline btn-sm flex items-center gap-1.5"
+                  style={{ cursor: 'pointer' }}
+                >
+                  <Download size={13} />
+                  Download Mitigated Dataset
+                </a>
+                <button 
+                  className="btn btn-outline btn-sm text-[11px] flex items-center gap-1.5"
+                  disabled={isGenerating}
+                  onClick={handleRemediate}
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  {isGenerating ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />} Re-generate
+                </button>
+              </div>
+            </div>
+            
+            {generationError && (
+              <div className="text-xs mt-2" style={{ color: 'var(--danger)' }}>
+                {generationError}
+              </div>
+            )}
+            
+            {/* Comparison panels */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Original Stats Card */}
+              <div className="card space-y-3" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
+                <div className="text-[11px] font-bold tracking-wide uppercase" style={{ color: 'var(--muted)' }}>Original Dataset</div>
+                
+                <div className="grid grid-cols-2 gap-2 border-b pb-2" style={{ borderColor: 'var(--border)' }}>
+                  <div>
+                    <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>Disparate Impact</div>
+                    <div className="text-base font-bold" style={{ color: originalDI && originalDI < 0.8 ? 'var(--danger)' : 'var(--success)' }}>
+                      {originalDI != null ? originalDI.toFixed(3) : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>Statistical Parity Diff</div>
+                    <div className="text-base font-bold" style={{ color: originalSPD && Math.abs(originalSPD) > 0.1 ? 'var(--status-warning)' : 'var(--fg)' }}>
+                      {originalSPD != null ? originalSPD.toFixed(3) : '-'}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Distribution List */}
+                <div className="space-y-2.5">
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--placeholder)' }}>Cohort Distribution:</div>
+                  {allGroups.map((group) => {
+                    const count = originalCounts[group] || 0;
+                    const pct = originalPcts[group] || 0;
+                    const posRate = originalLabelDist[group]?.positive;
+                    
+                    return (
+                      <div key={group} className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold truncate" style={{ color: 'var(--fg)' }}>{group}</span>
+                          <span style={{ color: 'var(--muted)' }}>{count.toLocaleString()} rows ({pct.toFixed(1)}%)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 rounded-full" style={{ background: 'var(--border)' }}>
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--primary)' }} />
+                          </div>
+                          <span className="text-[10px] font-mono shrink-0" style={{ color: 'var(--success)' }}>Pos Rate: {posRate != null ? `${posRate.toFixed(1)}%` : '-'}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Mitigated Stats Card */}
+              <div className="card space-y-3" style={{ background: 'var(--surface-2)', borderColor: 'var(--primary-dim)' }}>
+                <div className="text-[11px] font-bold tracking-wide uppercase" style={{ color: 'var(--primary)' }}>Mitigated Dataset (Balanced)</div>
+                
+                <div className="grid grid-cols-2 gap-2 border-b pb-2" style={{ borderColor: 'var(--border)' }}>
+                  <div>
+                    <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>Disparate Impact</div>
+                    <div className="text-base font-bold flex items-center gap-1.5" style={{ color: mitigatedDI && mitigatedDI < 0.8 ? 'var(--danger)' : 'var(--success)' }}>
+                      {mitigatedDI != null ? mitigatedDI.toFixed(3) : '-'}
+                      {originalDI != null && mitigatedDI != null && mitigatedDI > originalDI && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ color: 'var(--success)', background: 'rgba(6, 214, 160, 0.1)' }}>
+                          +{((mitigatedDI - originalDI) * 100).toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>Statistical Parity Diff</div>
+                    <div className="text-base font-bold" style={{ color: mitigatedSPD && Math.abs(mitigatedSPD) > 0.1 ? 'var(--status-warning)' : 'var(--success)' }}>
+                      {mitigatedSPD != null ? mitigatedSPD.toFixed(3) : '-'}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Distribution List */}
+                <div className="space-y-2.5">
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--placeholder)' }}>Cohort Distribution:</div>
+                  {allGroups.map((group) => {
+                    const count = mitigatedCounts[group] || 0;
+                    const pct = mitigatedPcts[group] || 0;
+                    const posRate = mitigatedLabelDist[group]?.positive;
+                    
+                    return (
+                      <div key={group} className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold truncate" style={{ color: 'var(--fg)' }}>{group}</span>
+                          <span style={{ color: 'var(--muted)' }}>{count.toLocaleString()} rows ({pct.toFixed(1)}%)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 rounded-full" style={{ background: 'var(--border)' }}>
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--primary)' }} />
+                          </div>
+                          <span className="text-[10px] font-mono shrink-0" style={{ color: 'var(--success)' }}>Pos Rate: {posRate != null ? `${posRate.toFixed(1)}%` : '-'}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (fixes.length === 0) return (
     <div className="space-y-3">
       {biasOrigin.length > 0 && <BiasOriginTracerCard items={biasOrigin} />}
+      {renderRemediationSection()}
       <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} />
       <div className="card flex items-center gap-3 py-8" style={{ background: 'rgba(6, 214, 160, 0.04)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
         <CheckCircle2 size={20} style={{ color: 'var(--success)' }} />
@@ -3771,6 +4182,7 @@ function FixesTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: Sta
   return (
     <div className="space-y-3">
       {biasOrigin.length > 0 && <BiasOriginTracerCard items={biasOrigin} />}
+      {renderRemediationSection()}
 
       {/* Pareto Frontier */}
       <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} />
