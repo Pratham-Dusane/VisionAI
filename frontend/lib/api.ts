@@ -582,3 +582,235 @@ export function getDownloadMitigatedUrl(auditId: string): string {
   return `${API_BASE}/api/audits/${auditId}/download-mitigated`;
 }
 
+/**
+ * What-If Simulator: run a live prediction on a user-constructed profile.
+ * Returns prediction label, confidence, raw score, and per-feature contributions.
+ */
+export async function whatifPredict(auditId: string, features: Record<string, unknown>, threshold?: number) {
+  const res = await fetch(`${API_BASE}/api/audits/${auditId}/whatif/predict`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ features, threshold }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `What-If prediction failed (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    auditId: string;
+    prediction: string;
+    decision: 'APPROVED' | 'REJECTED';
+    confidence: number | null;
+    rawScore: number;
+    threshold: number;
+    featureContributions: Record<string, number>;
+    profile: Record<string, unknown>;
+  }>;
+}
+
+/**
+ * What-If Simulator: fetch a random row from the audit dataset.
+ */
+export async function whatifRandomRow(auditId: string) {
+  const res = await fetch(`${API_BASE}/api/audits/${auditId}/whatif/random-row`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to fetch random row (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    auditId: string;
+    features: Record<string, unknown>;
+  }>;
+}
+
+/**
+ * Fetch causal fairness analysis results on-demand (Feature 5).
+ */
+export async function getCausalAnalysis(auditId: string, force = false) {
+  const url = `${API_BASE}/api/audits/${auditId}/causal` + (force ? '?force=true' : '');
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to run causal analysis' }));
+    throw new Error(err.detail || `Causal analysis failed (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    causal_graph_dot: string;
+    per_attribute: Record<string, {
+      total_causal_effect: number;
+      direct_effect: number;
+      indirect_effect: number;
+      mediators: string[];
+      direct_paths: string[];
+      indirect_paths: string[];
+      discrimination_type: string;
+      legal_implication: string;
+      recommended_intervention: string;
+      error?: string;
+      fallback_note?: string;
+    }>;
+  }>;
+}
+
+export type PipelineNode = {
+  node_id: string;
+  audit_id: string;
+  label: string;
+  position_x: number;
+  position_y: number;
+};
+
+export type PipelineEdge = {
+  from_node: string;
+  to_node: string;
+  output_feature: string;
+  input_feature: string;
+};
+
+export type Pipeline = {
+  pipeline_id: string;
+  name: string;
+  description: string;
+  nodes: PipelineNode[];
+  edges: PipelineEdge[];
+  protected_attrs: string[];
+  status: 'DRAFT' | 'ANALYZED';
+  analysis_results?: string; // JSON string containing dict of attribute analysis
+  created_at?: string;
+  updated_at?: string;
+};
+
+export async function listPipelines(): Promise<Pipeline[]> {
+  const res = await fetch(`${API_BASE}/api/pipelines`);
+  if (!res.ok) {
+    throw new Error(`Failed to list pipelines (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function getPipeline(pipelineId: string): Promise<Pipeline> {
+  const res = await fetch(`${API_BASE}/api/pipelines/${pipelineId}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch pipeline (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function createPipeline(params: {
+  name: string;
+  description?: string;
+  nodes: PipelineNode[];
+  edges: PipelineEdge[];
+  protected_attrs?: string[];
+}): Promise<Pipeline> {
+  const res = await fetch(`${API_BASE}/api/pipelines`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to create pipeline' }));
+    throw new Error(err.detail || `Failed to create pipeline (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function updatePipeline(
+  pipelineId: string,
+  params: {
+    name?: string;
+    description?: string;
+    nodes?: PipelineNode[];
+    edges?: PipelineEdge[];
+    protected_attrs?: string[];
+  }
+): Promise<{ status: string }> {
+  const res = await fetch(`${API_BASE}/api/pipelines/${pipelineId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to update pipeline' }));
+    throw new Error(err.detail || `Failed to update pipeline (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function deletePipeline(pipelineId: string): Promise<{ status: string }> {
+  const res = await fetch(`${API_BASE}/api/pipelines/${pipelineId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to delete pipeline (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function runPipelineAnalysis(pipelineId: string): Promise<{
+  pipeline_id: string;
+  protected_attrs: string[];
+  results: Record<string, any>;
+}> {
+  const res = await fetch(`${API_BASE}/api/pipelines/${pipelineId}/analyze`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to analyze pipeline' }));
+    throw new Error(err.detail || `Failed to analyze pipeline (${res.status})`);
+  }
+  return res.json();
+}
+
+/**
+ * LLM and RAG Pipeline Bias Evaluator API (Feature 7).
+ */
+export async function runLLMBiasScan(params: {
+  llm_endpoint: string;
+  llm_api_key: string;
+  domain: string;
+  org_id: string;
+  model_name?: string;
+  rag_endpoint?: string;
+}) {
+  const res = await fetch(`${API_BASE}/api/audits/llm-bias`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `LLM bias evaluation failed (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    stereotype_amplification: Record<string, {
+      group_outputs: Record<string, {
+        responses: string[];
+        mean_toxicity: number;
+        mean_sentiment: number;
+      }>;
+      toxicity_disparity: number;
+      sentiment_disparity: number;
+      toxicity_flagged: boolean;
+      sentiment_flagged: boolean;
+      worst_toxicity_group: string | null;
+      lowest_sentiment_group: string | null;
+    }>;
+    retrieval_bias: {
+      retrieval_similarity_by_group: Record<string, number | null>;
+      similarity_disparity: number;
+      retrieval_bias_flagged: boolean;
+      retrieved_doc_samples: Record<string, string[]>;
+    };
+  }>;
+}
+
+
+

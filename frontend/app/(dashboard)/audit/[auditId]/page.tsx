@@ -17,14 +17,23 @@ import {
   fetchFeatureLaundering,
   remediateBias,
   getDownloadMitigatedUrl,
+  whatifPredict,
+  whatifRandomRow,
+  getCausalAnalysis,
 } from '@/lib/api';
 import { useState, useEffect, use, useRef, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Download, AlertTriangle, Shield, BarChart3,
   Brain, Wrench, Scale, CheckCircle2, Loader2, XCircle,
   Zap, Users, Eye, FileText, Layers, Info, Sparkles, Command, ArrowRight,
-  MessageSquareText, Send, MessageCircle, Trash2, Ghost,
+  MessageSquareText, Send, MessageCircle, Trash2, Ghost, RotateCcw, RefreshCw,
 } from 'lucide-react';
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
+} from 'recharts';
+
+const CausalGraph = dynamic(() => import('@/components/charts/CausalGraph'), { ssr: false });
 import ProxyNetworkGraph from '@/components/charts/ProxyNetworkGraph';
 import ShapSummaryChart from '@/components/charts/ShapSummaryChart';
 import IntersectionalHeatmap from '@/components/charts/IntersectionalHeatmap';
@@ -50,14 +59,16 @@ const BASE_TABS = [
   { key: 'model', label: 'Model Analysis', icon: Brain },
   { key: 'intersectional', label: 'Intersectional', icon: Layers },
   { key: 'explainability', label: 'Explainability', icon: Zap },
+  { key: 'causal', label: 'Causal Fairness', icon: Shield },
   { key: 'results', label: 'Results', icon: Command },
   { key: 'narratives', label: 'AI Narratives', icon: Sparkles },
   { key: 'fixes', label: 'Fixes', icon: Wrench },
+  { key: 'whatif', label: 'What-If', icon: Zap },
   { key: 'legal', label: 'Legal', icon: Scale },
 ];
 
 const MODE_TAB_KEYS: Record<StakeholderMode, string[]> = {
-  technical: ['overview', 'data', 'model', 'intersectional', 'explainability', 'results', 'narratives', 'fixes', 'legal'],
+  technical: ['overview', 'data', 'model', 'intersectional', 'explainability', 'causal', 'results', 'narratives', 'fixes', 'whatif', 'legal'],
   executive: ['overview', 'results', 'narratives', 'legal'],
   legal: ['overview', 'intersectional', 'results', 'legal', 'narratives'],
 };
@@ -511,7 +522,10 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   const sev = audit.severity || {};
   const score = sev.fairness_score ?? audit.fairnessScore ?? 0;
   const grade = sev.letter_grade ?? audit.letterGrade ?? '?';
-  const tabs = getTabs(stakeholderMode);
+  const tabs = getTabs(stakeholderMode).filter((t) => {
+    if (t.key === 'whatif' && audit?.dataOnly) return false;
+    return true;
+  });
   const visibleTabKeys = new Set(tabs.map((t) => t.key));
 
   function dismissGuidedSandbox() {
@@ -699,6 +713,12 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
             stakeholderMode={stakeholderMode}
             onAuditUpdated={(updatedAudit: any) => setAudit(updatedAudit)}
           />
+        )}
+        {visibleTabKeys.has('causal') && tab === 'causal' && (
+          <CausalTab audit={audit} />
+        )}
+        {visibleTabKeys.has('whatif') && tab === 'whatif' && (
+          <WhatIfTab audit={audit} />
         )}
         {visibleTabKeys.has('legal') && tab === 'legal' && <LegalTab audit={audit} mode={stakeholderMode} />}
         </div>
@@ -4466,6 +4486,728 @@ function LegalTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
         createdAt={audit.createdAt}
         updatedAt={audit.updatedAt}
       />
+    </div>
+  );
+}
+
+/* ==================== WHAT-IF SIMULATOR ==================== */
+function WhatIfTab({ audit }: { audit: any }) {
+  const [features, setFeatures] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(false);
+  const [predicting, setPredicting] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState('');
+  const [history, setHistory] = useState<any[]>([]);
+  const [mirroredProfile, setMirroredProfile] = useState<Record<string, any> | null>(null);
+  const [mirroredResult, setMirroredResult] = useState<any>(null);
+  const [mirrorLoading, setMirrorLoading] = useState(false);
+
+  const loadRepresentative = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await getSampleRow(audit.id);
+      const row = data.sampleRow || {};
+      setFeatures(row);
+      setMirroredProfile(null);
+      setMirroredResult(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load representative row');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadRandom = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await whatifRandomRow(audit.id);
+      const row = data.features || {};
+      setFeatures(row);
+      setMirroredProfile(null);
+      setMirroredResult(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load random row');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRepresentative();
+  }, [audit.id]);
+
+  useEffect(() => {
+    if (Object.keys(features).length === 0) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        setPredicting(true);
+        setError('');
+        const res = await whatifPredict(audit.id, features);
+        setResult(res);
+
+        // Add to history
+        setHistory((prev) => {
+          const match = prev.find((h) => JSON.stringify(h.profile) === JSON.stringify(res.profile));
+          if (match) return prev;
+          return [res, ...prev].slice(0, 5);
+        });
+
+        // Update mirror comparison if active
+        if (mirroredProfile) {
+          const dataBias = audit.dataBias || {};
+          const protectedCols = audit.config?.protectedCols || audit.protectedCols || [];
+          const updatedMirrorProfile = { ...features };
+          protectedCols.forEach((col: string) => {
+            const biasRow: any = Object.values(dataBias).find((b: any) => b.attribute?.toLowerCase() === col.toLowerCase());
+            if (biasRow && biasRow.privileged_group) {
+              updatedMirrorProfile[col] = biasRow.privileged_group;
+            } else if (biasRow && biasRow.privilegedGroup) {
+              updatedMirrorProfile[col] = biasRow.privilegedGroup;
+            }
+          });
+          setMirroredProfile(updatedMirrorProfile);
+          try {
+            setMirrorLoading(true);
+            const mRes = await whatifPredict(audit.id, updatedMirrorProfile);
+            setMirroredResult(mRes);
+          } catch (e) {
+            console.error('Failed to update mirror', e);
+          } finally {
+            setMirrorLoading(false);
+          }
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to calculate prediction');
+      } finally {
+        setPredicting(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [features, audit.id]);
+
+  const triggerMirror = async () => {
+    if (Object.keys(features).length === 0) return;
+    try {
+      setMirrorLoading(true);
+      const dataBias = audit.dataBias || {};
+      const protectedCols = audit.config?.protectedCols || audit.protectedCols || [];
+      const mirror = { ...features };
+      protectedCols.forEach((col: string) => {
+        const biasRow: any = Object.values(dataBias).find((b: any) => b.attribute?.toLowerCase() === col.toLowerCase());
+        if (biasRow && biasRow.privileged_group) {
+          mirror[col] = biasRow.privileged_group;
+        } else if (biasRow && biasRow.privilegedGroup) {
+          mirror[col] = biasRow.privilegedGroup;
+        }
+      });
+      setMirroredProfile(mirror);
+      const res = await whatifPredict(audit.id, mirror);
+      setMirroredResult(res);
+    } catch (err: any) {
+      setError(err.message || 'Failed to calculate mirror prediction');
+    } finally {
+      setMirrorLoading(false);
+    }
+  };
+
+  const schema = audit.schema || {};
+  const columns = schema.columns || [];
+  const labelCol = audit.labelCol || audit.config?.labelCol || '';
+  const protectedCols = audit.config?.protectedCols || audit.protectedCols || [];
+  const featureColumns = columns.filter((c: any) => c.name !== labelCol);
+
+  const isNumeric = (dtype: string) => {
+    const d = String(dtype).toLowerCase();
+    return d.includes('int') || d.includes('float') || d.includes('num') || d.includes('double');
+  };
+
+  // Sort contributions
+  const contribs = Object.entries(result?.featureContributions || {}) as [string, number][];
+  const sortedContribs = [...contribs]
+    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .slice(0, 8);
+  const maxContrib = Math.max(...sortedContribs.map(([_, val]) => Math.abs(val)), 0.01);
+
+  // Intersectional check
+  const dataBias = audit.dataBias || {};
+  const intersectional = audit.intersectional || [];
+  const criticalIntersections = intersectional.filter((item: any) => {
+    const colA = item.col_a || item.colA || '';
+    const valA = item.val_a || item.valA || '';
+    const colB = item.col_b || item.colB || '';
+    const valB = item.val_b || item.valB || '';
+    const severity = item.severity || '';
+
+    return String(features[colA]) === String(valA) &&
+           String(features[colB]) === String(valB) &&
+           (severity === 'CRITICAL' || severity === 'HIGH');
+  });
+
+  return (
+    <div className="whatif-container">
+      {/* Left Panel - Dynamic Form */}
+      <div className="whatif-left">
+        <div className="whatif-section-header">Applicant Profile</div>
+        <div className="whatif-toolbar">
+          <button
+            type="button"
+            className="btn btn-outline btn-sm flex items-center gap-1.5"
+            onClick={loadRepresentative}
+            disabled={loading}
+          >
+            <RotateCcw size={13} /> Reset to Average
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm flex items-center gap-1.5"
+            onClick={loadRandom}
+            disabled={loading}
+          >
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Load Random Row
+          </button>
+        </div>
+
+        {error && (
+          <div className="card text-xs p-3 mb-2" style={{ color: 'var(--danger)', borderColor: 'rgba(255,22,93,0.2)', background: 'rgba(255,22,93,0.03)' }}>
+            {error}
+          </div>
+        )}
+
+        <div className="whatif-form-scroll card" style={{ padding: '16px' }}>
+          {loading ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 gap-2">
+              <Loader2 className="animate-spin" size={24} style={{ color: 'var(--primary)' }} />
+              <span className="text-xs text-muted">Loading schema attributes...</span>
+            </div>
+          ) : featureColumns.length === 0 ? (
+            <div className="whatif-empty-state">No schema columns available.</div>
+          ) : (
+            featureColumns.map((c: any) => {
+              const isProtected = protectedCols.includes(c.name);
+              const uniqueCount = c.unique_count ?? c.uniqueCount ?? 0;
+              const sampleValues = c.sample_values ?? c.sampleValues ?? [];
+
+              return (
+                <div
+                  key={c.name}
+                  className={`whatif-field ${isProtected ? 'whatif-field-protected' : ''}`}
+                >
+                  <label className="whatif-field-label">
+                    <span>{c.name}</span>
+                    {isProtected && (
+                      <span title="Protected Attribute under assessment">
+                        <AlertTriangle
+                          size={12}
+                          className="whatif-protected-icon"
+                        />
+                      </span>
+                    )}
+                  </label>
+                  {isNumeric(c.dtype) ? (
+                    <input
+                      type="number"
+                      value={features[c.name] ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? '' : Number(e.target.value);
+                        setFeatures((prev) => ({ ...prev, [c.name]: val }));
+                      }}
+                    />
+                  ) : uniqueCount <= 10 ? (
+                    <select
+                      value={features[c.name] ?? ''}
+                      onChange={(e) => {
+                        setFeatures((prev) => ({ ...prev, [c.name]: e.target.value }));
+                      }}
+                    >
+                      <option value="">Select...</option>
+                      {Array.from(new Set([...sampleValues, features[c.name]].filter(Boolean))).map((v: any) => (
+                        <option key={v} value={v}>{String(v)}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={features[c.name] ?? ''}
+                      onChange={(e) => {
+                        setFeatures((prev) => ({ ...prev, [c.name]: e.target.value }));
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Right Panel - Result Cards */}
+      <div className="whatif-right">
+        {/* Card 1: Prediction Result */}
+        <div className={`whatif-prediction-card ${result?.decision === 'APPROVED' ? 'approved' : 'rejected'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="whatif-section-header" style={{ marginBottom: 0 }}>Prediction Result</span>
+            {predicting && <Loader2 className="animate-spin" size={16} style={{ color: 'var(--primary)' }} />}
+          </div>
+          {loading ? (
+            <div className="py-6 flex justify-center"><Loader2 className="animate-spin" size={20} /></div>
+          ) : !result ? (
+            <div className="whatif-empty-state">Construct profile to see prediction</div>
+          ) : (
+            <>
+              <div className={`whatif-prediction-label ${result.decision === 'APPROVED' ? 'approved' : 'rejected'}`}>
+                {result.decision}
+              </div>
+              {result.confidence != null ? (
+                <div className="whatif-confidence">
+                  Confidence: {(result.confidence * 100).toFixed(1)}%
+                </div>
+              ) : (
+                <div className="whatif-confidence">
+                  Decision probability score: {result.rawScore?.toFixed(4)} (Threshold: {result.threshold})
+                </div>
+              )}
+
+              {history.length > 0 && (
+                <div className="whatif-history">
+                  <span className="whatif-history-label">History:</span>
+                  {history.map((h, index) => (
+                    <div
+                      key={index}
+                      className={`whatif-history-dot ${h.decision === 'APPROVED' ? 'approved' : 'rejected'}`}
+                      title={`Score: ${h.rawScore} - Click to load`}
+                      onClick={() => {
+                        setFeatures(h.profile);
+                        setMirroredProfile(null);
+                        setMirroredResult(null);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Card 2: Feature Influence */}
+        <div className="whatif-contrib-card">
+          <div className="whatif-section-header">Feature Influence</div>
+          {loading ? (
+            <div className="py-6 flex justify-center"><Loader2 className="animate-spin" size={20} /></div>
+          ) : sortedContribs.length === 0 ? (
+            <div className="whatif-empty-state">No contribution statistics available.</div>
+          ) : (
+            <div className="space-y-2.5">
+              {sortedContribs.map(([name, val]) => {
+                const isPos = val > 0;
+                const pct = maxContrib > 0 ? (Math.abs(val) / maxContrib) * 100 : 0;
+                const valStr = isPos ? `+${val.toFixed(4)}` : val.toFixed(4);
+                return (
+                  <div key={name} className="whatif-contrib-row">
+                    <div className="whatif-contrib-name" title={name}>{name}</div>
+                    <div className="whatif-contrib-track">
+                      <div
+                        className={`whatif-contrib-bar ${isPos ? 'positive' : 'negative'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className={`whatif-contrib-value ${isPos ? 'positive' : 'negative'}`}>
+                      {valStr}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Card 3: Fairness Implication */}
+        <div className="whatif-fairness-card">
+          <div className="whatif-section-header">Fairness & Demographic Insights</div>
+          
+          {protectedCols.length === 0 ? (
+            <div className="whatif-empty-state">No protected attributes configured.</div>
+          ) : (
+            <div className="space-y-3">
+              {protectedCols.map((col: string) => {
+                const currentVal = features[col];
+                const biasRow: any = Object.values(dataBias).find((b: any) => b.attribute?.toLowerCase() === col.toLowerCase());
+                if (!biasRow) return null;
+
+                const privGroup = biasRow.privileged_group || biasRow.privilegedGroup;
+                const isPrivileged = String(currentVal) === String(privGroup);
+                const positiveRate = isPrivileged 
+                  ? (biasRow.metrics?.positive_rate_privileged ?? biasRow.metrics?.positiveRatePrivileged)
+                  : (biasRow.metrics?.positive_rate_unprivileged ?? biasRow.metrics?.positiveRateUnprivileged);
+                const disparateImpact = biasRow.metrics?.disparate_impact ?? biasRow.metrics?.disparateImpact;
+
+                return (
+                  <div key={col} className="whatif-fairness-group">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-semibold uppercase">{col} ({currentVal || 'N/A'})</span>
+                      <span className={`badge ${isPrivileged ? 'badge-pass' : 'badge-neutral'}`}>
+                        {isPrivileged ? 'Privileged Group' : 'Unprivileged Group'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span style={{ color: 'var(--muted)' }}>Historical Approval:</span>{' '}
+                        <strong>{positiveRate != null ? `${(positiveRate * 100).toFixed(1)}%` : 'N/A'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--muted)' }}>DI Ratio:</span>{' '}
+                        <strong style={{ color: biasRow.verdict === 'FAIL' ? 'var(--danger)' : 'var(--success)' }}>
+                          {disparateImpact != null ? disparateImpact.toFixed(2) : 'N/A'}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {criticalIntersections.map((item: any, idx: number) => {
+                const colA = item.col_a || item.colA;
+                const colB = item.col_b || item.colB;
+                const valA = item.val_a || item.valA;
+                const valB = item.val_b || item.valB;
+                const di = item.di_vs_overall ?? item.diVsOverall;
+                return (
+                  <div key={idx} className="whatif-fairness-group critical flex items-start gap-2">
+                    <AlertTriangle size={14} className="text-red-500 shrink-0 mt-0.5" style={{ color: 'var(--danger)' }} />
+                    <div className="text-xs">
+                      <strong>Intersectional Risk Alert:</strong> Profile matches intersectional group{' '}
+                      <span className="font-semibold">{valA} ({colA})</span> &{' '}
+                      <span className="font-semibold">{valB} ({colB})</span> which has a critical bias rating{' '}
+                      (DI: {di != null ? di.toFixed(2) : 'N/A'}).
+                    </div>
+                  </div>
+                );
+              })}
+
+              <button
+                type="button"
+                className="btn btn-outline btn-sm w-full mt-2"
+                onClick={triggerMirror}
+                disabled={mirrorLoading || Object.keys(features).length === 0}
+              >
+                {mirrorLoading ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" /> Calculating Mirror...
+                  </>
+                ) : (
+                  'Mirror to Privileged Group'
+                )}
+              </button>
+
+              {mirroredResult && (
+                <div className="whatif-mirror-grid">
+                  <div className="whatif-mirror-cell">
+                    <div className="text-[10px] font-bold uppercase text-muted mb-1" style={{ color: 'var(--muted)' }}>Current Profile</div>
+                    <div className={`whatif-prediction-label ${result?.decision === 'APPROVED' ? 'approved' : 'rejected'}`}>
+                      {result?.decision || 'REJECTED'}
+                    </div>
+                    <div className="text-[11px] mt-1" style={{ color: 'var(--placeholder)' }}>
+                      Score: {result?.rawScore?.toFixed(4)}
+                    </div>
+                  </div>
+                  <div className="whatif-mirror-cell">
+                    <div className="text-[10px] font-bold uppercase text-muted mb-1" style={{ color: 'var(--muted)' }}>Privileged Mirror</div>
+                    <div className={`whatif-prediction-label ${mirroredResult.decision === 'APPROVED' ? 'approved' : 'rejected'}`}>
+                      {mirroredResult.decision}
+                    </div>
+                    <div className="text-[11px] mt-1" style={{ color: 'var(--placeholder)' }}>
+                      Score: {mirroredResult.rawScore?.toFixed(4)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ==================== CAUSAL FAIRNESS ==================== */
+function CausalTab({ audit }: { audit: any }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [recomputing, setRecomputing] = useState(false);
+  const [error, setError] = useState('');
+  const [selectedAttribute, setSelectedAttribute] = useState('');
+
+  async function loadCausal(force = false) {
+    try {
+      if (force) {
+        setRecomputing(true);
+      } else {
+        setLoading(true);
+      }
+      setError('');
+      const res = await getCausalAnalysis(audit.id, force);
+      setData(res);
+      
+      const attrs = Object.keys(res.per_attribute || {});
+      if (attrs.length > 0) {
+        if (!selectedAttribute || force || !attrs.includes(selectedAttribute)) {
+          setSelectedAttribute(attrs[0]);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Causal analysis execution failed');
+    } finally {
+      setLoading(false);
+      setRecomputing(false);
+    }
+  }
+
+  useEffect(() => {
+    loadCausal(false);
+  }, [audit.id]);
+
+  const protectedCols = audit.config?.protectedCols || audit.protectedCols || [];
+  const labelCol = audit.labelCol || audit.config?.labelCol || '';
+
+  if (loading) {
+    return (
+      <div className="card flex flex-col items-center justify-center p-12 gap-3 min-h-[400px]">
+        <Loader2 className="animate-spin" size={32} style={{ color: 'var(--primary)' }} />
+        <div className="text-sm font-semibold">Running Causal Inference Model...</div>
+        <div className="text-xs text-muted max-w-sm text-center">
+          Building causal DAG, querying Gemini, and running DoWhy path estimation on-demand. This may take 10-15 seconds.
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="card flex flex-col items-center justify-center p-8 text-center min-h-[300px]">
+        <XCircle size={40} style={{ color: 'var(--danger)', marginBottom: 12 }} />
+        <h3 className="text-base font-semibold mb-1">Causal Inference Failed</h3>
+        <p className="text-sm text-muted max-w-md">{error || 'Unable to retrieve causal graph findings.'}</p>
+        <button
+          className="btn btn-outline btn-sm mt-4"
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const selectedRes = data.per_attribute?.[selectedAttribute];
+  const allAttributes = Object.keys(data.per_attribute || {});
+  
+  // Build chart data
+  const chartData = allAttributes.map((attr) => {
+    const res = data.per_attribute[attr];
+    if (res?.error) return null;
+    return {
+      name: attr,
+      Direct: Math.abs(res.direct_effect || 0),
+      Indirect: Math.abs(res.indirect_effect || 0),
+    };
+  }).filter(Boolean);
+
+  const getDiscBadge = (type: string) => {
+    switch (type) {
+      case 'DIRECT_DISCRIMINATION':
+        return <span className="badge badge-critical">Direct Discrimination (High Risk)</span>;
+      case 'INDIRECT_DISCRIMINATION':
+        return <span className="badge badge-medium">Indirect Discrimination (Medium Risk)</span>;
+      case 'MIXED_DISCRIMINATION':
+        return <span className="badge badge-critical">Mixed Discrimination (High Risk)</span>;
+      case 'NO_CAUSAL_EFFECT':
+        return <span className="badge badge-pass">No Causal Disparity (Low Risk)</span>;
+      default:
+        return <span className="badge badge-neutral">Unknown Status</span>;
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6 w-full animate-fade-in" style={{ animation: 'fade-in 0.3s ease-out' }}>
+      {/* Top Row: Left (Decomposition Chart), Right (Estimation details & assessment) */}
+      <div className="flex flex-wrap gap-6 w-full">
+        {/* Left Column: Causal Effect Decomposition */}
+        <div style={{ flex: '1 1 450px', minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="card" style={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div className="whatif-section-header">Causal Effect Decomposition</div>
+            {chartData.length === 0 ? (
+              <div className="py-8 text-center text-xs text-muted flex-1 flex items-center justify-center">No estimation metrics computed.</div>
+            ) : (
+              <div className="w-full flex-1 min-h-[200px] mt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartData}
+                    layout="vertical"
+                    margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+                    <XAxis type="number" stroke="var(--muted)" fontSize={10} />
+                    <YAxis type="category" dataKey="name" stroke="var(--muted)" fontSize={10} width={80} />
+                    <Tooltip
+                      contentStyle={{ background: 'var(--surface)', borderColor: 'var(--border)', borderRadius: '8px' }}
+                      labelStyle={{ color: 'var(--fg)', fontWeight: 600, fontSize: 11 }}
+                      itemStyle={{ fontSize: 11 }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 10 }} />
+                    <Bar dataKey="Direct" name="Direct Causal Effect" stackId="a" fill="#34A853" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="Indirect" name="Indirect Causal Effect" stackId="a" fill="#FBBC05" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Attribute Selector & Details / Assessment */}
+        <div style={{ flex: '1 1 450px', minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Selector & Recalculate */}
+          <div className="flex items-center justify-between flex-wrap gap-3 w-full">
+            <div className="flex gap-1.5 flex-wrap">
+              {allAttributes.map((attr) => (
+                <button
+                  key={attr}
+                  type="button"
+                  className={`btn btn-sm ${selectedAttribute === attr ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setSelectedAttribute(attr)}
+                >
+                  {attr}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              type="button"
+              className="btn btn-outline btn-sm flex items-center gap-1.5 ml-auto"
+              disabled={recomputing || loading}
+              onClick={() => loadCausal(true)}
+            >
+              {recomputing ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" />
+                  Recalculating...
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={13} />
+                  Force Recalculate
+                </>
+              )}
+            </button>
+          </div>
+
+          {selectedRes ? (
+            <div className="space-y-3">
+              {/* Implication Details */}
+              {selectedRes.error ? (
+                <div className="card text-xs p-4" style={{ borderColor: 'rgba(255,22,93,0.3)', background: 'rgba(255,22,93,0.03)' }}>
+                  <div className="font-semibold text-red-500 mb-1">Estimation Error</div>
+                  <div style={{ color: 'var(--muted)' }}>{selectedRes.error}</div>
+                  <div className="mt-2 text-[10px] text-muted italic">{selectedRes.fallback_note}</div>
+                </div>
+              ) : (
+                <>
+                  {/* Implication Card */}
+                  <div className="card space-y-2" style={{ padding: '20px' }}>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="whatif-section-header" style={{ marginBottom: 0 }}>Causal Assessment</span>
+                      {getDiscBadge(selectedRes.discrimination_type)}
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-3 text-center py-2.5 my-1 rounded-xl" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                      <div>
+                        <div className="text-[10px] uppercase text-muted font-bold">Total Effect</div>
+                        <div className="text-base font-extrabold">{selectedRes.total_causal_effect?.toFixed(4)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase text-muted font-bold">Direct Effect</div>
+                        <div className="text-base font-extrabold text-green-600" style={{ color: '#34A853' }}>
+                          {selectedRes.direct_effect?.toFixed(4)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase text-muted font-bold">Indirect Effect</div>
+                        <div className="text-base font-extrabold text-yellow-600" style={{ color: '#FBBC05' }}>
+                          {selectedRes.indirect_effect?.toFixed(4)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-xs pt-1">
+                      <strong>Legal Standing:</strong>{' '}
+                      <span style={{ color: 'var(--fg)' }}>{selectedRes.legal_implication}</span>
+                    </div>
+                  </div>
+
+                  {/* Intervention Card */}
+                  <div className="card" style={{ padding: '16px', borderColor: 'rgba(6, 214, 160, 0.2)', background: 'rgba(6, 214, 160, 0.03)' }}>
+                    <div className="flex items-start gap-2.5 text-xs">
+                      <Shield size={16} className="text-emerald-500 shrink-0 mt-0.5" style={{ color: 'var(--success)' }} />
+                      <div>
+                        <strong className="text-emerald-600 block mb-0.5" style={{ color: 'var(--success)' }}>Recommended Causal Intervention</strong>
+                        <span style={{ color: 'var(--fg)' }}>{selectedRes.recommended_intervention}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Paths traced */}
+                  {((selectedRes.direct_paths?.length || 0) > 0 || (selectedRes.indirect_paths?.length || 0) > 0) && (
+                    <div className="card space-y-2.5" style={{ padding: '16px' }}>
+                      <div className="whatif-section-header" style={{ marginBottom: 0 }}>Causal Pathways Traced</div>
+                      <div className="space-y-2 text-xs">
+                        {selectedRes.direct_paths?.length > 0 && (
+                          <div>
+                            <span className="font-semibold block text-[11px] text-muted">Direct Paths (Direct Discrimination risk):</span>
+                            <div className="font-mono bg-gray-50 dark:bg-black/20 p-1.5 rounded mt-1 overflow-x-auto" style={{ background: 'var(--surface-2)' }}>
+                              {selectedRes.direct_paths.map((p: string, idx: number) => (
+                                <div key={idx}>{p}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {selectedRes.indirect_paths?.length > 0 && (
+                          <div>
+                            <span className="font-semibold block text-[11px] text-muted">Indirect Paths (Indirect/Systemic Discrimination risk):</span>
+                            <div className="font-mono bg-gray-50 dark:bg-black/20 p-1.5 rounded mt-1 overflow-x-auto" style={{ background: 'var(--surface-2)' }}>
+                              {selectedRes.indirect_paths.map((p: string, idx: number) => (
+                                <div key={idx}>{p}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="card py-8 text-center text-xs text-muted">Select an attribute to display detail analysis.</div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Row: Graph Visualization */}
+      <div className="w-full flex flex-col gap-3">
+        <div className="whatif-section-header" style={{ marginBottom: 0 }}>Causal Graph (DAG)</div>
+        <div className="card flex flex-col w-full" style={{ padding: '24px' }}>
+          <CausalGraph
+            dotString={data.causal_graph_dot}
+            protectedCols={protectedCols}
+            mediators={selectedRes?.mediators || []}
+            labelCol={labelCol}
+          />
+          <div className="text-[11px] text-muted mt-3">
+            * The Directed Acyclic Graph represents structural causal assumptions proposed by Gemini. Path effects are estimated using linear mediation models in DoWhy.
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

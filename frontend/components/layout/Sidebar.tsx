@@ -13,17 +13,25 @@ import {
   Moon,
   Menu,
   X,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
 
-type NavIconName = 'dashboard' | 'drift' | 'reports' | 'settings';
+type NavIconName = 'dashboard' | 'drift' | 'reports' | 'settings' | 'pipelines' | 'messageSquare';
 
 const NAV_GROUPS = [
   {
     title: 'Core',
     items: [
       { label: 'Dashboard', href: '/dashboard', icon: 'dashboard' as NavIconName },
+    ]
+  },
+  {
+    title: 'Pipelines',
+    items: [
+      { label: 'Pipeline Audit', href: '/pipelines', icon: 'pipelines' as NavIconName },
+      { label: 'LLM/RAG', href: '/llm-audit', icon: 'messageSquare' as NavIconName },
     ]
   },
   {
@@ -63,6 +71,23 @@ function NavIcon({ type, active }: { type: NavIconName; active: boolean }) {
         <circle cx="12" cy="14" r="1.8" fill="none" stroke="currentColor" strokeWidth={1.2} />
         <circle cx="18.5" cy="7.5" r="1.8" fill="var(--icon-fill)" stroke="currentColor" strokeWidth={1.2} />
       </svg>
+    );
+  }
+
+  if (type === 'pipelines') {
+    return (
+      <svg className="sidebar-nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <line x1="6" y1="3" x2="6" y2="15" />
+        <circle cx="18" cy="6" r="3" fill="var(--icon-fill)" stroke="currentColor" strokeWidth={1.2} />
+        <circle cx="6" cy="18" r="3" fill="none" stroke="currentColor" strokeWidth={1.2} />
+        <path d="M18 9a9 9 0 0 1-9 9" />
+      </svg>
+    );
+  }
+
+  if (type === 'messageSquare') {
+    return (
+      <MessageSquare className="sidebar-nav-icon" size={18} strokeWidth={strokeWidth} style={{ fill: active ? 'var(--icon-fill)' : 'none' }} />
     );
   }
 

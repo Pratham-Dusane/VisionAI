@@ -56,7 +56,7 @@ USE_CLOUD_RUN_JOBS = os.getenv("USE_CLOUD_RUN_JOBS", "false").lower() == "true"
 _JSON_FIELDS = ["schema", "profiles", "dataBias", "modelBias", "explainability",
                 "intersectional", "featureLaundering", "historicalHarm", "regulationMap",
                 "blindSpots", "narratives", "biasOriginTracer", "modelDecisionBias",
-                "justifiedBias", "benchmarking", "severity", "proxies"]
+                "justifiedBias", "benchmarking", "severity", "proxies", "causalFairness"]
 
 
 def _deserialize_audit_fields(audit: dict) -> dict:

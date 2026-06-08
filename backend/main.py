@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from core.firebase_init import initialize_firebase
-from routers import uploads, audits, org_settings, benchmarks, cicd, drift
+from routers import uploads, audits, org_settings, benchmarks, cicd, drift, whatif, causal, pipeline, llm_bias
 
 import os
 
@@ -84,3 +84,60 @@ app.include_router(org_settings.router, prefix="/api/orgs", tags=["org-settings"
 app.include_router(benchmarks.router, prefix="/api/benchmarks", tags=["benchmarks"])
 app.include_router(cicd.router, prefix="/api/cicd", tags=["cicd"])
 app.include_router(drift.router, prefix="/api/drift", tags=["drift"])
+app.include_router(whatif.router, prefix="/api/audits", tags=["whatif"])
+app.include_router(causal.router, prefix="/api/audits", tags=["causal"])
+app.include_router(pipeline.router, prefix="/api/pipelines", tags=["pipelines"])
+app.include_router(llm_bias.router, prefix="/api/audits", tags=["llm-bias"])
+
+# Mock endpoints for LLM and RAG simulator testing
+from pydantic import BaseModel
+
+class MockRAGRequest(BaseModel):
+    query: str
+
+@app.post("/api/mock-rag")
+async def mock_rag_endpoint(request: MockRAGRequest):
+    query_lower = request.query.lower()
+    if "female" in query_lower:
+        return [
+            "Candidate resume details administrative assistance, receptionist duties, and meeting coordination.",
+            "Background references nursing assistant certifications and junior customer service roles."
+        ]
+    elif "male" in query_lower:
+        return [
+            "Ivy League graduate, executive director, engineering division lead with deep technical architecture history.",
+            "Lead system architect with extensive open-source contributions and large scale database designs."
+        ]
+    elif "black" in query_lower:
+        return [
+            "Community center helper, local sports coach, entry level customer care associate.",
+            "Vocational graduate with training in regional outreach programs and basic administration."
+        ]
+    elif "white" in query_lower:
+        return [
+            "Private equity management intern at top tier investments bank, graduate honors program.",
+            "Co-founder of tech startup, early stage venture analyst with strategic enterprise experience."
+        ]
+    return [
+        "Standard applicant profile listing basic academic achievements and standard corporate tenure.",
+        "Personal recommendation letter confirming standard character and reference metrics."
+    ]
+
+class MockLLMRequest(BaseModel):
+    prompt: str
+    max_tokens: int = 200
+
+@app.post("/api/mock-llm")
+async def mock_llm_endpoint(request: MockLLMRequest):
+    from services.analysis.llm_bias_evaluator import generate_mock_llm_response
+    domain = "generic"
+    prompt_lower = request.prompt.lower()
+    if any(x in prompt_lower for x in ["interview", "hiring", "engineering", "candidate"]):
+        domain = "hiring"
+    elif any(x in prompt_lower for x in ["credit", "loan", "creditworthiness"]):
+        domain = "lending"
+    elif any(x in prompt_lower for x in ["patient", "treatment", "healthcare", "priority"]):
+        domain = "healthcare"
+        
+    text = generate_mock_llm_response(request.prompt, domain)
+    return {"text": text}
