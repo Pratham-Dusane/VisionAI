@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from core.firebase_init import initialize_firebase
-from routers import uploads, audits, org_settings, benchmarks, cicd, drift, whatif, causal, pipeline, llm_bias
+from routers import uploads, audits, org_settings, benchmarks, cicd, drift, whatif, causal, pipeline, llm_bias, quantization
 
 import os
 
@@ -88,6 +88,7 @@ app.include_router(whatif.router, prefix="/api/audits", tags=["whatif"])
 app.include_router(causal.router, prefix="/api/audits", tags=["causal"])
 app.include_router(pipeline.router, prefix="/api/pipelines", tags=["pipelines"])
 app.include_router(llm_bias.router, prefix="/api/audits", tags=["llm-bias"])
+app.include_router(quantization.router, prefix="/api/quantization", tags=["quantization"])
 
 # Mock endpoints for LLM and RAG simulator testing
 from pydantic import BaseModel

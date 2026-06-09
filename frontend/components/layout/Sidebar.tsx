@@ -18,7 +18,7 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
 
-type NavIconName = 'dashboard' | 'drift' | 'reports' | 'settings' | 'pipelines' | 'messageSquare';
+type NavIconName = 'dashboard' | 'drift' | 'reports' | 'settings' | 'pipelines' | 'messageSquare' | 'quantization';
 
 const NAV_GROUPS = [
   {
@@ -39,6 +39,12 @@ const NAV_GROUPS = [
     items: [
       { label: 'Drift Monitor', href: '/drift', icon: 'drift' as NavIconName },
       { label: 'Reports', href: '/reports', icon: 'reports' as NavIconName },
+    ]
+  },
+  {
+    title: 'Compression',
+    items: [
+      { label: 'Quantization Profiler', href: '/quantization', icon: 'quantization' as NavIconName },
     ]
   },
   {
@@ -88,6 +94,23 @@ function NavIcon({ type, active }: { type: NavIconName; active: boolean }) {
   if (type === 'messageSquare') {
     return (
       <MessageSquare className="sidebar-nav-icon" size={18} strokeWidth={strokeWidth} style={{ fill: active ? 'var(--icon-fill)' : 'none' }} />
+    );
+  }
+
+  if (type === 'quantization') {
+    return (
+      <svg className="sidebar-nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="6" y="6" width="12" height="12" rx="2.5" stroke="currentColor" strokeWidth={strokeWidth} fill="var(--icon-fill)" />
+        <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth={1.2} fill="none" />
+        <line x1="12" y1="3" x2="12" y2="6" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" />
+        <line x1="12" y1="18" x2="12" y2="21" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" />
+        <line x1="3" y1="12" x2="6" y2="12" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" />
+        <line x1="18" y1="12" x2="21" y2="12" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" />
+        <line x1="7.5" y1="4" x2="7.5" y2="6" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" />
+        <line x1="16.5" y1="4" x2="16.5" y2="6" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" />
+        <line x1="7.5" y1="18" x2="7.5" y2="20" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" />
+        <line x1="16.5" y1="18" x2="16.5" y2="20" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" />
+      </svg>
     );
   }
 

@@ -25,7 +25,8 @@ vaderSentiment>=3.3.2
 detoxify>=0.5.2
 sentence-transformers>=2.2.2
 dowhy>=0.14
-networkx>=3.6.1
+networkx>=3.4.2
 httpx>=0.28.1
 requests>=2.33.1
+onnxruntime>=1.17.0
 

@@ -24,4 +24,4 @@ GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID", "")
 # Upload limits
 MAX_FILE_SIZE_MB = 500
 ALLOWED_DATASET_EXTENSIONS = {".csv", ".json", ".parquet"}
-ALLOWED_MODEL_EXTENSIONS = {".pkl", ".onnx", ".joblib"}
+ALLOWED_MODEL_EXTENSIONS = {".pkl", ".onnx", ".joblib", ".tflite"}

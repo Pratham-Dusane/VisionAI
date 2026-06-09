@@ -813,4 +813,151 @@ export async function runLLMBiasScan(params: {
 }
 
 
+// ─── Quantization Profiler (Feature 6) ─────────────────────────
 
+export interface QDIGroupResult {
+  full_precision_accuracy: number;
+  quantized_accuracy: number;
+  qdi: number;
+  accuracy_drop_pct: number;
+  sample_size: number;
+  flagged: boolean;
+}
+
+export interface QDIFlaggedGroup {
+  protected_col: string;
+  group: string;
+  qdi: number;
+  accuracy_drop_pct: number;
+  full_acc: number;
+  quant_acc: number;
+  sample_size: number;
+  explanation: string;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+}
+
+export interface QDIResults {
+  overall: {
+    full_precision_accuracy: number;
+    quantized_accuracy: number;
+    qdi: number;
+    accuracy_drop_pct: number;
+    total_samples: number;
+    simulated_quantization: boolean;
+  };
+  per_group: Record<string, Record<string, QDIGroupResult>>;
+  flagged_groups: QDIFlaggedGroup[];
+  metadata: {
+    qdi_threshold: number;
+    min_group_size: number;
+    feature_cols_used: string[];
+    protected_cols_analyzed: string[];
+  };
+}
+
+export interface QuantizationProfile {
+  id: string;
+  name: string;
+  status: 'PROCESSING' | 'COMPLETE' | 'FAILED';
+  createdAt?: string;
+  completedAt?: string;
+  overall_qdi?: number | null;
+  overall_accuracy_drop_pct?: number | null;
+  full_precision_accuracy?: number | null;
+  quantized_accuracy?: number | null;
+  flagged_count?: number | null;
+  total_samples?: number | null;
+  simulated_quantization?: boolean | null;
+  sourceAuditId?: string | null;
+  error?: string | null;
+}
+
+export interface QuantizationProfileDetail extends QuantizationProfile {
+  orgId: string;
+  datasetStoragePath: string;
+  fullModelStoragePath: string;
+  quantizedModelStoragePath?: string | null;
+  protectedCols: string[];
+  labelCol: string;
+  positiveLabel: string;
+  results?: QDIResults | null;
+}
+
+/**
+ * Create a new quantization profile and start QDI analysis.
+ */
+export async function runQuantizationProfile(params: {
+  orgId: string;
+  name?: string;
+  datasetStoragePath: string;
+  fullModelStoragePath: string;
+  quantizedModelStoragePath?: string;
+  protectedCols: string[];
+  labelCol: string;
+  positiveLabel: string;
+  featureCols?: string[];
+  sourceAuditId?: string;
+}) {
+  const res = await fetch(`${API_BASE}/api/quantization/profile`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Quantization profile creation failed (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    profileId: string;
+    status: string;
+  }>;
+}
+
+/**
+ * List all quantization profiles for an organization.
+ */
+export async function listQuantizationProfiles(orgId: string) {
+  const res = await fetch(`${API_BASE}/api/quantization/profiles?orgId=${encodeURIComponent(orgId)}`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to list quantization profiles (${res.status})`);
+  }
+
+  return res.json() as Promise<QuantizationProfile[]>;
+}
+
+/**
+ * Get a single quantization profile with full results.
+ */
+export async function getQuantizationProfile(profileId: string) {
+  const res = await fetch(`${API_BASE}/api/quantization/profiles/${profileId}`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to fetch quantization profile (${res.status})`);
+  }
+
+  return res.json() as Promise<QuantizationProfileDetail>;
+}
+
+/**
+ * Delete a quantization profile.
+ */
+export async function deleteQuantizationProfile(profileId: string) {
+  const res = await fetch(`${API_BASE}/api/quantization/profiles/${profileId}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to delete quantization profile (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    deleted: boolean;
+    profileId: string;
+  }>;
+}
