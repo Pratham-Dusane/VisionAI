@@ -95,6 +95,7 @@ export default function QuantizationProfilerPage() {
   // Profile list
   const [profiles, setProfiles] = useState<QuantizationProfile[]>([]);
   const [listLoading, setListLoading] = useState(true);
+  const [backendOffline, setBackendOffline] = useState(false);
 
   // Selected profile (results view)
   const [selectedProfile, setSelectedProfile] = useState<QuantizationProfileDetail | null>(null);
@@ -146,11 +147,13 @@ export default function QuantizationProfilerPage() {
   const loadProfiles = useCallback(async () => {
     if (!org?.id) return;
     setListLoading(true);
+    setBackendOffline(false);
     try {
       const data = await listQuantizationProfiles(org.id);
       setProfiles(data);
     } catch (e) {
       console.error('Failed to load quantization profiles:', e);
+      setBackendOffline(true);
     } finally {
       setListLoading(false);
     }
@@ -415,6 +418,16 @@ export default function QuantizationProfilerPage() {
         {/* ── VIEW: LIST ── */}
         {view === 'list' && (
           <div className="animate-fade-in">
+            {backendOffline && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
+                borderRadius: 12, background: 'var(--danger-dim)', color: 'var(--danger)', fontSize: 13,
+                marginBottom: 20,
+              }}>
+                <AlertTriangle size={16} />
+                <span>Backend unavailable. Please ensure the backend server is running.</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--fg)' }}>Previous Profiles</h2>
               <button
@@ -850,180 +863,177 @@ export default function QuantizationProfilerPage() {
                   </div>
                 )}
 
-                {/* 2-Column Dashboard Grid */}
-                <div className="results-grid">
-                  
-                  {/* Left Column: Chart and Table */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                    
-                    {/* QDI Bar Chart */}
-                    {chartData.length > 0 && (
-                      <div className="card" style={{ padding: '24px 28px' }}>
-                        <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg)', marginBottom: 16 }}>
-                          Accuracy by Demographic Group
-                        </h3>
-                        <ResponsiveContainer width="100%" height={Math.max(280, chartData.length * 48)}>
-                          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="4 4" stroke="var(--border-light)" horizontal={false} />
-                            <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--muted)' }} tickFormatter={(v) => `${v}%`} tickLine={false} axisLine={false} />
-                            <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12, fill: 'var(--fg)' }} tickLine={false} axisLine={false} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Legend
-                              formatter={(value) => value === 'fullAcc' ? 'Full Precision' : 'Quantized'}
-                              iconType="square"
-                              iconSize={10}
-                              wrapperStyle={{ fontSize: 12, paddingTop: 10 }}
-                            />
-                            <Bar dataKey="fullAcc" name="fullAcc" radius={[0, 4, 4, 0]} barSize={12}>
-                              {chartData.map((entry, idx) => (
-                                <Cell key={`full-${idx}`} fill="var(--primary)" />
-                              ))}
-                            </Bar>
-                            <Bar dataKey="quantAcc" name="quantAcc" radius={[0, 4, 4, 0]} barSize={12}>
-                              {chartData.map((entry, idx) => (
-                                <Cell
-                                  key={`quant-${idx}`}
-                                  fill={entry.flagged ? 'var(--danger)' : 'var(--placeholder)'}
-                                  stroke={entry.flagged ? 'var(--danger)' : 'none'}
-                                  strokeWidth={entry.flagged ? 1 : 0}
-                                />
-                              ))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-
-                    {/* QDI Summary Table */}
-                    <div className="card quantization-table" style={{ padding: 0, overflow: 'hidden' }}>
-                      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-                        <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg)', margin: 0 }}>QDI Details</h3>
-                      </div>
-                      <div className="table-wrap" style={{ border: 'none', borderRadius: 0 }}>
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Attribute</th>
-                              <th>Group</th>
-                              <th>Full Acc</th>
-                              <th>Quant Acc</th>
-                              <th>QDI</th>
-                              <th>Samples</th>
-                              <th>Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {Object.entries(r.per_group).map(([col, groups]) =>
-                              Object.entries(groups).map(([group, data]) => (
-                                <tr key={`${col}-${group}`}>
-                                  <td style={{ fontWeight: 600, color: 'var(--fg)' }}>{col}</td>
-                                  <td>{group}</td>
-                                  <td>{(data.full_precision_accuracy * 100).toFixed(1)}%</td>
-                                  <td style={{ color: data.flagged ? 'var(--danger)' : 'var(--fg)', fontWeight: data.flagged ? 600 : 400 }}>
-                                    {(data.quantized_accuracy * 100).toFixed(1)}%
-                                  </td>
-                                  <td style={{ fontWeight: 700, color: data.flagged ? 'var(--danger)' : 'var(--success)' }}>
-                                    {data.qdi.toFixed(3)}
-                                  </td>
-                                  <td style={{ color: 'var(--muted)' }}>{data.sample_size}</td>
-                                  <td>
-                                    {data.flagged ? (
-                                      <span className="badge badge-critical" style={{ fontSize: 9 }}>🔴 FLAGGED</span>
-                                    ) : (
-                                      <span className="badge badge-pass" style={{ fontSize: 9 }}>✅ OK</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
+                {/* Level 2 (Critical Alert / Deployment Risk Banner - Full width immediately below KPIs) */}
+                {r.flagged_groups.length > 0 ? (
+                  <div className="card" style={{
+                    padding: '24px',
+                    background: 'var(--danger-dim)',
+                    borderColor: 'color-mix(in srgb, var(--danger) 30%, transparent)',
+                    marginBottom: 24,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <Shield size={20} style={{ color: 'var(--danger)', flexShrink: 0, marginTop: 2 }} />
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--danger)', marginBottom: 8 }}>
+                          Deployment Risk — Fairness Failure
+                        </div>
+                        <p style={{ fontSize: 13, color: 'var(--fg)', lineHeight: 1.6, margin: 0, opacity: 0.85 }}>
+                          <strong>{r.flagged_groups.length} group{r.flagged_groups.length > 1 ? 's' : ''} experienced</strong> severe,
+                          disproportionate accuracy degradation after model compression. Deploying this quantized model
+                          may violate fairness requirements under AI regulations (e.g. NYC Local Law 144, EU AI Act).
+                          Consider retraining with quantization-aware training (QAT) or using fallback paths.
+                        </p>
                       </div>
                     </div>
-
                   </div>
+                ) : (
+                  <div className="card" style={{
+                    padding: '24px',
+                    background: 'var(--success-dim)',
+                    borderColor: 'color-mix(in srgb, var(--success) 30%, transparent)',
+                    marginBottom: 24,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <CheckCircle size={20} style={{ color: 'var(--success)', flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--success)', marginBottom: 4 }}>
+                          Ready for Edge Deployment
+                        </div>
+                        <p style={{ fontSize: 13, color: 'var(--fg)', lineHeight: 1.5, margin: 0, opacity: 0.75 }}>
+                          All groups maintain accuracy within the 5.0% QDI threshold. The quantized model is approved for edge deployment from a fairness perspective.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                  {/* Right Column: Status & Flagged Groups */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                    
-                    {/* Deployment Recommendation callout */}
+                {/* Level 3 (Visualization + Details - 60/40 Split Layout) */}
+                <div className="progressive-viz-grid" style={{ marginBottom: 24 }}>
+                  
+                  {/* Left 60%: QDI Bar Chart (no CartesianGrid lines) */}
+                  {chartData.length > 0 ? (
+                    <div className="card" style={{ padding: '24px 28px' }}>
+                      <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg)', marginBottom: 16 }}>
+                        Accuracy by Demographic Group
+                      </h3>
+                      <ResponsiveContainer width="100%" height={Math.max(280, chartData.length * 48)}>
+                        <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+                          <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--muted)' }} tickFormatter={(v) => `${v}%`} tickLine={false} axisLine={false} />
+                          <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12, fill: 'var(--fg)' }} tickLine={false} axisLine={false} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend
+                            formatter={(value) => value === 'fullAcc' ? 'Full Precision' : 'Quantized'}
+                            iconType="square"
+                            iconSize={10}
+                            wrapperStyle={{ fontSize: 12, paddingTop: 10 }}
+                          />
+                          <Bar dataKey="fullAcc" name="fullAcc" radius={[0, 4, 4, 0]} barSize={12}>
+                            {chartData.map((entry, idx) => (
+                              <Cell key={`full-${idx}`} fill="var(--primary)" />
+                            ))}
+                          </Bar>
+                          <Bar dataKey="quantAcc" name="quantAcc" radius={[0, 4, 4, 0]} barSize={12}>
+                            {chartData.map((entry, idx) => (
+                              <Cell
+                                key={`quant-${idx}`}
+                                fill={entry.flagged ? 'var(--danger)' : 'var(--placeholder)'}
+                                stroke={entry.flagged ? 'var(--danger)' : 'none'}
+                                strokeWidth={entry.flagged ? 1 : 0}
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : null}
+
+                  {/* Right 40%: Demographic Impact Details flagged group cards */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Demographic Impact Details
+                    </h4>
                     {r.flagged_groups.length > 0 ? (
-                      <div className="card" style={{
-                        padding: '24px',
-                        background: 'var(--danger-dim)',
-                        borderColor: 'color-mix(in srgb, var(--danger) 30%, transparent)',
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                          <Shield size={20} style={{ color: 'var(--danger)', flexShrink: 0, marginTop: 2 }} />
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--danger)', marginBottom: 8 }}>
-                              Deployment Risk — Fairness Failure
-                            </div>
-                            <p style={{ fontSize: 13, color: 'var(--fg)', lineHeight: 1.6, margin: 0, opacity: 0.85 }}>
-                              <strong>{r.flagged_groups.length} group{r.flagged_groups.length > 1 ? 's' : ''} experienced</strong> severe,
-                              disproportionate accuracy degradation after model compression. Deploying this quantized model
-                              may violate fairness requirements under AI regulations (e.g. NYC Local Law 144, EU AI Act).
-                              Consider retraining with quantization-aware training (QAT) or using fallback paths.
-                            </p>
+                      r.flagged_groups.map((fg, idx) => (
+                        <div
+                          key={idx}
+                          className="card flagged-group-card"
+                          style={{
+                            padding: '16px 20px',
+                            borderLeft: `4px solid ${fg.severity === 'CRITICAL' ? 'var(--danger)' : fg.severity === 'HIGH' ? 'var(--warning)' : 'var(--accent)'}`,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--fg)' }}>
+                              {fg.protected_col} = {fg.group}
+                            </span>
+                            <span className={`badge ${fg.severity === 'CRITICAL' ? 'badge-critical' : fg.severity === 'HIGH' ? 'badge-high' : 'badge-medium'}`} style={{ fontSize: 9 }}>
+                              {fg.severity}
+                            </span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)', marginLeft: 'auto' }}>
+                              -{fg.accuracy_drop_pct.toFixed(1)}% Acc
+                            </span>
                           </div>
+                          <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5, margin: 0 }}>
+                            Quantization drop: QDI of <strong>{fg.qdi.toFixed(3)}</strong> (dropped from {(fg.full_acc * 100).toFixed(1)}% accuracy to {(fg.quant_acc * 100).toFixed(1)}%).
+                          </p>
                         </div>
-                      </div>
+                      ))
                     ) : (
-                      <div className="card" style={{
-                        padding: '24px',
-                        background: 'var(--success-dim)',
-                        borderColor: 'color-mix(in srgb, var(--success) 30%, transparent)',
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <CheckCircle size={20} style={{ color: 'var(--success)', flexShrink: 0 }} />
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--success)', marginBottom: 4 }}>
-                              Ready for Edge Deployment
-                            </div>
-                            <p style={{ fontSize: 13, color: 'var(--fg)', lineHeight: 1.5, margin: 0, opacity: 0.75 }}>
-                              All groups maintain accuracy within the 5.0% QDI threshold. The quantized model is approved for edge deployment from a fairness perspective.
-                            </p>
-                          </div>
-                        </div>
+                      <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
+                        <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
+                          No demographic groups flagged. Compression did not induce significant bias.
+                        </p>
                       </div>
                     )}
-
-                    {/* Flagged Group Alerts stack */}
-                    {r.flagged_groups.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          Demographic Impact Details
-                        </h4>
-                        {r.flagged_groups.map((fg, idx) => (
-                          <div
-                            key={idx}
-                            className="card flagged-group-card"
-                            style={{
-                              padding: '16px 20px',
-                              borderLeft: `4px solid ${fg.severity === 'CRITICAL' ? 'var(--danger)' : fg.severity === 'HIGH' ? 'var(--warning)' : 'var(--accent)'}`,
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                              <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--fg)' }}>
-                                {fg.protected_col} = {fg.group}
-                              </span>
-                              <span className={`badge ${fg.severity === 'CRITICAL' ? 'badge-critical' : fg.severity === 'HIGH' ? 'badge-high' : 'badge-medium'}`} style={{ fontSize: 9 }}>
-                                {fg.severity}
-                              </span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)', marginLeft: 'auto' }}>
-                                -{fg.accuracy_drop_pct.toFixed(1)}% Acc
-                              </span>
-                            </div>
-                            <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5, margin: 0 }}>
-                              Quantization drop: QDI of <strong>{fg.qdi.toFixed(3)}</strong> (dropped from {(fg.full_acc * 100).toFixed(1)}% accuracy to {(fg.quant_acc * 100).toFixed(1)}%).
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
                   </div>
 
+                </div>
+
+                {/* Level 4 (Raw Data - QDI Details Table at Bottom, Full Width) */}
+                <div className="card quantization-table" style={{ padding: 0, overflow: 'hidden', width: '100%' }}>
+                  <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg)', margin: 0 }}>QDI Details</h3>
+                  </div>
+                  <div className="table-wrap" style={{ border: 'none', borderRadius: 0 }}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Attribute</th>
+                          <th>Group</th>
+                          <th>Full Acc</th>
+                          <th>Quant Acc</th>
+                          <th>QDI</th>
+                          <th>Samples</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(r.per_group).map(([col, groups]) =>
+                          Object.entries(groups).map(([group, data]) => (
+                            <tr key={`${col}-${group}`}>
+                              <td style={{ fontWeight: 600, color: 'var(--fg)' }}>{col}</td>
+                              <td>{group}</td>
+                              <td>{(data.full_precision_accuracy * 100).toFixed(1)}%</td>
+                              <td style={{ color: data.flagged ? 'var(--danger)' : 'var(--fg)', fontWeight: data.flagged ? 600 : 400 }}>
+                                {(data.quantized_accuracy * 100).toFixed(1)}%
+                              </td>
+                              <td style={{ fontWeight: 700, color: data.flagged ? 'var(--danger)' : 'var(--success)' }}>
+                                {data.qdi.toFixed(3)}
+                              </td>
+                              <td style={{ color: 'var(--muted)' }}>{data.sample_size}</td>
+                              <td>
+                                {data.flagged ? (
+                                  <span className="badge badge-critical" style={{ fontSize: 9 }}>🔴 FLAGGED</span>
+                                ) : (
+                                  <span className="badge badge-pass" style={{ fontSize: 9 }}>✅ OK</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}

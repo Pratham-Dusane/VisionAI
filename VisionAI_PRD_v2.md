@@ -506,6 +506,7 @@ export function WhatIfSimulator({
 
 ---
 
+
 ## 2. Bias Transfer Learning Detector
 
 ### 2.1 Overview
@@ -527,6 +528,8 @@ transformers==4.40.0
 torch==2.3.0  # CPU-only: torch==2.3.0+cpu
 datasets==2.19.0
 ```
+
+code is only sample demo
 
 ```python
 import numpy as np
@@ -641,9 +644,12 @@ def get_transfer_recommendation(delta: float, base_di: float, finetuned_di: floa
 
 ### 2.3 Frontend — Transfer Learning Tab
 
-**Add a new sub-tab within the Model Analysis tab** (Tab 3 of audit results):
+**Add a new tab within the main left navbar** :
 
-Sub-tab label: "Transfer Bias" — only visible if the audit was run on a fine-tuned transformer model (detect from model file format: HuggingFace `config.json` present in uploaded zip).
+label: "Transfer Bias"
+
+
+here too, like feature 6 user shld be able to upload and use preexisting audit to prevent recomputations-only visible if the audit was run on a fine-tuned transformer model (detect from model file format: HuggingFace `config.json` present in uploaded zip).
 
 **UI Layout:**
 
@@ -1477,6 +1483,8 @@ Below the chart: Legal implication callout card + recommended intervention card.
 
 When production ML models are compressed for edge deployment (converting TensorFlow to TFLite, or PyTorch to ONNX with INT8 quantization), model weights lose precision. This compression disproportionately degrades accuracy for underrepresented groups and edge-case accessibility inputs. A model that was fair at full precision can become significantly biased after quantization.
 
+take dataset, full model and if lite not provided then generate
+
 VisionAI introduces the **Quantization Disparity Index (QDI)** — a metric measuring the relative performance drop for specific demographic groups caused by quantization.
 
 **QDI formula:**
@@ -1494,7 +1502,7 @@ A QDI > 0.05 (5% relative degradation for a group) is flagged as a quantization 
 | Full precision model | `.pkl`, `.pt`, `.h5`, `.onnx` (FP32) |
 | Quantized model | `.tflite`, `.onnx` (INT8), `.pt` (INT8 quantized) |
 
-### 6.3 Backend — Quantization Profiler
+### 6.3 Backend — Quantization Profiler(just ex suit adjust according to the main frontned n feature)
 
 **File:** `backend/services/analysis/quantization_profiler.py`
 
@@ -1630,11 +1638,7 @@ def compute_qdi(
 
 ### 6.4 Frontend — Quantization Profiler UI
 
-**Location:** New sub-tab "Quantization" within the Model Analysis tab (Tab 3).
-
-Only shown when a quantized model variant is uploaded alongside the primary model.
-
-**Upload UI addition:** In Step 1 of the Audit Wizard (Upload Files section), add an optional third upload zone:
+**Location:** New ndependant, seperate, new section below monitoring section and above administration section in the left navbar and upload shld hv this 
 
 ```
 [ Dataset CSV ]   [ Model (Full Precision) ]   [ Model (Quantized) — optional ]

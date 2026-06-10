@@ -961,3 +961,110 @@ export async function deleteQuantizationProfile(profileId: string) {
     profileId: string;
   }>;
 }
+
+// ─── Transfer Bias Analysis Types & API ──────────────────────────────────────
+
+export interface TransferBiasAnalysisRequest {
+  orgId: string;
+  name?: string;
+  datasetStoragePath: string;
+  fineTunedModelStoragePath: string;
+  baseModelName: string;
+  domain?: string;
+  protectedCols: string[];
+  labelCol: string;
+  positiveLabel: string;
+  featureCols?: string[];
+  sourceAuditId?: string;
+}
+
+export interface TransferBiasAnalysis {
+  id: string;
+  name: string;
+  createdAt: string;
+  completedAt: string | null;
+  status: 'PROCESSING' | 'COMPLETE' | 'FAILED';
+  baseModelName: string;
+  domain: string;
+  sourceAuditId?: string;
+  summary: any | null;
+  error?: string | null;
+}
+
+export interface TransferBiasAnalysisDetail extends TransferBiasAnalysis {
+  datasetStoragePath: string;
+  fineTunedModelStoragePath: string;
+  protectedCols: string[];
+  labelCol: string;
+  positiveLabel: string;
+  results: any | null;
+}
+
+/**
+ * Create a new transfer bias analysis.
+ */
+export async function createTransferBiasAnalysis(params: TransferBiasAnalysisRequest) {
+  const res = await fetch(`${API_BASE}/api/transfer-bias/analyze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Transfer bias analysis creation failed (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    analysisId: string;
+    status: string;
+  }>;
+}
+
+/**
+ * List all transfer bias analyses for an organization.
+ */
+export async function listTransferBiasAnalyses(orgId: string) {
+  const res = await fetch(`${API_BASE}/api/transfer-bias/analyses?orgId=${encodeURIComponent(orgId)}`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to list transfer bias analyses (${res.status})`);
+  }
+
+  return res.json() as Promise<TransferBiasAnalysis[]>;
+}
+
+/**
+ * Get a single transfer bias analysis with full results.
+ */
+export async function getTransferBiasAnalysis(analysisId: string) {
+  const res = await fetch(`${API_BASE}/api/transfer-bias/analyses/${analysisId}`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to fetch transfer bias analysis (${res.status})`);
+  }
+
+  return res.json() as Promise<TransferBiasAnalysisDetail>;
+}
+
+/**
+ * Delete a transfer bias analysis.
+ */
+export async function deleteTransferBiasAnalysis(analysisId: string) {
+  const res = await fetch(`${API_BASE}/api/transfer-bias/analyses/${analysisId}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to delete transfer bias analysis (${res.status})`);
+  }
+
+  return res.json() as Promise<{
+    deleted: boolean;
+    analysisId: string;
+  }>;
+}
+

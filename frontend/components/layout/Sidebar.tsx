@@ -8,6 +8,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Eye,
   Sun,
   Moon,
@@ -18,9 +19,9 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
 
-type NavIconName = 'dashboard' | 'drift' | 'reports' | 'settings' | 'pipelines' | 'messageSquare' | 'quantization';
+type NavIconName = 'dashboard' | 'drift' | 'reports' | 'settings' | 'pipelines' | 'messageSquare' | 'quantization' | 'transfer';
 
-const NAV_GROUPS = [
+const NAV_GROUPS: { title: string; items: { label: string; href: string; icon: NavIconName }[]; expandable?: boolean }[] = [
   {
     title: 'Core',
     items: [
@@ -28,10 +29,18 @@ const NAV_GROUPS = [
     ]
   },
   {
-    title: 'Pipelines',
+    title: 'Audits & Analysis',
+    expandable: true,
     items: [
       { label: 'Pipeline Audit', href: '/pipelines', icon: 'pipelines' as NavIconName },
+      { label: 'Transfer Bias', href: '/transfer-bias', icon: 'transfer' as NavIconName },
       { label: 'LLM/RAG', href: '/llm-audit', icon: 'messageSquare' as NavIconName },
+    ]
+  },
+  {
+    title: 'Optimization',
+    items: [
+      { label: 'Quantization Profiler', href: '/quantization', icon: 'quantization' as NavIconName },
     ]
   },
   {
@@ -39,12 +48,6 @@ const NAV_GROUPS = [
     items: [
       { label: 'Drift Monitor', href: '/drift', icon: 'drift' as NavIconName },
       { label: 'Reports', href: '/reports', icon: 'reports' as NavIconName },
-    ]
-  },
-  {
-    title: 'Compression',
-    items: [
-      { label: 'Quantization Profiler', href: '/quantization', icon: 'quantization' as NavIconName },
     ]
   },
   {
@@ -114,6 +117,17 @@ function NavIcon({ type, active }: { type: NavIconName; active: boolean }) {
     );
   }
 
+  if (type === 'transfer') {
+    return (
+      <svg className="sidebar-nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M17 3L21 7L17 11" />
+        <path d="M3 7H21" />
+        <path d="M7 21L3 17L7 13" />
+        <path d="M21 17H3" />
+      </svg>
+    );
+  }
+
   if (type === 'reports') {
     return (
       <svg className="sidebar-nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -145,6 +159,7 @@ function getInitials(name?: string | null, email?: string | null): string {
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [auditsExpanded, setAuditsExpanded] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
   const { user, org, signOutUser } = useAuth();
@@ -245,12 +260,27 @@ export default function Sidebar() {
       <nav className="flex-1 py-2 overflow-y-auto" data-tour="sidebar">
         {NAV_GROUPS.map((group, groupIdx) => (
           <div key={group.title} className={groupIdx > 0 ? 'mt-4' : ''}>
-            {showLabels && (
-              <div className="px-5 mb-1 text-[10px] font-bold tracking-wider uppercase" style={{ color: 'var(--placeholder)' }}>
-                {group.title}
-              </div>
+            {showLabels && group.expandable ? (
+              <button
+                type="button"
+                onClick={() => setAuditsExpanded(!auditsExpanded)}
+                className="w-full flex items-center justify-between px-5 mb-1.5 text-[10px] font-bold tracking-wider uppercase hover:text-[var(--fg)] transition-colors cursor-pointer"
+                style={{ color: 'var(--placeholder)', border: 'none', background: 'transparent', textAlign: 'left', outline: 'none' }}
+              >
+                <span>{group.title}</span>
+                <ChevronDown
+                  size={12}
+                  className={`transition-transform duration-200 ${auditsExpanded ? '' : '-rotate-90'}`}
+                />
+              </button>
+            ) : (
+              showLabels && (
+                <div className="px-5 mb-1.5 text-[10px] font-bold tracking-wider uppercase" style={{ color: 'var(--placeholder)' }}>
+                  {group.title}
+                </div>
+              )
             )}
-            {group.items.map((item) => {
+            {(!group.expandable || auditsExpanded || !showLabels) && group.items.map((item) => {
               const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
               return (
                 <Link

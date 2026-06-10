@@ -61,6 +61,26 @@ def download_from_storage(storage_path: str) -> Path:
     Download a file from Firebase Storage to a local temp path.
     Returns the local file path.
     """
+    # Check if it exists locally first (for local testing/dev fallbacks)
+    local_check = Path(storage_path)
+    if local_check.is_absolute() and local_check.exists():
+        ext = local_check.suffix
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext, dir=TEMP_UPLOAD_DIR) as tmp:
+            local_path = Path(tmp.name)
+        import shutil
+        shutil.copy2(local_check, local_path)
+        return local_path
+
+    # Check if relative to TEMP_UPLOAD_DIR or if only the filename was specified
+    name_check = TEMP_UPLOAD_DIR / Path(storage_path).name
+    if name_check.exists():
+        ext = name_check.suffix
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext, dir=TEMP_UPLOAD_DIR) as tmp:
+            local_path = Path(tmp.name)
+        import shutil
+        shutil.copy2(name_check, local_path)
+        return local_path
+
     bucket_name, object_path = _parse_storage_path(storage_path)
 
     if bucket_name:
