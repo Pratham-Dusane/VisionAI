@@ -56,7 +56,8 @@ USE_CLOUD_RUN_JOBS = os.getenv("USE_CLOUD_RUN_JOBS", "false").lower() == "true"
 _JSON_FIELDS = ["schema", "profiles", "dataBias", "modelBias", "explainability",
                 "intersectional", "featureLaundering", "historicalHarm", "regulationMap",
                 "blindSpots", "narratives", "biasOriginTracer", "modelDecisionBias",
-                "justifiedBias", "benchmarking", "severity", "proxies", "causalFairness"]
+                "justifiedBias", "benchmarking", "severity", "proxies", "causalFairness",
+                "paretoData"]
 
 
 def _deserialize_audit_fields(audit: dict) -> dict:
@@ -1035,12 +1036,30 @@ async def get_pareto_frontier(audit_id: str):
             raise HTTPException(status_code=404, detail="Audit not found")
 
         audit = doc.to_dict()
+        
+        # Check cache
+        cached = audit.get("paretoData")
+        if cached:
+            try:
+                parsed = json.loads(cached) if isinstance(cached, str) else cached
+                if parsed and "points" in parsed:
+                    return parsed
+            except Exception:
+                pass
+
         points = _compute_pareto_points(audit)
-        return {
+        payload = {
             "auditId": audit_id,
             "points": points,
             "computedAt": datetime.utcnow().isoformat(),
         }
+        
+        # Save cache back to Firestore
+        db.collection("audits").document(audit_id).update({
+            "paretoData": json.dumps(payload)
+        })
+        
+        return payload
     except HTTPException:
         raise
     except ValueError as e:

@@ -22,7 +22,7 @@ export default function PredictiveParityChart({ equalizedOdds }: PredictiveParit
         }));
 
         return (
-          <div key={attr} className="card" style={{ padding: '16px 12px' }}>
+          <div key={attr} className="chart-card" style={{ padding: '16px 12px' }}>
             <h4 className="text-xs font-semibold mb-3 px-2" style={{ color: 'var(--muted)' }}>
               Predictive Parity (Precision) - {attr}
             </h4>

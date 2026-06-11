@@ -28,6 +28,7 @@ import {
   Brain, Wrench, Scale, CheckCircle2, Loader2, XCircle,
   Zap, Users, Eye, FileText, Layers, Info, Sparkles, Command, ArrowRight,
   MessageSquareText, Send, MessageCircle, Trash2, Ghost, RotateCcw, RefreshCw,
+  Copy, Check,
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
@@ -2877,124 +2878,142 @@ function ModelTab({ audit }: { audit: any }) {
 
   return (
     <div className="space-y-3">
-      {/* ---- Phase D: Disparity Dumbbell with toggles ---- */}
+      {/* ---- Phase D: Consolidated Controls & CSS Grid of Charts ---- */}
       {eqOddsDimensions.length > 0 && (
         <>
-          {/* Model Dimension Toggle */}
-          <div className="card" style={{ padding: 10 }}>
-            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Model dimension selector">
-              {eqOddsDimensions.map((dim) => {
-                const active = modelDimension === dim;
-                return (
-                  <button
-                    key={dim}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setModelDimension(dim)}
-                    className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                    style={{
-                      border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
-                      background: active ? 'var(--primary-dim)' : 'var(--surface)',
-                      color: active ? 'var(--primary)' : 'var(--muted)',
-                    }}
-                  >
-                    {dim.charAt(0).toUpperCase() + dim.slice(1).replace(/_/g, ' ')}
-                  </button>
-                );
-              })}
+          {/* Sticky Consolidated Control Bar */}
+          <div className="card sticky top-0 z-20 flex flex-wrap items-center justify-between gap-4 p-4 shadow-sm border-[var(--border)]" style={{ background: 'var(--surface)' }}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Dimension:</span>
+              <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Model dimension selector">
+                {eqOddsDimensions.map((dim) => {
+                  const active = modelDimension === dim;
+                  return (
+                    <button
+                      key={dim}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setModelDimension(dim)}
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer"
+                      style={{
+                        border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
+                        background: active ? 'var(--primary-dim)' : 'var(--surface-2)',
+                        color: active ? 'var(--primary)' : 'var(--muted)',
+                      }}
+                    >
+                      {dim.charAt(0).toUpperCase() + dim.slice(1).replace(/_/g, ' ')}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Metric:</span>
+              <div className="flex rounded-lg overflow-hidden border border-[var(--border)]">
+                {(['fpr', 'fnr'] as const).map((m) => {
+                  const active = modelMetric === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setModelMetric(m)}
+                      className="px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer"
+                      style={{
+                        background: active ? 'var(--primary)' : 'var(--surface)',
+                        color: active ? '#fff' : 'var(--muted)',
+                        border: 'none',
+                      }}
+                    >
+                      {m === 'fpr' ? 'False Positive Rate' : 'False Negative Rate'}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* FPR / FNR Metric Toggle */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Metric:</span>
-            {(['fpr', 'fnr'] as const).map((m) => {
-              const active = modelMetric === m;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setModelMetric(m)}
-                  className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
-                  style={{
-                    border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
-                    background: active ? 'var(--primary)' : 'var(--surface)',
-                    color: active ? '#fff' : 'var(--muted)',
-                  }}
-                >
-                  {m === 'fpr' ? 'False Positive Rate' : 'False Negative Rate'}
-                </button>
-              );
-            })}
-          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-4 animate-fade-in">
+            {/* Dumbbell Chart */}
+            <div className="chart-card">
+              <DisparityDumbbellChart
+                dimensionLabel={modelDimension.charAt(0).toUpperCase() + modelDimension.slice(1).replace(/_/g, ' ')}
+                metric={modelMetric}
+                baselineGroup={baselineGroup}
+                rows={dumbbellRows}
+              />
+            </div>
 
-          {/* Dumbbell Chart */}
-          <div className="card">
-            <DisparityDumbbellChart
-              dimensionLabel={modelDimension.charAt(0).toUpperCase() + modelDimension.slice(1).replace(/_/g, ' ')}
-              metric={modelMetric}
-              baselineGroup={baselineGroup}
-              rows={dumbbellRows}
-            />
-          </div>
-
-          {/* Phase D2: Raw Validation Table */}
-          {validationRows.length > 0 && (
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
-                FPR / FNR Validation- {modelDimension.charAt(0).toUpperCase() + modelDimension.slice(1).replace(/_/g, ' ')}
-                <span className="ml-2 text-[10px] font-normal" style={{ color: 'var(--placeholder)' }}>
-                  Baseline: {baselineGroup}
-                </span>
-              </div>
-              <div style={{ overflowX: 'auto' }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Group</th>
-                      <th>FPR</th>
-                      <th>FNR</th>
-                      <th>Precision</th>
-                      <th>Δ FPR vs Baseline</th>
-                      <th>Δ FNR vs Baseline</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {validationRows.map((row) => {
-                      const deltaColor = (d: number) => {
-                        const abs = Math.abs(d);
-                        if (abs >= 10) return 'var(--danger)';
-                        if (abs >= 5) return 'var(--status-warning)';
-                        return 'var(--muted)';
-                      };
-                      return (
-                        <tr key={row.group}>
-                          <td className="font-medium">
-                            {row.group}
-                            {row.isBaseline && (
-                              <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--primary-dim)', color: 'var(--primary)' }}>
-                                baseline
-                              </span>
-                            )}
-                          </td>
-                          <td style={{ color: row.fpr > 15 ? 'var(--danger)' : 'var(--muted)' }}>{row.fpr.toFixed(1)}%</td>
-                          <td style={{ color: row.fnr > 15 ? 'var(--accent)' : 'var(--muted)' }}>{row.fnr.toFixed(1)}%</td>
-                          <td>{row.precision.toFixed(1)}%</td>
-                          <td style={{ color: deltaColor(row.deltaFpr), fontWeight: Math.abs(row.deltaFpr) >= 5 ? 600 : 400 }}>
-                            {row.isBaseline ? '-' : `${row.deltaFpr > 0 ? '+' : ''}${row.deltaFpr.toFixed(1)} pp`}
-                          </td>
-                          <td style={{ color: deltaColor(row.deltaFnr), fontWeight: Math.abs(row.deltaFnr) >= 5 ? 600 : 400 }}>
-                            {row.isBaseline ? '-' : `${row.deltaFnr > 0 ? '+' : ''}${row.deltaFnr.toFixed(1)} pp`}
-                          </td>
+            {/* Phase D2: Raw Validation Table */}
+            {validationRows.length > 0 && (
+              <div className="chart-card flex flex-col justify-between" style={{ padding: 0, overflow: 'hidden' }}>
+                <div>
+                  <div className="px-5 py-4 text-xs font-bold uppercase tracking-wider border-b" style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}>
+                    FPR / FNR Validation - {modelDimension.charAt(0).toUpperCase() + modelDimension.slice(1).replace(/_/g, ' ')}
+                    <span className="ml-2 text-[10px] font-normal lowercase" style={{ color: 'var(--placeholder)' }}>
+                      (Baseline: {baselineGroup})
+                    </span>
+                  </div>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Group</th>
+                          <th>FPR</th>
+                          <th>FNR</th>
+                          <th>Precision</th>
+                          <th>Δ FPR</th>
+                          <th>Δ FNR</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody>
+                        {validationRows.map((row) => {
+                          const deltaColor = (d: number) => {
+                            const abs = Math.abs(d);
+                            if (abs >= 10) return 'var(--danger)';
+                            if (abs >= 5) return 'var(--status-warning)';
+                            return 'var(--muted)';
+                          };
+                          return (
+                            <tr key={row.group}>
+                              <td className="font-medium">
+                                {row.group}
+                                {row.isBaseline && (
+                                  <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--primary-dim)', color: 'var(--primary)' }}>
+                                    baseline
+                                  </span>
+                                )}
+                              </td>
+                              <td style={{ color: row.fpr > 15 ? 'var(--danger)' : 'var(--muted)' }}>{row.fpr.toFixed(1)}%</td>
+                              <td style={{ color: row.fnr > 15 ? 'var(--accent)' : 'var(--muted)' }}>{row.fnr.toFixed(1)}%</td>
+                              <td>{row.precision.toFixed(1)}%</td>
+                              <td style={{ color: deltaColor(row.deltaFpr), fontWeight: Math.abs(row.deltaFpr) >= 5 ? 600 : 400 }}>
+                                {row.isBaseline ? '-' : `${row.deltaFpr > 0 ? '+' : ''}${row.deltaFpr.toFixed(1)} pp`}
+                              </td>
+                              <td style={{ color: deltaColor(row.deltaFnr), fontWeight: Math.abs(row.deltaFnr) >= 5 ? 600 : 400 }}>
+                                {row.isBaseline ? '-' : `${row.deltaFnr > 0 ? '+' : ''}${row.deltaFnr.toFixed(1)} pp`}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Row 2: Equalized Odds Chart */}
+            {Object.keys(eqOdds).length > 0 && (
+              <EqualizedOddsChart equalizedOdds={eqOdds} />
+            )}
+
+            {/* Row 2: Predictive Parity Chart */}
+            {Object.keys(eqOdds).length > 0 && (
+              <PredictiveParityChart equalizedOdds={eqOdds} />
+            )}
+          </div>
         </>
       )}
 
@@ -3210,15 +3229,7 @@ function ModelTab({ audit }: { audit: any }) {
         );
       })}
 
-      {/* Equalized Odds Chart */}
-      {Object.keys(eqOdds).length > 0 && (
-        <EqualizedOddsChart equalizedOdds={eqOdds} />
-      )}
 
-      {/* Predictive Parity Chart */}
-      {Object.keys(eqOdds).length > 0 && (
-        <PredictiveParityChart equalizedOdds={eqOdds} />
-      )}
 
       {/* Equalized Odds - collapsible by attribute */}
       {Object.keys(eqOdds).length > 0 && (
@@ -3476,11 +3487,67 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
   );
 }
 
+function getContrastText(bgColorHexOrVar: string, isThemeDark: boolean): string {
+  const clean = bgColorHexOrVar.trim().toLowerCase();
+  
+  if (clean.includes('var(--status-critical-dim)') || clean.includes('rgba(217, 48, 37')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--status-warning-dim)') || clean.includes('rgba(176, 96, 0')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--status-pass-dim)') || clean.includes('rgba(24, 128, 56')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--warning-dim)')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--surface-2)')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  
+  if (clean.startsWith('rgba') || clean.startsWith('rgb')) {
+    const match = clean.match(/\d+/g);
+    if (match && match.length >= 3) {
+      const r = parseInt(match[0], 10);
+      const g = parseInt(match[1], 10);
+      const b = parseInt(match[2], 10);
+      let a = 1.0;
+      const matchFloat = clean.match(/[\d\.]+/g);
+      if (matchFloat && matchFloat.length >= 4) {
+        a = parseFloat(matchFloat[3]);
+      }
+      
+      const bgR = isThemeDark ? 18 : 255;
+      const bgG = isThemeDark ? 26 : 255;
+      const bgB = isThemeDark ? 42 : 255;
+      
+      const blendR = r * a + bgR * (1 - a);
+      const blendG = g * a + bgG * (1 - a);
+      const blendB = b * a + bgB * (1 - a);
+      
+      const luminance = (0.2126 * blendR + 0.7152 * blendG + 0.0722 * blendB) / 255;
+      return luminance > 0.5 ? '#111827' : '#F9FAFB';
+    }
+  }
+  
+  if (clean.startsWith('#')) {
+    const r = parseInt(clean.slice(1, 3), 16) || 0;
+    const g = parseInt(clean.slice(3, 5), 16) || 0;
+    const b = parseInt(clean.slice(5, 7), 16) || 0;
+    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    return luminance > 0.5 ? '#111827' : '#F9FAFB';
+  }
+  
+  return isThemeDark ? '#F9FAFB' : '#111827';
+}
+
 /* Collapsible Intersection group */
 function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string; items: any[] }) {
   const [open, setOpen] = useState(false);
   const criticalCount = items.filter((d: any) => d.severity === 'CRITICAL').length;
   const highCount = items.filter((d: any) => d.severity === 'HIGH').length;
+  const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
 
   return (
     <div style={{ borderBottom: '1px solid var(--border)' }}>
@@ -3496,11 +3563,11 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
         </div>
         <div className="flex items-center gap-3 text-xs">
           {criticalCount > 0 ? (
-            <span className="badge badge-critical" style={{ fontSize: '9px', padding: '1px 6px' }}>{criticalCount} CRITICAL</span>
+            <span className="badge badge-critical" style={{ fontSize: '9px', padding: '1px 6px', color: isDark ? '#F9FAFB' : '#111827' }}>{criticalCount} CRITICAL</span>
           ) : highCount > 0 ? (
-            <span className="badge badge-high" style={{ fontSize: '9px', padding: '1px 6px' }}>{highCount} HIGH</span>
+            <span className="badge badge-high" style={{ fontSize: '9px', padding: '1px 6px', color: isDark ? '#F9FAFB' : '#111827' }}>{highCount} HIGH</span>
           ) : (
-            <span className="badge badge-pass" style={{ fontSize: '9px', padding: '1px 6px' }}>PASS</span>
+            <span className="badge badge-pass" style={{ fontSize: '9px', padding: '1px 6px', color: isDark ? '#F9FAFB' : '#111827' }}>PASS</span>
           )}
         </div>
       </button>
@@ -3516,7 +3583,14 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
                   <td className="font-medium text-xs">
                     {d.group}
                     {d.low_confidence && (
-                      <span className="ml-2 px-1.5 py-0.5 rounded text-xs bg-[#2A3040] text-[#5A6478]" title={d.statistical_note}>
+                      <span 
+                        className="ml-2 px-1.5 py-0.5 rounded text-xs" 
+                        title={d.statistical_note}
+                        style={{
+                          background: isDark ? '#2A3040' : '#E9EEF6',
+                          color: isDark ? '#F9FAFB' : '#111827'
+                        }}
+                      >
                         n&lt;30
                       </span>
                     )}
@@ -3525,7 +3599,20 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
                   <td>{(d.positive_rate * 100).toFixed(1)}%</td>
                   <td style={{ color: d.di_vs_overall < 0.8 && !d.low_confidence ? 'var(--danger)' : d.di_vs_overall >= 0.8 ? 'var(--success)' : 'var(--muted)', fontWeight: 600 }}>
                     {d.di_vs_overall?.toFixed(2)}</td>
-                  <td><span className={`badge ${sevBadge(d.severity)}`}>{d.severity}</span></td>
+                  <td>
+                    <span 
+                      className={`badge ${sevBadge(d.severity)}`}
+                      style={{
+                        color: getContrastText(
+                          d.severity === 'CRITICAL' ? 'var(--status-critical-dim)' :
+                          d.severity === 'HIGH' ? 'var(--status-warning-dim)' : 'var(--status-pass-dim)',
+                          isDark
+                        )
+                      }}
+                    >
+                      {d.severity}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -3811,6 +3898,8 @@ function FixesTab({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [selectedAttribute, setSelectedAttribute] = useState<string>('');
+  const [selectedFixIdx, setSelectedFixIdx] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (audit.protectedCols && audit.protectedCols.length > 0 && !selectedAttribute) {
@@ -4186,12 +4275,11 @@ function FixesTab({
       </div>
     );
   };
-
   if (fixes.length === 0) return (
     <div className="space-y-3">
       {biasOrigin.length > 0 && <BiasOriginTracerCard items={biasOrigin} />}
       {renderRemediationSection()}
-      <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} />
+      <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} initialParetoData={audit.paretoData} />
       <div className="card flex items-center gap-3 py-8" style={{ background: 'rgba(6, 214, 160, 0.04)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
         <CheckCircle2 size={20} style={{ color: 'var(--success)' }} />
         <div className="text-sm font-medium" style={{ color: 'var(--success)' }}>No critical issues requiring fixes.</div>
@@ -4199,13 +4287,27 @@ function FixesTab({
     </div>
   );
 
+  const currentFix = fixes[selectedFixIdx] || fixes[0];
+  const matchingTracer = currentFix ? biasOrigin.find((item: any) => 
+    currentFix.title.toLowerCase().includes(item.attribute.toLowerCase()) || 
+    currentFix.description.toLowerCase().includes(item.attribute.toLowerCase())
+  ) : null;
+
+  const handleCopyCode = () => {
+    const snippet = CODE_SNIPPETS[currentFix?.technique];
+    if (!snippet) return;
+    navigator.clipboard.writeText(snippet).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
   return (
     <div className="space-y-3">
-      {biasOrigin.length > 0 && <BiasOriginTracerCard items={biasOrigin} />}
       {renderRemediationSection()}
 
       {/* Pareto Frontier */}
-      <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} />
+      <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} initialParetoData={audit.paretoData} />
 
       {stakeholderMode === 'legal' && (
         <div className="card" style={{ borderColor: 'var(--accent-dim)', background: 'var(--accent-dim)' }}>
@@ -4215,9 +4317,140 @@ function FixesTab({
         </div>
       )}
 
-      {fixes.map((f, i) => (
-        <FixCard key={i} fix={f} />
-      ))}
+      {/* Refactored Sidebar Layout */}
+      <div className="card flex flex-col md:flex-row h-[560px] p-0 overflow-hidden border rounded-xl" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        {/* Left Sidebar */}
+        <div className="w-full md:w-72 flex flex-col border-b md:border-b-0 md:border-r border-[var(--border)] bg-[var(--surface-2)] shrink-0 overflow-y-auto">
+          <div className="p-3 border-b border-[var(--border)] text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5 bg-[var(--surface-3)]">
+            <Wrench size={13} className="text-[var(--primary)]" />
+            Remediation Menu
+          </div>
+          <div className="flex-1 divide-y divide-[var(--border)]">
+            {fixes.map((f, idx) => {
+              const active = idx === selectedFixIdx;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedFixIdx(idx)}
+                  className={`w-full text-left p-3.5 transition-all flex flex-col gap-1 focus:outline-none ${
+                    active 
+                      ? 'bg-[var(--sidebar-active-bg)] border-l-4 border-[var(--sidebar-active-border)] text-[var(--sidebar-active-text)]' 
+                      : 'hover:bg-[var(--border-light)] text-[var(--fg)]'
+                  }`}
+                  style={{ background: active ? 'var(--sidebar-active-bg)' : 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-xs font-bold leading-tight">{f.title}</span>
+                    <span className={`badge ${sevBadge(f.severity)} text-[9px] px-1.5 py-0.5 rounded uppercase shrink-0`}>
+                      {f.severity}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[var(--muted)] truncate">{f.technique}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Content Area */}
+        {currentFix ? (
+          <div className="flex-1 flex flex-col overflow-y-auto p-5 space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+              <div>
+                <h3 className="text-base font-extrabold text-[var(--fg)]">{currentFix.title}</h3>
+                <p className="text-xs text-[var(--muted)] mt-0.5">Remediation Strategy</p>
+              </div>
+              <span className={`badge ${sevBadge(currentFix.severity)}`}>
+                {currentFix.severity} Severity
+              </span>
+            </div>
+
+            {/* Description */}
+            <div className="text-xs text-[var(--fg)] leading-relaxed bg-[var(--surface-2)] p-3.5 rounded-lg border border-[var(--border)]">
+              {currentFix.description}
+            </div>
+
+            {/* KPIs Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                <span className="text-[10px] text-[var(--muted)] font-semibold uppercase block">Mitigation Technique</span>
+                <span className="text-xs font-bold text-[var(--primary)] block mt-1">{currentFix.technique}</span>
+              </div>
+              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                <span className="text-[10px] text-[var(--muted)] font-semibold uppercase block">Projected Outcome</span>
+                <span className="text-xs font-bold text-[var(--fg)] block mt-1">{currentFix.projected}</span>
+              </div>
+              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                <span className="text-[10px] text-[var(--muted)] font-semibold uppercase block">Projected Improvement</span>
+                <span className="text-xs font-bold text-[var(--success)] block mt-1">+{currentFix.projectedImprovementPct}%</span>
+              </div>
+              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                <span className="text-[10px] text-[var(--muted)] font-semibold uppercase block">Estimated Accuracy Impact</span>
+                <span className="text-xs font-bold text-[var(--accent)] block mt-1">{currentFix.accuracyImpact}</span>
+              </div>
+            </div>
+
+            {/* Warnings (Bias Origin Tracer Integration) */}
+            {matchingTracer && (
+              <div 
+                className="p-3.5 rounded-lg border flex gap-3 text-xs" 
+                style={{ 
+                  background: matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'rgba(255, 49, 95, 0.05)' : 'rgba(255, 181, 71, 0.05)',
+                  borderColor: matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'rgba(255, 49, 95, 0.2)' : 'rgba(255, 181, 71, 0.2)' 
+                }}
+              >
+                <AlertTriangle size={16} className={matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'text-[var(--danger)] shrink-0' : 'text-[var(--accent)] shrink-0'} />
+                <div>
+                  <strong className="block mb-1 font-bold" style={{ color: matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'var(--danger)' : 'var(--accent)' }}>
+                    Bias Origin Tracer Alert: {matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'Model Amplification Detected' : 'Learned from Historical Data'}
+                  </strong>
+                  <span style={{ color: 'var(--fg)' }}>{matchingTracer.summary}</span>
+                  <div className="text-[10px] text-[var(--muted)] mt-1.5 font-semibold">
+                    Original Dataset DI: {matchingTracer.dataDI} | Model Predicted DI: {matchingTracer.modelDI}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Code Snippet */}
+            {CODE_SNIPPETS[currentFix.technique] && (
+              <div className="space-y-1.5">
+                <span className="text-[10px] text-[var(--muted)] font-bold uppercase tracking-wider block">Remediation Snippet (Python)</span>
+                <div className="code-block-pro shadow-inner">
+                  <div className="code-block-pro-header flex justify-between items-center px-3 py-1.5 bg-[var(--surface-3)] border-b border-[var(--border)]">
+                    <span className="font-mono text-[10px] text-[var(--muted)]">python • {currentFix.technique}</span>
+                    <button
+                      onClick={handleCopyCode}
+                      className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--surface-3)] hover:bg-[var(--border)] border border-[var(--border)] text-[10px] font-semibold transition-colors cursor-pointer text-[var(--muted)] hover:text-[var(--fg)]"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {copied ? (
+                        <>
+                          <Check size={11} className="text-[var(--success)]" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={11} />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <pre className="p-3 overflow-x-auto font-mono text-[11px] leading-relaxed bg-[var(--code-bg)] text-[var(--code-fg)]" style={{ margin: 0 }}>
+                    <code>{highlightPython(CODE_SNIPPETS[currentFix.technique])}</code>
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-xs text-[var(--muted)]">
+            Select a technique on the left to view mitigation steps.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -4251,12 +4484,61 @@ postprocessor = ThresholdOptimizer(
 postprocessor.fit(X_val, y_val, sensitive_features=A_val)`,
 };
 
+function highlightPython(code: string) {
+  const regex = /(#[^\n]*)|("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')|(\b(?:def|class|import|from|return|as|in|for|if|else|elif|try|except|and|or|not)\b)|(\b\w+(?=\())|([=+\-*\/%<>!&|^~]+)/g;
+  
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+  let keyIdx = 0;
+  
+  while ((match = regex.exec(code)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(code.substring(lastIndex, match.index));
+    }
+    
+    if (match[1]) {
+      // Comment
+      parts.push(<span key={`c-${keyIdx++}`} className="cmt">{match[1]}</span>);
+    } else if (match[2]) {
+      // String
+      parts.push(<span key={`s-${keyIdx++}`} className="str">{match[2]}</span>);
+    } else if (match[3]) {
+      // Keyword
+      parts.push(<span key={`k-${keyIdx++}`} className="kw">{match[3]}</span>);
+    } else if (match[4]) {
+      // Function call/definition
+      parts.push(<span key={`f-${keyIdx++}`} className="fn">{match[4]}</span>);
+    } else if (match[5]) {
+      // Operator
+      parts.push(<span key={`o-${keyIdx++}`} className="op">{match[5]}</span>);
+    }
+    
+    lastIndex = regex.lastIndex;
+  }
+  
+  if (lastIndex < code.length) {
+    parts.push(code.substring(lastIndex));
+  }
+  
+  return parts;
+}
+
 function FixCard({ fix }: { fix: any }) {
   const [showCode, setShowCode] = useState(false);
+  const [copied, setCopied] = useState(false);
   const snippet = CODE_SNIPPETS[fix.technique] || null;
 
+  const handleCopy = () => {
+    if (!snippet) return;
+    navigator.clipboard.writeText(snippet).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
   return (
-    <div className="card">
+    <div className="card animate-fade-in">
       <div className="flex items-center gap-2 mb-2">
         <Wrench size={14} style={{ color: 'var(--primary)' }} />
         <span className="text-sm font-semibold">{fix.title}</span>
@@ -4282,15 +4564,30 @@ function FixCard({ fix }: { fix: any }) {
             {showCode ? 'Hide' : 'Show'} code snippet
           </button>
           {showCode && (
-            <pre className="text-xs p-3 rounded-lg overflow-x-auto" style={{
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              color: 'var(--fg)',
-              fontFamily: 'monospace',
-              lineHeight: 1.6,
-            }}>
-              {snippet}
-            </pre>
+            <div className="code-block-pro mt-2 shadow-inner">
+              <div className="code-block-pro-header">
+                <span className="font-mono text-[10px]">python • {fix.technique}</span>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--surface-3)] hover:bg-[var(--border)] border border-[var(--border)] text-[10px] font-semibold transition-colors cursor-pointer text-[var(--muted)] hover:text-[var(--fg)]"
+                >
+                  {copied ? (
+                    <>
+                      <Check size={11} className="text-[var(--success)]" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={11} />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <pre>
+                <code>{highlightPython(snippet)}</code>
+              </pre>
+            </div>
           )}
         </div>
       )}
@@ -4501,6 +4798,7 @@ function WhatIfTab({ audit }: { audit: any }) {
   const [mirroredProfile, setMirroredProfile] = useState<Record<string, any> | null>(null);
   const [mirroredResult, setMirroredResult] = useState<any>(null);
   const [mirrorLoading, setMirrorLoading] = useState(false);
+  const prevResultRef = useRef<any>(null);
 
   const loadRepresentative = async () => {
     try {
@@ -4511,6 +4809,7 @@ function WhatIfTab({ audit }: { audit: any }) {
       setFeatures(row);
       setMirroredProfile(null);
       setMirroredResult(null);
+      prevResultRef.current = null;
     } catch (err: any) {
       setError(err.message || 'Failed to load representative row');
     } finally {
@@ -4527,6 +4826,7 @@ function WhatIfTab({ audit }: { audit: any }) {
       setFeatures(row);
       setMirroredProfile(null);
       setMirroredResult(null);
+      prevResultRef.current = null;
     } catch (err: any) {
       setError(err.message || 'Failed to load random row');
     } finally {
@@ -4546,6 +4846,9 @@ function WhatIfTab({ audit }: { audit: any }) {
         setPredicting(true);
         setError('');
         const res = await whatifPredict(audit.id, features);
+        if (result) {
+          prevResultRef.current = result;
+        }
         setResult(res);
 
         // Add to history
@@ -4800,18 +5103,40 @@ function WhatIfTab({ audit }: { audit: any }) {
           ) : sortedContribs.length === 0 ? (
             <div className="whatif-empty-state">No contribution statistics available.</div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {sortedContribs.map(([name, val]) => {
                 const isPos = val > 0;
                 const pct = maxContrib > 0 ? (Math.abs(val) / maxContrib) * 100 : 0;
                 const valStr = isPos ? `+${val.toFixed(4)}` : val.toFixed(4);
+
+                const prevVal = prevResultRef.current?.featureContributions?.[name];
+                const hasPrev = prevVal !== undefined && prevVal !== null;
+                const prevIsPos = prevVal > 0;
+                const prevPct = hasPrev && maxContrib > 0 ? (Math.abs(prevVal) / maxContrib) * 100 : 0;
+
                 return (
                   <div key={name} className="whatif-contrib-row">
                     <div className="whatif-contrib-name" title={name}>{name}</div>
-                    <div className="whatif-contrib-track">
+                    <div className="whatif-contrib-track" style={{ position: 'relative' }}>
+                      {/* Ghost bar (underneath, absolutely positioned) */}
+                      {hasPrev && (
+                        <div
+                          className={`whatif-contrib-bar ${prevIsPos ? 'positive' : 'negative'}`}
+                          style={{
+                            width: `${prevPct}%`,
+                            opacity: 0.22,
+                            position: 'absolute',
+                            top: 0,
+                            zIndex: 1,
+                            pointerEvents: 'none',
+                          }}
+                          title={`Previous value: ${prevVal.toFixed(4)}`}
+                        />
+                      )}
+                      {/* Solid bar (current value, relatively positioned to layer on top) */}
                       <div
                         className={`whatif-contrib-bar ${isPos ? 'positive' : 'negative'}`}
-                        style={{ width: `${pct}%` }}
+                        style={{ width: `${pct}%`, position: 'relative', zIndex: 2 }}
                       />
                     </div>
                     <div className={`whatif-contrib-value ${isPos ? 'positive' : 'negative'}`}>
@@ -4820,6 +5145,12 @@ function WhatIfTab({ audit }: { audit: any }) {
                   </div>
                 );
               })}
+              {prevResultRef.current && (
+                <div className="text-[10px] text-center mt-2" style={{ color: 'var(--placeholder)' }}>
+                  <span className="inline-block w-2.5 h-1.5 rounded mr-1" style={{ background: 'color-mix(in srgb, var(--muted) 35%, transparent)' }} />
+                  Ghost = previous value, Solid = current value
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -4934,7 +5265,7 @@ function WhatIfTab({ audit }: { audit: any }) {
 
 /* ==================== CAUSAL FAIRNESS ==================== */
 function CausalTab({ audit }: { audit: any }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<any>(audit.causalFairness || null);
   const [loading, setLoading] = useState(false);
   const [recomputing, setRecomputing] = useState(false);
   const [error, setError] = useState('');
@@ -4966,7 +5297,14 @@ function CausalTab({ audit }: { audit: any }) {
   }
 
   useEffect(() => {
-    loadCausal(false);
+    if (!data) {
+      loadCausal(false);
+    } else {
+      const attrs = Object.keys(data.per_attribute || {});
+      if (attrs.length > 0 && !selectedAttribute) {
+        setSelectedAttribute(attrs[0]);
+      }
+    }
   }, [audit.id]);
 
   const protectedCols = audit.config?.protectedCols || audit.protectedCols || [];

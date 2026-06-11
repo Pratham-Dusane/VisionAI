@@ -82,13 +82,7 @@ async def get_causal_fairness(audit_id: str, force: bool = False):
         if cached:
             try:
                 parsed = json.loads(cached) if isinstance(cached, str) else cached
-                has_error = False
                 if isinstance(parsed, dict) and "per_attribute" in parsed:
-                    for attr, info in parsed["per_attribute"].items():
-                        if isinstance(info, dict) and "error" in info:
-                            has_error = True
-                            break
-                if not has_error:
                     return parsed
             except Exception:
                 pass

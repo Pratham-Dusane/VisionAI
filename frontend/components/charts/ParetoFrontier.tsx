@@ -10,6 +10,7 @@ import { Loader2 } from 'lucide-react';
 interface ParetoFrontierProps {
   auditId: string;
   hasModel: boolean;
+  initialParetoData?: any;
 }
 
 interface ParetoPoint {
@@ -18,12 +19,12 @@ interface ParetoPoint {
   fairnessScore: number;
 }
 
-export default function ParetoFrontier({ auditId, hasModel }: ParetoFrontierProps) {
-  const [data, setData] = useState<ParetoPoint[]>([]);
+export default function ParetoFrontier({ auditId, hasModel, initialParetoData }: ParetoFrontierProps) {
+  const [data, setData] = useState<ParetoPoint[]>(initialParetoData?.points || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedThreshold, setSelectedThreshold] = useState(0.5);
-  const [fetched, setFetched] = useState(false);
+  const [fetched, setFetched] = useState(!!initialParetoData?.points);
 
   if (!hasModel) return null;
 

@@ -2,7 +2,7 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, Mail, Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
+import { Eye, Mail, Lock, User, ArrowRight, AlertCircle, ShieldCheck, ScanLine, Radar, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -127,37 +127,73 @@ export default function LoginPage() {
 
   return (
     <div className="login-container">
-      {/* Animated background orbs (visible in dark mode only via CSS) */}
-      <div className="login-orb login-orb-1" />
-      <div className="login-orb login-orb-2" />
-      <div className="login-orb login-orb-3" />
-
-      {/* Card */}
-      <div className="login-card animate-fade-in">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-6">
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
-            style={{ background: 'var(--primary)' }}
-          >
-            <Eye size={24} color="#FFFFFF" strokeWidth={2.5} />
+      <div className="login-grid">
+        <section className="login-showcase animate-fade-in" aria-label="VisionAI audit preview">
+          <div className="login-brand-row">
+            <div className="login-brand-mark">
+              <Eye size={24} color="#FFFFFF" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h1><span>Vision</span>AI</h1>
+              <p>Bias intelligence for high-stakes models</p>
+            </div>
           </div>
-          <h1 className="page-title tracking-wide">
-            <span style={{ color: 'var(--logo-primary)' }}>Vision</span>
-            <span style={{ color: 'var(--logo-secondary)' }}>AI</span>
-          </h1>
-          <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
-            Fairness Observability Platform
-          </p>
-        </div>
 
-        {/* Title */}
-        <h2 className="text-base font-semibold text-center mb-1" style={{ color: 'var(--fg)' }}>
-          {isRegister ? 'Create your account' : 'Welcome back'}
-        </h2>
-        <p className="text-xs text-center mb-5" style={{ color: 'var(--muted)' }}>
-          {isRegister ? 'Start auditing AI fairness today' : 'Sign in to continue to your dashboard'}
-        </p>
+          <div className="login-hero-copy">
+            <div className="login-kicker">
+              <Sparkles size={14} />
+              <span>Judging-ready live audit command center</span>
+            </div>
+            <h2>See unfair decisions before they reach people.</h2>
+            <p>
+              Upload a model, trace hidden bias, simulate protected-attribute flips, and ship
+              stakeholder-ready reports from one cinematic workspace.
+            </p>
+          </div>
+
+          <div className="login-orbit-stage" aria-hidden="true">
+            <div className="login-scan-card login-scan-card-main">
+              <div className="login-scan-header">
+                <span>Fairness scan</span>
+                <strong>LIVE</strong>
+              </div>
+              <div className="login-radar">
+                <div className="login-radar-sweep" />
+                <ShieldCheck size={38} />
+              </div>
+              <div className="login-metric-row">
+                <span>DI ratio</span>
+                <strong>0.91</strong>
+              </div>
+              <div className="login-metric-row danger">
+                <span>Intersectional risk</span>
+                <strong>High</strong>
+              </div>
+            </div>
+
+            <div className="login-floating-chip chip-a">
+              <ScanLine size={15} />
+              Shadow tests passed
+            </div>
+            <div className="login-floating-chip chip-b">
+              <Radar size={15} />
+              Causal path detected
+            </div>
+            <div className="login-neural-line line-a" />
+            <div className="login-neural-line line-b" />
+          </div>
+        </section>
+
+        <section className="login-card animate-fade-in" aria-label={isRegister ? 'Create account' : 'Sign in'}>
+          <div className="login-card-topline">
+            <span>{isRegister ? 'Create workspace' : 'Secure access'}</span>
+            <span>Google Solutions 2026</span>
+          </div>
+
+          <h2>{isRegister ? 'Build your audit room' : 'Enter the audit room'}</h2>
+          <p className="login-card-subtitle">
+            {isRegister ? 'Start with a guided sandbox and demo-ready datasets.' : 'Continue to your VisionAI fairness dashboard.'}
+          </p>
 
         {/* Google button */}
         <button
@@ -277,8 +313,7 @@ export default function LoginPage() {
           <span>Guest Login - Solutions Challenge Exclusive</span>
         </button>
 
-        {/* Toggle */}
-        <p className="text-center text-xs mt-4" style={{ color: 'var(--muted)' }}>
+        <p className="login-toggle-copy">
           {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
             onClick={() => { setIsRegister(!isRegister); setError(''); }}
@@ -289,6 +324,7 @@ export default function LoginPage() {
             {isRegister ? 'Sign in' : 'Create one'}
           </button>
         </p>
+        </section>
       </div>
     </div>
   );
