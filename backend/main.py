@@ -43,11 +43,11 @@ async def startup():
 # Health check endpoints
 @app.get("/")
 async def root():
-    return {"status": "ok", "service": "visionai-api"}
+    return {"status": "ok", "service": "visionai-api", "version": "v1.0.2_shadow_fix"}
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "service": "visionai-api"}
+    return {"status": "ok", "service": "visionai-api", "version": "v1.0.2_shadow_fix"}
 
 # Debug endpoint - test binner directly
 @app.get("/api/debug/binner")
