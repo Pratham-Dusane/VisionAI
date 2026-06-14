@@ -1,0 +1,58 @@
+name: Deploy Sentinel to Artifact Registry
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'sentinel/**'
+      - '.github/workflows/deploy-sentinel.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: visionai-prod-aea95
+  REGION: asia-south1
+  SERVICE_NAME: visionai-sentinel
+
+jobs:
+  build-and-push:
+    name: Build and Push Sentinel Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Build and Push Docker Image
+        run: |
+          cd sentinel
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.SERVICE_NAME }}:latest .
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.SERVICE_NAME }}:latest
+
+      - name: Deployment Summary
+        run: |
+          echo "## Sentinel Image Push Successful! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Registry**: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/visionai/${{ env.SERVICE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: latest" >> $GITHUB_STEP_SUMMARY

@@ -1,12 +1,16 @@
 """
 Analysis Pipeline Orchestrator - PRD §7.1
 Runs all analysis steps, updates Firestore progress.
+
+Performance: Steps are parallelized where possible.
+Narratives are deferred to lazy on-demand generation.
 """
 
 import pandas as pd
 import numpy as np
 from pathlib import Path
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 
 logger = logging.getLogger("pipeline")
@@ -27,7 +31,6 @@ from services.analysis.flip_sensitivity import compute_flip_sensitivity
 from services.analysis.explainability import compute_explainability_all
 from services.compliance.regulation_mapper import map_regulations
 from services.gemini.blind_spot_detector import detect_blind_spots_sync
-from services.gemini.stakeholder_formatter import generate_all_stakeholder_narratives_sync
 from services.gemini.justified_bias import classify_bias_findings_sync
 from core.firebase_init import download_from_storage, cleanup_temp_file
 
@@ -134,6 +137,14 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
     config keys: storagePath, protectedCols, labelCol, positiveLabel,
                  dataOnly, modelStoragePath, deployed, deployedSince,
                  decisionsPerMonth, threshold
+
+    Structured as three phases for speed:
+      Phase A (sequential): download, schema, binning, proxy, profiling, data_bias
+      Phase B (parallel):   justified_bias | model_eval+explain | intersectional | feature_laundering | blind_spots
+      Phase C (sequential): historical_harm, regulation_mapping, severity_scoring
+
+    Narratives are NOT generated here — they are lazy-loaded on demand
+    when the user opens the AI Narratives tab.
     """
     db = firestore.client()
     local_path = None
@@ -141,6 +152,10 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
     results = {}
 
     try:
+        # ================================================================
+        # PHASE A — Sequential preprocessing (each step depends on prior)
+        # ================================================================
+
         # --- Step 1: Download dataset ---
         _update_progress(db, audit_id, "download", "running")
         local_path = download_from_storage(config["storagePath"])
@@ -155,7 +170,6 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
 
         # --- Step 2b: Auto-bin continuous protected attributes ---
         _update_progress(db, audit_id, "auto_binning", "running")
-        # Keep raw df for model evaluation (model trained on raw numbers)
         df_raw = df.copy()
         df, bin_report = auto_bin_protected_columns(df, config["protectedCols"])
         results["binning"] = bin_report
@@ -185,135 +199,184 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
         results["dataBias"] = data_bias
         _update_progress(db, audit_id, "data_bias_scan", "complete")
 
-        # --- Step 5b: Justified bias classification (Gemini AI) ---
-        _update_progress(db, audit_id, "justified_bias", "running")
-        try:
-            justified = classify_bias_findings_sync(
-                data_bias, config.get("domain", "Other")
-            )
-            results["justifiedBias"] = justified
-            logger.info(f"[PIPELINE] Classified {len(justified)} bias findings for justification")
-        except Exception as e:
-            results["justifiedBias"] = {}
-            logger.error(f"[PIPELINE] Justified bias classification error: {e}")
-        _update_progress(db, audit_id, "justified_bias", "complete")
+        # ================================================================
+        # PHASE B — Parallel execution of independent analysis steps
+        # ================================================================
 
-        # --- Step 6: Model evaluation (skip if dataOnly) ---
-        model = None
-        model_bias = None
-        flip_sens = None
-
-        logger.info(f"Model gate: dataOnly={config.get('dataOnly')}, modelStoragePath={config.get('modelStoragePath')}")
-        print(f"[PIPELINE] dataOnly={config.get('dataOnly')}, modelStoragePath={config.get('modelStoragePath')}")
-
-        if not config.get("dataOnly", True) and config.get("modelStoragePath"):
-            _update_progress(db, audit_id, "model_evaluation", "running")
+        def _run_justified_bias():
+            """Gemini: classify bias findings as harmful vs justified."""
+            _update_progress(db, audit_id, "justified_bias", "running")
             try:
-                model_local_path = download_from_storage(config["modelStoragePath"])
-                model = load_model(str(model_local_path))
-                if model:
-                    # Use RAW df for model eval - model trained on raw data
-                    raw_feature_cols = [c for c in df_raw.columns
-                                        if c != config["labelCol"]]
-                    model_bias = evaluate_model_bias(
-                        df_raw, model, config["protectedCols"],
-                        config["labelCol"], config["positiveLabel"],
-                        raw_feature_cols,
-                    )
-                    results["modelBias"] = model_bias
-
-                    # Flip sensitivity - also on raw df
-                    flip_sens = compute_flip_sensitivity(
-                        model, df_raw, raw_feature_cols, config["protectedCols"],
-                    )
-                    results["flipSensitivity"] = flip_sens
-
-                    model_features = pd.get_dummies(df_raw[raw_feature_cols], drop_first=True).fillna(0)
-                    if hasattr(model, "feature_names_in_"):
-                        model_features = model_features.reindex(columns=list(model.feature_names_in_), fill_value=0)
-
-                    scores = _predict_scores_from_model(model, model_features)
-                    threshold = float(config.get("threshold", 0.5))
-                    model_preds = (scores >= threshold).astype(int)
-
-                    pred_df = df.copy()
-                    pred_df["__model_pred__"] = model_preds
-                    model_decision_bias = scan_data_bias(
-                        pred_df,
-                        "__model_pred__",
-                        1,
-                        config["protectedCols"],
-                    )
-                    results["modelDecisionBias"] = model_decision_bias
-                    results["biasOriginTracer"] = _build_bias_origin_tracer(data_bias, model_decision_bias)
-            except Exception as e:
-                results["modelBias"] = None
-                results["modelDecisionBias"] = {}
-                results["biasOriginTracer"] = []
-                results["modelError"] = str(e)
-                logger.error(f"Model evaluation error: {e}")
-                print(f"[PIPELINE] Model evaluation ERROR: {e}")
-                import traceback; traceback.print_exc()
-            _update_progress(db, audit_id, "model_evaluation", "complete")
-        else:
-            results["modelBias"] = None
-            results["modelDecisionBias"] = {}
-            results["biasOriginTracer"] = []
-            print(f"[PIPELINE] Model evaluation SKIPPED -- dataOnly={config.get('dataOnly')}, modelPath={config.get('modelStoragePath')}")
-            _update_progress(db, audit_id, "model_evaluation", "skipped")
-
-        # --- Step 6b: Explainability / SHAP (requires model) ---
-        if model is not None:
-            _update_progress(db, audit_id, "explainability", "running")
-            try:
-                # Use RAW df for SHAP - model trained on raw data
-                raw_feature_cols = [c for c in df_raw.columns if c != config["labelCol"]]
-                explainability = compute_explainability_all(
-                    model, df_raw, config["protectedCols"], raw_feature_cols,
+                justified = classify_bias_findings_sync(
+                    data_bias, config.get("domain", "Other")
                 )
-                results["explainability"] = explainability
+                logger.info(f"[PIPELINE] Classified {len(justified)} bias findings for justification")
+                return "justifiedBias", justified
             except Exception as e:
-                results["explainability"] = None
-                results["explainabilityError"] = str(e)
-            _update_progress(db, audit_id, "explainability", "complete")
-        else:
-            results["explainability"] = None
-            _update_progress(db, audit_id, "explainability", "skipped")
+                logger.error(f"[PIPELINE] Justified bias classification error: {e}")
+                return "justifiedBias", {}
+            finally:
+                _update_progress(db, audit_id, "justified_bias", "complete")
 
-        # --- Step 7: Intersectional audit ---
-        _update_progress(db, audit_id, "intersectional_audit", "running")
-        intersectional = intersectional_audit(
-            df, config["protectedCols"],
-            config["labelCol"], config["positiveLabel"],
-        )
-        results["intersectional"] = intersectional
-        _update_progress(db, audit_id, "intersectional_audit", "complete")
+        def _run_model_eval_and_explain():
+            """Model evaluation + SHAP explainability (both need model)."""
+            nonlocal model_local_path
+            model = None
+            model_result = {}
 
-        # --- Step 8: Feature laundering ---
-        _update_progress(db, audit_id, "feature_laundering", "running")
-        feature_cols_for_launder = [
-            c for c in df.columns
-            if c != config["labelCol"] and c not in config["protectedCols"]
+            logger.info(f"Model gate: dataOnly={config.get('dataOnly')}, modelStoragePath={config.get('modelStoragePath')}")
+            
+            if not config.get("dataOnly", True) and config.get("modelStoragePath"):
+                _update_progress(db, audit_id, "model_evaluation", "running")
+                try:
+                    model_local_path = download_from_storage(config["modelStoragePath"])
+                    model = load_model(str(model_local_path))
+                    if model:
+                        raw_feature_cols = [c for c in df_raw.columns
+                                            if c != config["labelCol"]]
+                        model_bias = evaluate_model_bias(
+                            df_raw, model, config["protectedCols"],
+                            config["labelCol"], config["positiveLabel"],
+                            raw_feature_cols,
+                        )
+                        model_result["modelBias"] = model_bias
+
+                        flip_sens = compute_flip_sensitivity(
+                            model, df_raw, raw_feature_cols, config["protectedCols"],
+                        )
+                        model_result["flipSensitivity"] = flip_sens
+
+                        model_features = pd.get_dummies(df_raw[raw_feature_cols], drop_first=True).fillna(0)
+                        if hasattr(model, "feature_names_in_"):
+                            model_features = model_features.reindex(columns=list(model.feature_names_in_), fill_value=0)
+
+                        scores = _predict_scores_from_model(model, model_features)
+                        threshold = float(config.get("threshold", 0.5))
+                        model_preds = (scores >= threshold).astype(int)
+
+                        pred_df = df.copy()
+                        pred_df["__model_pred__"] = model_preds
+                        model_decision_bias = scan_data_bias(
+                            pred_df, "__model_pred__", 1, config["protectedCols"],
+                        )
+                        model_result["modelDecisionBias"] = model_decision_bias
+                        model_result["biasOriginTracer"] = _build_bias_origin_tracer(data_bias, model_decision_bias)
+                except Exception as e:
+                    model_result["modelBias"] = None
+                    model_result["modelDecisionBias"] = {}
+                    model_result["biasOriginTracer"] = []
+                    model_result["modelError"] = str(e)
+                    logger.error(f"Model evaluation error: {e}")
+                _update_progress(db, audit_id, "model_evaluation", "complete")
+
+                # Explainability / SHAP (requires model)
+                if model is not None:
+                    _update_progress(db, audit_id, "explainability", "running")
+                    try:
+                        raw_feature_cols = [c for c in df_raw.columns if c != config["labelCol"]]
+                        explainability = compute_explainability_all(
+                            model, df_raw, config["protectedCols"], raw_feature_cols,
+                        )
+                        model_result["explainability"] = explainability
+                    except Exception as e:
+                        model_result["explainability"] = None
+                        model_result["explainabilityError"] = str(e)
+                    _update_progress(db, audit_id, "explainability", "complete")
+                else:
+                    model_result["explainability"] = None
+                    _update_progress(db, audit_id, "explainability", "skipped")
+            else:
+                model_result["modelBias"] = None
+                model_result["modelDecisionBias"] = {}
+                model_result["biasOriginTracer"] = []
+                model_result["explainability"] = None
+                _update_progress(db, audit_id, "model_evaluation", "skipped")
+                _update_progress(db, audit_id, "explainability", "skipped")
+
+            return "model_eval", model_result
+
+        def _run_intersectional():
+            """Intersectional audit across protected attribute pairs."""
+            _update_progress(db, audit_id, "intersectional_audit", "running")
+            intersect = intersectional_audit(
+                df, config["protectedCols"],
+                config["labelCol"], config["positiveLabel"],
+            )
+            _update_progress(db, audit_id, "intersectional_audit", "complete")
+            return "intersectional", intersect
+
+        def _run_blind_spots():
+            """Gemini: identify overlooked sensitive columns."""
+            _update_progress(db, audit_id, "blind_spot_detection", "running")
+            try:
+                sample_values_per_col = {}
+                if "schema" in results and "columns" in results["schema"]:
+                    for col_info in results["schema"]["columns"]:
+                        sample_values_per_col[col_info["name"]] = col_info.get("sample_values", [])
+
+                blind_spots = detect_blind_spots_sync(
+                    column_names=list(df.columns),
+                    domain=config.get("domain", "Other"),
+                    already_flagged=config["protectedCols"],
+                    sample_values_per_col=sample_values_per_col,
+                )
+                logger.info(f"[PIPELINE] Detected {len(blind_spots)} blind spots")
+                return "blindSpots", blind_spots
+            except Exception as e:
+                logger.error(f"[PIPELINE] Blind spot detection error: {e}")
+                return "blindSpots", []
+            finally:
+                _update_progress(db, audit_id, "blind_spot_detection", "complete")
+
+        # Launch all Phase B tasks in parallel
+        parallel_tasks = [
+            _run_justified_bias,
+            _run_model_eval_and_explain,
+            _run_intersectional,
+            _run_blind_spots,
         ]
-        laundering = detect_feature_laundering(
-            df, config["protectedCols"], feature_cols_for_launder,
-        )
-        results["featureLaundering"] = laundering
-        _update_progress(db, audit_id, "feature_laundering", "complete")
 
-        # --- Step 9: Historical harm ---
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = {executor.submit(fn): fn.__name__ for fn in parallel_tasks}
+            for future in as_completed(futures):
+                try:
+                    key, value = future.result()
+                    if key == "model_eval":
+                        results.update(value)
+                    else:
+                        results[key] = value
+                except Exception as e:
+                    logger.error(f"[PIPELINE] Parallel task failed: {e}")
+
+        # Ensure all expected keys exist (in case parallel tasks were skipped)
+        results.setdefault("justifiedBias", {})
+        results.setdefault("modelBias", None)
+        results.setdefault("modelDecisionBias", {})
+        results.setdefault("biasOriginTracer", [])
+        results.setdefault("explainability", None)
+        results.setdefault("intersectional", [])
+        results.setdefault("blindSpots", [])
+        results.setdefault("featureLaundering", None)
+
+        # ================================================================
+        # PHASE C — Sequential finalization (depends on Phase B results)
+        # ================================================================
+
+        model_bias = results.get("modelBias")
+        intersectional = results.get("intersectional", [])
+        laundering = results.get("featureLaundering") or []
+
+        # --- Historical harm ---
         _update_progress(db, audit_id, "historical_harm", "running")
         harm_results = []
         if config.get("deployed") and config.get("deployedSince"):
             for attr, bias in data_bias.items():
                 di = bias.get("metrics", {}).get("disparate_impact")
                 if di and di < 0.8:
-                    # Find unprivileged group + proportion
                     priv = bias.get("privileged_group", "")
                     group_rates = bias.get("group_rates", {})
                     for g, rate in group_rates.items():
                         if g != priv:
-                            # Estimate proportion from profiles
                             proportion = _get_group_proportion(profiles, attr, g)
                             harm = calculate_historical_harm(
                                 config["deployedSince"],
@@ -325,7 +388,7 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
         results["historicalHarm"] = harm_results
         _update_progress(db, audit_id, "historical_harm", "complete")
 
-        # --- Step 10: Regulation mapping ---
+        # --- Regulation mapping ---
         _update_progress(db, audit_id, "regulation_mapping", "running")
         regulations = map_regulations(
             data_bias, laundering, intersectional, proxies, model_bias,
@@ -335,7 +398,7 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
         results["regulationMap"] = regulations
         _update_progress(db, audit_id, "regulation_mapping", "complete")
 
-        # --- Step 11: Severity scoring ---
+        # --- Severity scoring ---
         _update_progress(db, audit_id, "severity_scoring", "running")
         severity = compute_severity_score(
             data_bias, proxies, intersectional, laundering, model_bias,
@@ -343,46 +406,9 @@ def run_full_pipeline(config: dict, audit_id: str) -> dict:
         results["severity"] = severity
         _update_progress(db, audit_id, "severity_scoring", "complete")
 
-        # --- Step 12: Blind spot detection (Gemini AI) ---
-        _update_progress(db, audit_id, "blind_spot_detection", "running")
-        try:
-            # Extract sample values from schema
-            sample_values_per_col = {}
-            if "schema" in results and "columns" in results["schema"]:
-                for col_info in results["schema"]["columns"]:
-                    sample_values_per_col[col_info["name"]] = col_info.get("sample_values", [])
-            
-            blind_spots = detect_blind_spots_sync(
-                column_names=list(df.columns),
-                domain=config.get("domain", "Other"),
-                already_flagged=config["protectedCols"],
-                sample_values_per_col=sample_values_per_col,
-            )
-            results["blindSpots"] = blind_spots
-            logger.info(f"[PIPELINE] Detected {len(blind_spots)} blind spots")
-        except Exception as e:
-            results["blindSpots"] = []
-            logger.error(f"[PIPELINE] Blind spot detection error: {e}")
-            import traceback
-            traceback.print_exc()
-        _update_progress(db, audit_id, "blind_spot_detection", "complete")
-
-        # --- Step 13: Narrative generation (Gemini AI) ---
-        _update_progress(db, audit_id, "narrative_generation", "running")
-        try:
-            narratives = generate_all_stakeholder_narratives_sync(
-                audit_id=audit_id,
-                audit_results=results,
-                domain=config.get("domain", "Other"),
-            )
-            results["narratives"] = narratives
-            logger.info(f"[PIPELINE] Generated narratives for {len(narratives)} stakeholder types")
-        except Exception as e:
-            results["narratives"] = {}
-            logger.error(f"[PIPELINE] Narrative generation error: {e}")
-            import traceback
-            traceback.print_exc()
-        _update_progress(db, audit_id, "narrative_generation", "complete")
+        # Narratives are NOT generated here — they are lazy-loaded on demand
+        # when the user opens the AI Narratives tab via GET /api/audits/{id}/narrative/{type}
+        results["narratives"] = {}
 
         return results
 

@@ -7,6 +7,7 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   PlusCircle,
   TrendingUp,
   TrendingDown,
@@ -32,6 +33,7 @@ export default function DashboardPage() {
   const [compareAId, setCompareAId] = useState('');
   const [compareBId, setCompareBId] = useState('');
   const [tourForce, setTourForce] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   // Listen for help button tour trigger + auto-start if first time
   useEffect(() => {
@@ -226,8 +228,8 @@ export default function DashboardPage() {
         </section>
 
         {/* Top Section: Health Indicators & Secondary Stats */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-          <div data-tour="fairness-score" className="lg:row-span-2 h-full">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div data-tour="fairness-score" className="h-full">
           <HealthIndicatorCard
             title="System Fairness"
             value={avgScore}
@@ -240,7 +242,7 @@ export default function DashboardPage() {
           />
           </div>
 
-          <div data-tour="proxy-alerts" className="lg:row-span-2 h-full">
+          <div data-tour="proxy-alerts" className="h-full">
           <HealthIndicatorCard
             title="Active Proxy Alerts"
             value={alertCount}
@@ -251,132 +253,169 @@ export default function DashboardPage() {
           />
           </div>
 
-          <div
-            className="dashboard-hover-card relative overflow-hidden border flex items-center justify-between p-5 h-full rounded-[24px] lg:col-start-3 lg:row-start-1"
-            style={{
-              background: 'color-mix(in srgb, var(--surface) 84%, transparent)',
-              borderColor: 'color-mix(in srgb, var(--border) 65%, transparent)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.08)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-            }}
-          >
-            <div>
-              <div className="text-xs font-semibold tracking-wider uppercase mb-1" style={{ color: 'var(--muted)' }}>Total Audits</div>
-              <div className="dashboard-number text-2xl font-black" style={{ color: 'var(--fg)' }}>
-                {orderedAudits.length}
-              </div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--surface-2)]">
-              <BarChart3 size={24} style={{ color: 'var(--muted)' }} />
-            </div>
-          </div>
-
-          <div
-            data-tour={audits.length < 2 ? "model-compare" : undefined}
-            className="dashboard-hover-card relative overflow-hidden border flex items-center justify-between p-5 h-full rounded-[24px] lg:col-start-3 lg:row-start-2"
-            style={{
-              background: 'color-mix(in srgb, var(--surface) 84%, transparent)',
-              borderColor: 'color-mix(in srgb, var(--border) 65%, transparent)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.08)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-            }}
-          >
-            <div>
-              <div className="text-xs font-semibold tracking-wider uppercase mb-1" style={{ color: 'var(--muted)' }}>Last Audit</div>
-              <div className="dashboard-number text-2xl font-black" style={{ color: 'var(--fg)' }}>
-                {lastAudit ? new Date(lastAudit).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
-              </div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--surface-2)]">
-              <Calendar size={24} style={{ color: 'var(--muted)' }} />
-            </div>
-          </div>
-
-          {!loading && audits.length >= 2 && (
-  <div className="lg:col-start-1 lg:row-start-3 h-full w-full flex flex-col justify-center px-4 py-8">
-    <p className="model-compare-hero-text font-sans w-full text-3xl sm:text-4xl lg:text-4xl font-semibold leading-snug text-gray-800 dark:text-gray-200">
-      Benchmarking accuracy is easy. Compare your previous and next.
-    </p>
-  </div>
-)}
-
-          {!loading && audits.length >= 2 && (
+          <div className="grid grid-rows-2 gap-4 h-full">
             <div
-              data-tour="model-compare"
-              className="border rounded-[24px] flex flex-col gap-4 p-5 lg:col-start-2 lg:col-span-2 lg:row-start-3 model-compare-panel"
+              className="dashboard-hover-card relative overflow-hidden border flex items-center justify-between p-5 h-full rounded-[24px]"
               style={{
                 background: 'color-mix(in srgb, var(--surface) 84%, transparent)',
-                borderColor: 'color-mix(in srgb, var(--primary) 22%, var(--border))',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.08)',
+                borderColor: 'color-mix(in srgb, var(--border) 65%, transparent)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.08)',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
               }}
             >
               <div>
-                <div className="text-sm font-semibold mb-1" style={{ color: 'var(--fg)' }}>
-                  Model Comparison Mode
-                </div>
-                <div className="text-xs" style={{ color: 'var(--muted)' }}>
-                  Compare audits in the same domain.
+                <div className="text-xs font-semibold tracking-wider uppercase mb-1" style={{ color: 'var(--muted)' }}>Total Audits</div>
+                <div className="dashboard-number text-2xl font-black" style={{ color: 'var(--fg)' }}>
+                  {orderedAudits.length}
                 </div>
               </div>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--surface-2)]">
+                <BarChart3 size={24} style={{ color: 'var(--muted)' }} />
+              </div>
+            </div>
 
-              {completedAudits.length >= 2 ? (
-                <>
-                  <div className="grid grid-cols-1 gap-3">
-                    <div>
-                      <label className="label-text block mb-1" style={{ color: 'var(--muted)' }}>Audit A</label>
-                      <select className="select model-compare-select w-full" value={compareAId} onChange={(e) => setCompareAId(e.target.value)}>
-                        {completedAudits.map((a) => (
-                          <option key={a.id} value={a.id}>{a.name} ({a.domain})</option>
-                        ))}
-                      </select>
+            <div
+              data-tour={audits.length < 2 ? "model-compare" : undefined}
+              className="dashboard-hover-card relative overflow-hidden border flex items-center justify-between p-5 h-full rounded-[24px]"
+              style={{
+                background: 'color-mix(in srgb, var(--surface) 84%, transparent)',
+                borderColor: 'color-mix(in srgb, var(--border) 65%, transparent)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.08)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+              }}
+            >
+              <div>
+                <div className="text-xs font-semibold tracking-wider uppercase mb-1" style={{ color: 'var(--muted)' }}>Last Audit</div>
+                <div className="dashboard-number text-2xl font-black" style={{ color: 'var(--fg)' }}>
+                  {lastAudit ? new Date(lastAudit).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
+                </div>
+              </div>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--surface-2)]">
+                <Calendar size={24} style={{ color: 'var(--muted)' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Accordion for Model Comparison */}
+        {!loading && audits.length >= 2 && (
+          <div
+            data-tour="model-compare"
+            className="border rounded-[24px] overflow-hidden transition-all duration-300"
+            style={{
+              background: 'color-mix(in srgb, var(--surface) 84%, transparent)',
+              borderColor: 'color-mix(in srgb, var(--primary) 22%, var(--border))',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.08)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+            }}
+          >
+            <button
+              onClick={() => setCompareOpen(!compareOpen)}
+              className="w-full flex items-center justify-between px-6 py-4 font-semibold text-[15px] cursor-pointer focus:outline-none hover:bg-[var(--surface-2)]/50 transition-colors animate-fade-in"
+              style={{ color: 'var(--fg)' }}
+            >
+              <div className="flex items-center gap-2">
+                <BarChart3 size={18} style={{ color: 'var(--primary)' }} />
+                <span>Compare Audits</span>
+              </div>
+              <ChevronDown
+                size={18}
+                className={`transform transition-transform duration-300 ${compareOpen ? 'rotate-180' : ''}`}
+                style={{ color: 'var(--muted)' }}
+              />
+            </button>
+
+            <div
+              className={`transition-all duration-500 ease-in-out overflow-hidden ${
+                compareOpen ? 'opacity-100 max-h-[800px] border-t p-5' : 'opacity-0 max-h-0 pointer-events-none'
+              }`}
+              style={{ borderColor: 'var(--border)' }}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+                {/* Hero text */}
+                <div className="h-full w-full flex flex-col justify-center px-4 py-4">
+                  <p className="model-compare-hero-text font-sans w-full text-2xl sm:text-3xl font-semibold leading-snug text-gray-800 dark:text-gray-200">
+                    Benchmarking accuracy is easy. Compare your previous and next.
+                  </p>
+                </div>
+
+                {/* Model Comparison Panel */}
+                <div
+                  className="border rounded-[24px] flex flex-col gap-4 p-5 lg:col-span-2 model-compare-panel"
+                  style={{
+                    background: 'var(--surface-2)',
+                    borderColor: 'var(--border)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.05)',
+                  }}
+                >
+                  <div>
+                    <div className="text-sm font-semibold mb-1" style={{ color: 'var(--fg)' }}>
+                      Model Comparison Mode
                     </div>
-                    <div>
-                      <label className="label-text block mb-1" style={{ color: 'var(--muted)' }}>Audit B</label>
-                      <select className="select model-compare-select w-full" value={compareB?.id || ''} onChange={(e) => setCompareBId(e.target.value)}>
-                        {compareOptionsB.map((a) => (
-                          <option key={a.id} value={a.id}>{a.name} ({a.domain})</option>
-                        ))}
-                      </select>
+                    <div className="text-xs" style={{ color: 'var(--muted)' }}>
+                      Compare audits in the same domain.
                     </div>
                   </div>
 
-                  {compareA && compareB && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="p-3 rounded-lg model-compare-metric">
-                        <div className="text-xs" style={{ color: 'var(--muted)' }}>Fairness Score</div>
-                        <div className="dashboard-number text-sm mt-1" style={{ color: 'var(--fg)' }}>{compareA.fairnessScore} {'->'} <strong>{compareB.fairnessScore}</strong></div>
-                      </div>
-                      <div className="p-3 rounded-lg model-compare-metric">
-                        <div className="text-xs" style={{ color: 'var(--muted)' }}>Worst DI Ratio</div>
-                        <div className="dashboard-number text-sm mt-1" style={{ color: diDelta >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-                          {worstDI(compareA).toFixed(2)} {'->'} <strong>{worstDI(compareB).toFixed(2)}</strong>
+                  {completedAudits.length >= 2 ? (
+                    <>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <label className="label-text block mb-1 text-xs" style={{ color: 'var(--muted)' }}>Audit A</label>
+                          <select className="select model-compare-select w-full" value={compareAId} onChange={(e) => setCompareAId(e.target.value)}>
+                            {completedAudits.map((a) => (
+                              <option key={a.id} value={a.id}>{a.name} ({a.domain})</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="label-text block mb-1 text-xs" style={{ color: 'var(--muted)' }}>Audit B</label>
+                          <select className="select model-compare-select w-full" value={compareB?.id || ''} onChange={(e) => setCompareBId(e.target.value)}>
+                            {compareOptionsB.map((a) => (
+                              <option key={a.id} value={a.id}>{a.name} ({a.domain})</option>
+                            ))}
+                          </select>
                         </div>
                       </div>
-                      <div className="p-3 rounded-lg model-compare-metric">
-                        <div className="text-xs" style={{ color: 'var(--muted)' }}>Equalized Odds Attributes</div>
-                        <div className="dashboard-number text-sm mt-1" style={{ color: 'var(--fg)' }}>
-                          {Object.keys(compareA.modelBias?._equalized_odds || {}).length} {'->'} <strong>{Object.keys(compareB.modelBias?._equalized_odds || {}).length}</strong>
+
+                      {compareA && compareB && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="p-3 rounded-lg model-compare-metric border" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)' }}>
+                            <div className="text-xs" style={{ color: 'var(--muted)' }}>Fairness Score</div>
+                            <div className="dashboard-number text-sm mt-1" style={{ color: 'var(--fg)' }}>{compareA.fairnessScore} {'->'} <strong>{compareB.fairnessScore}</strong></div>
+                          </div>
+                          <div className="p-3 rounded-lg model-compare-metric border" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)' }}>
+                            <div className="text-xs" style={{ color: 'var(--muted)' }}>Worst DI Ratio</div>
+                            <div className="dashboard-number text-sm mt-1" style={{ color: diDelta >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                              {worstDI(compareA).toFixed(2)} {'->'} <strong>{worstDI(compareB).toFixed(2)}</strong>
+                            </div>
+                          </div>
+                          <div className="p-3 rounded-lg model-compare-metric border" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)' }}>
+                            <div className="text-xs" style={{ color: 'var(--muted)' }}>Equalized Odds Attributes</div>
+                            <div className="dashboard-number text-sm mt-1" style={{ color: 'var(--fg)' }}>
+                              {Object.keys(compareA.modelBias?._equalized_odds || {}).length} {'->'} <strong>{Object.keys(compareB.modelBias?._equalized_odds || {}).length}</strong>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {compareSummary && (
+                        <div className="text-xs leading-relaxed model-compare-summary p-3 rounded-lg border" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)', color: 'var(--muted)' }}>{compareSummary}</div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-xs rounded-lg px-3 py-2" style={{ background: 'var(--surface-3)', color: 'var(--muted)' }}>
+                      You have {audits.length} audit(s), but at least 2 completed audits are required to run a domain-matched comparison.
                     </div>
                   )}
-
-                  {compareSummary && (
-                    <div className="text-xs leading-relaxed model-compare-summary">{compareSummary}</div>
-                  )}
-                </>
-              ) : (
-                <div className="text-xs rounded-lg px-3 py-2" style={{ background: 'var(--surface-2)', color: 'var(--muted)' }}>
-                  You have {audits.length} audit(s), but at least 2 completed audits are required to run a domain-matched comparison.
                 </div>
-              )}
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Loading */}
         {loading && (

@@ -13,14 +13,28 @@ import {
   findMinimumFlip,
   getOrgSettings,
   runShadowTest,
+  fetchNarrative,
+  fetchFeatureLaundering,
+  remediateBias,
+  getDownloadMitigatedUrl,
+  whatifPredict,
+  whatifRandomRow,
+  getCausalAnalysis,
 } from '@/lib/api';
 import { useState, useEffect, use, useRef, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Download, AlertTriangle, Shield, BarChart3,
   Brain, Wrench, Scale, CheckCircle2, Loader2, XCircle,
   Zap, Users, Eye, FileText, Layers, Info, Sparkles, Command, ArrowRight,
-  MessageSquareText, Send, MessageCircle, Trash2, Ghost,
+  MessageSquareText, Send, MessageCircle, Trash2, Ghost, RotateCcw, RefreshCw,
+  Copy, Check,
 } from 'lucide-react';
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
+} from 'recharts';
+
+const CausalGraph = dynamic(() => import('@/components/charts/CausalGraph'), { ssr: false });
 import ProxyNetworkGraph from '@/components/charts/ProxyNetworkGraph';
 import ShapSummaryChart from '@/components/charts/ShapSummaryChart';
 import IntersectionalHeatmap from '@/components/charts/IntersectionalHeatmap';
@@ -46,14 +60,16 @@ const BASE_TABS = [
   { key: 'model', label: 'Model Analysis', icon: Brain },
   { key: 'intersectional', label: 'Intersectional', icon: Layers },
   { key: 'explainability', label: 'Explainability', icon: Zap },
+  { key: 'causal', label: 'Causal Fairness', icon: Shield },
   { key: 'results', label: 'Results', icon: Command },
   { key: 'narratives', label: 'AI Narratives', icon: Sparkles },
   { key: 'fixes', label: 'Fixes', icon: Wrench },
+  { key: 'whatif', label: 'What-If', icon: Zap },
   { key: 'legal', label: 'Legal', icon: Scale },
 ];
 
 const MODE_TAB_KEYS: Record<StakeholderMode, string[]> = {
-  technical: ['overview', 'data', 'model', 'intersectional', 'explainability', 'results', 'narratives', 'fixes', 'legal'],
+  technical: ['overview', 'data', 'model', 'intersectional', 'explainability', 'causal', 'results', 'narratives', 'fixes', 'whatif', 'legal'],
   executive: ['overview', 'results', 'narratives', 'legal'],
   legal: ['overview', 'intersectional', 'results', 'legal', 'narratives'],
 };
@@ -339,6 +355,8 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   const [redTeamLoading, setRedTeamLoading] = useState(false);
   const [guidedSandboxActive, setGuidedSandboxActive] = useState(false);
   const [guidedBannerVisible, setGuidedBannerVisible] = useState(false);
+  const [isFetchingLaundering, setIsFetchingLaundering] = useState(false);
+  const isFetchingLaunderingRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -396,6 +414,39 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
       // Ignore storage access issues and continue normal render flow.
     }
   }, [audit?.id]);
+
+  useEffect(() => {
+    // Lazy fetch feature laundering if missing
+    if (audit && audit.status === 'COMPLETE' && audit.featureLaundering === null && !isFetchingLaunderingRef.current) {
+      isFetchingLaunderingRef.current = true;
+      setIsFetchingLaundering(true);
+      let cancelled = false;
+
+      (async () => {
+        try {
+          const data = await fetchFeatureLaundering(audit.id);
+          if (!cancelled) {
+            setAudit((prev: any) => ({
+              ...prev,
+              featureLaundering: data.featureLaundering || [],
+              severity: data.severity || prev.severity,
+              regulationMap: data.regulationMap || prev.regulationMap,
+            }));
+          }
+        } catch (e) {
+          console.error('Failed to load feature laundering', e);
+          if (!cancelled) {
+            setAudit((prev: any) => ({ ...prev, featureLaundering: [] }));
+          }
+        } finally {
+          isFetchingLaunderingRef.current = false;
+          if (!cancelled) setIsFetchingLaundering(false);
+        }
+      })();
+
+      return () => { cancelled = true; };
+    }
+  }, [audit?.id, audit?.status, audit?.featureLaundering]);
 
   // Show processing state - skeleton shimmer layout
   if (loading || (audit && audit.status === 'PROCESSING')) {
@@ -472,7 +523,10 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   const sev = audit.severity || {};
   const score = sev.fairness_score ?? audit.fairnessScore ?? 0;
   const grade = sev.letter_grade ?? audit.letterGrade ?? '?';
-  const tabs = getTabs(stakeholderMode);
+  const tabs = getTabs(stakeholderMode).filter((t) => {
+    if (t.key === 'whatif' && audit?.dataOnly) return false;
+    return true;
+  });
   const visibleTabKeys = new Set(tabs.map((t) => t.key));
 
   function dismissGuidedSandbox() {
@@ -564,17 +618,21 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
         {/* Header */}
         <div className="flex items-start gap-4">
           {/* Score ring */}
-          <div className="relative shrink-0">
-            <svg width="88" height="88" viewBox="0 0 88 88">
-              <circle cx="44" cy="44" r="38" fill="none" stroke="var(--surface-2)" strokeWidth="6" />
-              <circle cx="44" cy="44" r="38" fill="none" stroke={scoreColor(score)} strokeWidth="6"
-                strokeDasharray={`${score * 2.39} 239`} strokeLinecap="round" transform="rotate(-90 44 44)" />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-black" style={{ color: gradeColor(grade) }}>{grade}</span>
-              <span className="text-xs font-bold" style={{ color: scoreColor(score) }}>{score}/100</span>
+          {isFetchingLaundering ? (
+            <div className="skeleton shrink-0" style={{ width: 88, height: 88, borderRadius: '50%' }} title="Recomputing score with laundering data..." />
+          ) : (
+            <div className="relative shrink-0">
+              <svg width="88" height="88" viewBox="0 0 88 88">
+                <circle cx="44" cy="44" r="38" fill="none" stroke="var(--surface-2)" strokeWidth="6" />
+                <circle cx="44" cy="44" r="38" fill="none" stroke={scoreColor(score)} strokeWidth="6"
+                  strokeDasharray={`${score * 2.39} 239`} strokeLinecap="round" transform="rotate(-90 44 44)" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-black" style={{ color: gradeColor(grade) }}>{grade}</span>
+                <span className="text-xs font-bold" style={{ color: scoreColor(score) }}>{score}/100</span>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1">
@@ -586,6 +644,19 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
               <span>{new Date(audit.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
               <span>•</span><span>{audit.rowCount?.toLocaleString()} rows</span>
               <span>•</span><span>{audit.columnCount} cols</span>
+              {audit.model_identifier && (
+                <>
+                  <span>•</span>
+                  <a
+                    href={`/attestation/${encodeURIComponent(audit.model_identifier)}`}
+                    className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
+                    style={{ color: 'var(--primary)' }}
+                  >
+                    <Shield size={12} className="inline mr-0.5" />
+                    Attestation Chain: {audit.model_identifier}
+                  </a>
+                </>
+              )}
             </div>
             {sev.penalties?.length > 0 && (
               <div className="text-xs mt-1" style={{ color: 'var(--placeholder)' }}>
@@ -632,8 +703,37 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
         {visibleTabKeys.has('intersectional') && tab === 'intersectional' && <IntersectionalTab audit={audit} />}
         {visibleTabKeys.has('explainability') && tab === 'explainability' && <ExplainabilityTab audit={audit} />}
         {visibleTabKeys.has('results') && tab === 'results' && <ResultsTab audit={audit} onNavigateTab={setTab} visibleTabKeys={visibleTabKeys} />}
-        {visibleTabKeys.has('narratives') && tab === 'narratives' && <NarrativesTab audit={audit} mode={stakeholderMode} />}
-        {visibleTabKeys.has('fixes') && tab === 'fixes' && <FixesTab audit={audit} stakeholderMode={stakeholderMode} />}
+        {visibleTabKeys.has('narratives') && tab === 'narratives' && (
+          <NarrativesTab
+            audit={audit}
+            mode={stakeholderMode}
+            onNarrativeGenerated={(modeStr, narrativeStr) => {
+              setAudit((prev: any) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  narratives: {
+                    ...(prev.narratives || {}),
+                    [modeStr]: narrativeStr,
+                  },
+                };
+              });
+            }}
+          />
+        )}
+        {visibleTabKeys.has('fixes') && tab === 'fixes' && (
+          <FixesTab
+            audit={audit}
+            stakeholderMode={stakeholderMode}
+            onAuditUpdated={(updatedAudit: any) => setAudit(updatedAudit)}
+          />
+        )}
+        {visibleTabKeys.has('causal') && tab === 'causal' && (
+          <CausalTab audit={audit} />
+        )}
+        {visibleTabKeys.has('whatif') && tab === 'whatif' && (
+          <WhatIfTab audit={audit} />
+        )}
         {visibleTabKeys.has('legal') && tab === 'legal' && <LegalTab audit={audit} mode={stakeholderMode} />}
         </div>
 
@@ -1238,9 +1338,10 @@ function OverviewTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: 
         <Mini label="Proxy Variables" value={String(proxies.length)}
           sub={`${proxies.filter((p: any) => p.risk_level === 'HIGH').length} HIGH risk`}
           color={proxies.length > 0 ? 'var(--accent)' : 'var(--success)'} />
-        <Mini label="Feature Laundering" value={String(laundering.filter((l: any) => l.laundering_detected).length)}
-          sub={`of ${laundering.length} tested`}
-          color={laundering.some((l: any) => l.laundering_detected) ? 'var(--danger)' : 'var(--success)'} />
+        <Mini label="Feature Laundering" 
+          value={audit.featureLaundering === null ? '...' : String(laundering.filter((l: any) => l.laundering_detected).length)}
+          sub={audit.featureLaundering === null ? 'Loading...' : `of ${laundering.length} tested`}
+          color={audit.featureLaundering === null ? 'var(--muted)' : laundering.some((l: any) => l.laundering_detected) ? 'var(--danger)' : 'var(--success)'} />
       </div>
 
       {benchmarking?.message && (
@@ -1905,7 +2006,15 @@ function buildNarrativeAssistantReply(question: string, audit: any, mode: Stakeh
   };
 }
 
-function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
+function NarrativesTab({
+  audit,
+  mode,
+  onNarrativeGenerated,
+}: {
+  audit: any;
+  mode: StakeholderMode;
+  onNarrativeGenerated?: (mode: string, narrative: string) => void;
+}) {
   const narratives = audit.narratives || {};
   const [fullNarrativeOpen, setFullNarrativeOpen] = useState(false);
   const [fullNarrativeLoading, setFullNarrativeLoading] = useState(false);
@@ -1945,11 +2054,56 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
     legal: { label: 'Legal', desc: 'Compliance assessment' },
   } as const;
 
-  const currentNarrative = narratives[mode] || '';
+  const [currentNarrative, setCurrentNarrative] = useState<string>(narratives[mode] || '');
+  const [isFetchingNarrative, setIsFetchingNarrative] = useState(false);
+  const isFetchingNarrativeRef = useRef(false);
+  const fetchedNarratives = useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    setCurrentNarrative(fetchedNarratives.current[mode] || audit.narratives?.[mode] || '');
+    // Reset the ref when mode changes so a new fetch can happen
+    isFetchingNarrativeRef.current = false;
+  }, [mode, audit.narratives]);
+
+  useEffect(() => {
+    // If we don't have the narrative for this mode, fetch it lazy
+    const alreadyHave = fetchedNarratives.current[mode] || audit.narratives?.[mode];
+    if (!alreadyHave && !isFetchingNarrativeRef.current && audit?.id && audit?.status === 'COMPLETE') {
+      isFetchingNarrativeRef.current = true;
+      setIsFetchingNarrative(true);
+      let cancelled = false;
+
+      (async () => {
+        try {
+          const data = await fetchNarrative(audit.id, mode);
+          if (!cancelled) {
+            const nar = data.narrative || 'No narrative available.';
+            fetchedNarratives.current[mode] = nar;
+            setCurrentNarrative(nar);
+            if (onNarrativeGenerated) {
+              onNarrativeGenerated(mode, nar);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to load narrative', e);
+          if (!cancelled) {
+            const errText = 'Narrative generation failed. Please try refreshing.';
+            fetchedNarratives.current[mode] = errText;
+            setCurrentNarrative(errText);
+          }
+        } finally {
+          isFetchingNarrativeRef.current = false;
+          if (!cancelled) setIsFetchingNarrative(false);
+        }
+      })();
+
+      return () => { cancelled = true; };
+    }
+  }, [mode, audit?.id, audit?.status, audit.narratives]);
+
   const chatContext = useMemo(() => buildAuditChatContext(audit), [audit]);
   const suggestedPrompts = useMemo(() => buildChatSuggestedPrompts(chatContext, mode), [chatContext, mode]);
-  const tldr = extractNarrativeTldr(currentNarrative || '', mode);
-  const hasNarratives = Object.keys(narratives).length > 0 && Object.values(narratives).some((v: any) => v && v.length > 0);
+  const tldr = extractNarrativeTldr(currentNarrative, mode);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -2082,12 +2236,22 @@ function NarrativesTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
     setComments((prev) => prev.filter((c) => c.id !== id));
   };
 
-  if (!hasNarratives) return (
+  if (isFetchingNarrative) return (
+    <div className="card text-center py-12">
+      <Loader2 size={28} className="mx-auto mb-3 animate-spin" style={{ color: 'var(--primary)' }} />
+      <div className="text-sm font-semibold mb-1" style={{ color: 'var(--fg)' }}>Generating AI Narrative...</div>
+      <div className="text-xs" style={{ color: 'var(--muted)' }}>
+        Analyzing bias metrics and synthesizing the {mode} briefing. This takes about 5-15 seconds.
+      </div>
+    </div>
+  );
+
+  if (!currentNarrative) return (
     <div className="card text-center py-12">
       <Sparkles size={28} className="mx-auto mb-3" style={{ color: 'var(--primary)', opacity: 0.5 }} />
-      <div className="text-sm font-semibold mb-1" style={{ color: 'var(--muted)' }}>No AI Narratives Generated</div>
+      <div className="text-sm font-semibold mb-1" style={{ color: 'var(--muted)' }}>No AI Narrative Available</div>
       <div className="text-xs" style={{ color: 'var(--placeholder)' }}>
-        Narratives are generated by Gemini AI during the audit pipeline. Check that your GEMINI_API_KEY is configured.
+        Narratives are generated by Gemini AI. Check that your GEMINI_API_KEY is configured.
       </div>
     </div>
   );
@@ -2727,124 +2891,142 @@ function ModelTab({ audit }: { audit: any }) {
 
   return (
     <div className="space-y-3">
-      {/* ---- Phase D: Disparity Dumbbell with toggles ---- */}
+      {/* ---- Phase D: Consolidated Controls & CSS Grid of Charts ---- */}
       {eqOddsDimensions.length > 0 && (
         <>
-          {/* Model Dimension Toggle */}
-          <div className="card" style={{ padding: 10 }}>
-            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Model dimension selector">
-              {eqOddsDimensions.map((dim) => {
-                const active = modelDimension === dim;
-                return (
-                  <button
-                    key={dim}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setModelDimension(dim)}
-                    className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                    style={{
-                      border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
-                      background: active ? 'var(--primary-dim)' : 'var(--surface)',
-                      color: active ? 'var(--primary)' : 'var(--muted)',
-                    }}
-                  >
-                    {dim.charAt(0).toUpperCase() + dim.slice(1).replace(/_/g, ' ')}
-                  </button>
-                );
-              })}
+          {/* Sticky Consolidated Control Bar */}
+          <div className="card sticky top-0 z-20 flex flex-wrap items-center justify-between gap-4 p-4 shadow-sm border-[var(--border)]" style={{ background: 'var(--surface)' }}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Dimension:</span>
+              <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Model dimension selector">
+                {eqOddsDimensions.map((dim) => {
+                  const active = modelDimension === dim;
+                  return (
+                    <button
+                      key={dim}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setModelDimension(dim)}
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer"
+                      style={{
+                        border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
+                        background: active ? 'var(--primary-dim)' : 'var(--surface-2)',
+                        color: active ? 'var(--primary)' : 'var(--muted)',
+                      }}
+                    >
+                      {dim.charAt(0).toUpperCase() + dim.slice(1).replace(/_/g, ' ')}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Metric:</span>
+              <div className="flex rounded-lg overflow-hidden border border-[var(--border)]">
+                {(['fpr', 'fnr'] as const).map((m) => {
+                  const active = modelMetric === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setModelMetric(m)}
+                      className="px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer"
+                      style={{
+                        background: active ? 'var(--primary)' : 'var(--surface)',
+                        color: active ? '#fff' : 'var(--muted)',
+                        border: 'none',
+                      }}
+                    >
+                      {m === 'fpr' ? 'False Positive Rate' : 'False Negative Rate'}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* FPR / FNR Metric Toggle */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Metric:</span>
-            {(['fpr', 'fnr'] as const).map((m) => {
-              const active = modelMetric === m;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setModelMetric(m)}
-                  className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
-                  style={{
-                    border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
-                    background: active ? 'var(--primary)' : 'var(--surface)',
-                    color: active ? '#fff' : 'var(--muted)',
-                  }}
-                >
-                  {m === 'fpr' ? 'False Positive Rate' : 'False Negative Rate'}
-                </button>
-              );
-            })}
-          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-4 animate-fade-in">
+            {/* Dumbbell Chart */}
+            <div className="chart-card">
+              <DisparityDumbbellChart
+                dimensionLabel={modelDimension.charAt(0).toUpperCase() + modelDimension.slice(1).replace(/_/g, ' ')}
+                metric={modelMetric}
+                baselineGroup={baselineGroup}
+                rows={dumbbellRows}
+              />
+            </div>
 
-          {/* Dumbbell Chart */}
-          <div className="card">
-            <DisparityDumbbellChart
-              dimensionLabel={modelDimension.charAt(0).toUpperCase() + modelDimension.slice(1).replace(/_/g, ' ')}
-              metric={modelMetric}
-              baselineGroup={baselineGroup}
-              rows={dumbbellRows}
-            />
-          </div>
-
-          {/* Phase D2: Raw Validation Table */}
-          {validationRows.length > 0 && (
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
-                FPR / FNR Validation- {modelDimension.charAt(0).toUpperCase() + modelDimension.slice(1).replace(/_/g, ' ')}
-                <span className="ml-2 text-[10px] font-normal" style={{ color: 'var(--placeholder)' }}>
-                  Baseline: {baselineGroup}
-                </span>
-              </div>
-              <div style={{ overflowX: 'auto' }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Group</th>
-                      <th>FPR</th>
-                      <th>FNR</th>
-                      <th>Precision</th>
-                      <th>Δ FPR vs Baseline</th>
-                      <th>Δ FNR vs Baseline</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {validationRows.map((row) => {
-                      const deltaColor = (d: number) => {
-                        const abs = Math.abs(d);
-                        if (abs >= 10) return 'var(--danger)';
-                        if (abs >= 5) return 'var(--status-warning)';
-                        return 'var(--muted)';
-                      };
-                      return (
-                        <tr key={row.group}>
-                          <td className="font-medium">
-                            {row.group}
-                            {row.isBaseline && (
-                              <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--primary-dim)', color: 'var(--primary)' }}>
-                                baseline
-                              </span>
-                            )}
-                          </td>
-                          <td style={{ color: row.fpr > 15 ? 'var(--danger)' : 'var(--muted)' }}>{row.fpr.toFixed(1)}%</td>
-                          <td style={{ color: row.fnr > 15 ? 'var(--accent)' : 'var(--muted)' }}>{row.fnr.toFixed(1)}%</td>
-                          <td>{row.precision.toFixed(1)}%</td>
-                          <td style={{ color: deltaColor(row.deltaFpr), fontWeight: Math.abs(row.deltaFpr) >= 5 ? 600 : 400 }}>
-                            {row.isBaseline ? '-' : `${row.deltaFpr > 0 ? '+' : ''}${row.deltaFpr.toFixed(1)} pp`}
-                          </td>
-                          <td style={{ color: deltaColor(row.deltaFnr), fontWeight: Math.abs(row.deltaFnr) >= 5 ? 600 : 400 }}>
-                            {row.isBaseline ? '-' : `${row.deltaFnr > 0 ? '+' : ''}${row.deltaFnr.toFixed(1)} pp`}
-                          </td>
+            {/* Phase D2: Raw Validation Table */}
+            {validationRows.length > 0 && (
+              <div className="chart-card flex flex-col justify-between" style={{ padding: 0, overflow: 'hidden' }}>
+                <div>
+                  <div className="px-5 py-4 text-xs font-bold uppercase tracking-wider border-b" style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}>
+                    FPR / FNR Validation - {modelDimension.charAt(0).toUpperCase() + modelDimension.slice(1).replace(/_/g, ' ')}
+                    <span className="ml-2 text-[10px] font-normal lowercase" style={{ color: 'var(--placeholder)' }}>
+                      (Baseline: {baselineGroup})
+                    </span>
+                  </div>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Group</th>
+                          <th>FPR</th>
+                          <th>FNR</th>
+                          <th>Precision</th>
+                          <th>Δ FPR</th>
+                          <th>Δ FNR</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody>
+                        {validationRows.map((row) => {
+                          const deltaColor = (d: number) => {
+                            const abs = Math.abs(d);
+                            if (abs >= 10) return 'var(--danger)';
+                            if (abs >= 5) return 'var(--status-warning)';
+                            return 'var(--muted)';
+                          };
+                          return (
+                            <tr key={row.group}>
+                              <td className="font-medium">
+                                {row.group}
+                                {row.isBaseline && (
+                                  <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--primary-dim)', color: 'var(--primary)' }}>
+                                    baseline
+                                  </span>
+                                )}
+                              </td>
+                              <td style={{ color: row.fpr > 15 ? 'var(--danger)' : 'var(--muted)' }}>{row.fpr.toFixed(1)}%</td>
+                              <td style={{ color: row.fnr > 15 ? 'var(--accent)' : 'var(--muted)' }}>{row.fnr.toFixed(1)}%</td>
+                              <td>{row.precision.toFixed(1)}%</td>
+                              <td style={{ color: deltaColor(row.deltaFpr), fontWeight: Math.abs(row.deltaFpr) >= 5 ? 600 : 400 }}>
+                                {row.isBaseline ? '-' : `${row.deltaFpr > 0 ? '+' : ''}${row.deltaFpr.toFixed(1)} pp`}
+                              </td>
+                              <td style={{ color: deltaColor(row.deltaFnr), fontWeight: Math.abs(row.deltaFnr) >= 5 ? 600 : 400 }}>
+                                {row.isBaseline ? '-' : `${row.deltaFnr > 0 ? '+' : ''}${row.deltaFnr.toFixed(1)} pp`}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Row 2: Equalized Odds Chart */}
+            {Object.keys(eqOdds).length > 0 && (
+              <EqualizedOddsChart equalizedOdds={eqOdds} />
+            )}
+
+            {/* Row 2: Predictive Parity Chart */}
+            {Object.keys(eqOdds).length > 0 && (
+              <PredictiveParityChart equalizedOdds={eqOdds} />
+            )}
+          </div>
         </>
       )}
 
@@ -3060,15 +3242,7 @@ function ModelTab({ audit }: { audit: any }) {
         );
       })}
 
-      {/* Equalized Odds Chart */}
-      {Object.keys(eqOdds).length > 0 && (
-        <EqualizedOddsChart equalizedOdds={eqOdds} />
-      )}
 
-      {/* Predictive Parity Chart */}
-      {Object.keys(eqOdds).length > 0 && (
-        <PredictiveParityChart equalizedOdds={eqOdds} />
-      )}
 
       {/* Equalized Odds - collapsible by attribute */}
       {Object.keys(eqOdds).length > 0 && (
@@ -3326,11 +3500,67 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
   );
 }
 
+function getContrastText(bgColorHexOrVar: string, isThemeDark: boolean): string {
+  const clean = bgColorHexOrVar.trim().toLowerCase();
+  
+  if (clean.includes('var(--status-critical-dim)') || clean.includes('rgba(217, 48, 37')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--status-warning-dim)') || clean.includes('rgba(176, 96, 0')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--status-pass-dim)') || clean.includes('rgba(24, 128, 56')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--warning-dim)')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--surface-2)')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  
+  if (clean.startsWith('rgba') || clean.startsWith('rgb')) {
+    const match = clean.match(/\d+/g);
+    if (match && match.length >= 3) {
+      const r = parseInt(match[0], 10);
+      const g = parseInt(match[1], 10);
+      const b = parseInt(match[2], 10);
+      let a = 1.0;
+      const matchFloat = clean.match(/[\d\.]+/g);
+      if (matchFloat && matchFloat.length >= 4) {
+        a = parseFloat(matchFloat[3]);
+      }
+      
+      const bgR = isThemeDark ? 18 : 255;
+      const bgG = isThemeDark ? 26 : 255;
+      const bgB = isThemeDark ? 42 : 255;
+      
+      const blendR = r * a + bgR * (1 - a);
+      const blendG = g * a + bgG * (1 - a);
+      const blendB = b * a + bgB * (1 - a);
+      
+      const luminance = (0.2126 * blendR + 0.7152 * blendG + 0.0722 * blendB) / 255;
+      return luminance > 0.5 ? '#111827' : '#F9FAFB';
+    }
+  }
+  
+  if (clean.startsWith('#')) {
+    const r = parseInt(clean.slice(1, 3), 16) || 0;
+    const g = parseInt(clean.slice(3, 5), 16) || 0;
+    const b = parseInt(clean.slice(5, 7), 16) || 0;
+    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    return luminance > 0.5 ? '#111827' : '#F9FAFB';
+  }
+  
+  return isThemeDark ? '#F9FAFB' : '#111827';
+}
+
 /* Collapsible Intersection group */
 function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string; items: any[] }) {
   const [open, setOpen] = useState(false);
   const criticalCount = items.filter((d: any) => d.severity === 'CRITICAL').length;
   const highCount = items.filter((d: any) => d.severity === 'HIGH').length;
+  const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
 
   return (
     <div style={{ borderBottom: '1px solid var(--border)' }}>
@@ -3346,11 +3576,11 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
         </div>
         <div className="flex items-center gap-3 text-xs">
           {criticalCount > 0 ? (
-            <span className="badge badge-critical" style={{ fontSize: '9px', padding: '1px 6px' }}>{criticalCount} CRITICAL</span>
+            <span className="badge badge-critical" style={{ fontSize: '9px', padding: '1px 6px', color: isDark ? '#F9FAFB' : '#111827' }}>{criticalCount} CRITICAL</span>
           ) : highCount > 0 ? (
-            <span className="badge badge-high" style={{ fontSize: '9px', padding: '1px 6px' }}>{highCount} HIGH</span>
+            <span className="badge badge-high" style={{ fontSize: '9px', padding: '1px 6px', color: isDark ? '#F9FAFB' : '#111827' }}>{highCount} HIGH</span>
           ) : (
-            <span className="badge badge-pass" style={{ fontSize: '9px', padding: '1px 6px' }}>PASS</span>
+            <span className="badge badge-pass" style={{ fontSize: '9px', padding: '1px 6px', color: isDark ? '#F9FAFB' : '#111827' }}>PASS</span>
           )}
         </div>
       </button>
@@ -3366,7 +3596,14 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
                   <td className="font-medium text-xs">
                     {d.group}
                     {d.low_confidence && (
-                      <span className="ml-2 px-1.5 py-0.5 rounded text-xs bg-[#2A3040] text-[#5A6478]" title={d.statistical_note}>
+                      <span 
+                        className="ml-2 px-1.5 py-0.5 rounded text-xs" 
+                        title={d.statistical_note}
+                        style={{
+                          background: isDark ? '#2A3040' : '#E9EEF6',
+                          color: isDark ? '#F9FAFB' : '#111827'
+                        }}
+                      >
                         n&lt;30
                       </span>
                     )}
@@ -3375,7 +3612,20 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
                   <td>{(d.positive_rate * 100).toFixed(1)}%</td>
                   <td style={{ color: d.di_vs_overall < 0.8 && !d.low_confidence ? 'var(--danger)' : d.di_vs_overall >= 0.8 ? 'var(--success)' : 'var(--muted)', fontWeight: 600 }}>
                     {d.di_vs_overall?.toFixed(2)}</td>
-                  <td><span className={`badge ${sevBadge(d.severity)}`}>{d.severity}</span></td>
+                  <td>
+                    <span 
+                      className={`badge ${sevBadge(d.severity)}`}
+                      style={{
+                        color: getContrastText(
+                          d.severity === 'CRITICAL' ? 'var(--status-critical-dim)' :
+                          d.severity === 'HIGH' ? 'var(--status-warning-dim)' : 'var(--status-pass-dim)',
+                          isDark
+                        )
+                      }}
+                    >
+                      {d.severity}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -3504,7 +3754,12 @@ function ExplainabilityTab({ audit }: { audit: any }) {
         <div className="px-4 py-2.5 text-xs font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}>
           Feature Laundering Detection
         </div>
-        {laundering.length === 0 ? (
+        {audit.featureLaundering === null ? (
+          <div className="px-4 py-6 text-center text-sm" style={{ color: 'var(--placeholder)' }}>
+            <Loader2 size={24} className="mx-auto mb-3 animate-spin" style={{ color: 'var(--primary)' }} />
+            Detecting proxy reconstruction via GBM...
+          </div>
+        ) : laundering.length === 0 ? (
           <div className="px-4 py-6 text-center text-sm" style={{ color: 'var(--placeholder)' }}>No laundering analysis available.</div>
         ) : (
           <table>
@@ -3637,13 +3892,78 @@ function ExplainabilityTab({ audit }: { audit: any }) {
 }
 
 /* ==================== FIXES ==================== */
-function FixesTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: StakeholderMode }) {
+function FixesTab({
+  audit,
+  stakeholderMode,
+  onAuditUpdated,
+}: {
+  audit: any;
+  stakeholderMode: StakeholderMode;
+  onAuditUpdated: (updatedAudit: any) => void;
+}) {
   const dataBias = audit.dataBias || {};
   const justifiedBias = audit.justifiedBias || {};
   const laundering = audit.featureLaundering || [];
   const proxies = audit.proxies || [];
   const profiles = audit.profiles || [];
   const biasOrigin = audit.biasOriginTracer || [];
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [selectedAttribute, setSelectedAttribute] = useState<string>('');
+  const [selectedFixIdx, setSelectedFixIdx] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (audit.protectedCols && audit.protectedCols.length > 0 && !selectedAttribute) {
+      setSelectedAttribute(audit.protectedCols[0]);
+    }
+  }, [audit.protectedCols, selectedAttribute]);
+
+  const handleRemediate = async () => {
+    setIsGenerating(true);
+    setGenerationError(null);
+    try {
+      const res = await remediateBias(audit.id);
+      if (res.success) {
+        onAuditUpdated({
+          ...audit,
+          mitigatedStoragePath: res.mitigatedStoragePath,
+          mitigatedProfiles: res.mitigatedProfiles,
+          mitigatedDataBias: res.mitigatedDataBias,
+        });
+      } else {
+        setGenerationError("Failed to generate balanced dataset.");
+      }
+    } catch (err: any) {
+      setGenerationError(err?.message || "An error occurred during dataset bias remediation.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const originalAttrData = audit.dataBias?.[selectedAttribute] || {};
+  const originalDI = originalAttrData?.metrics?.disparate_impact;
+  const originalSPD = originalAttrData?.metrics?.statistical_parity_difference;
+
+  const originalProfile = audit.profiles?.find((p: any) => p.attribute === selectedAttribute) || {};
+  const originalCounts = originalProfile?.group_counts || {};
+  const originalPcts = originalProfile?.group_percentages || {};
+  const originalLabelDist = originalProfile?.label_distribution_per_group || {};
+
+  const mitigatedAttrData = audit.mitigatedDataBias?.[selectedAttribute] || {};
+  const mitigatedDI = mitigatedAttrData?.metrics?.disparate_impact;
+  const mitigatedSPD = mitigatedAttrData?.metrics?.statistical_parity_difference;
+
+  const mitigatedProfile = audit.mitigatedProfiles?.find((p: any) => p.attribute === selectedAttribute) || {};
+  const mitigatedCounts = mitigatedProfile?.group_counts || {};
+  const mitigatedPcts = mitigatedProfile?.group_percentages || {};
+  const mitigatedLabelDist = mitigatedProfile?.label_distribution_per_group || {};
+
+  const allGroups = Array.from(new Set([
+    ...Object.keys(originalCounts),
+    ...Object.keys(mitigatedCounts)
+  ])).sort();
 
   const fixes: any[] = [];
   const improvementBySeverity: Record<string, number> = {
@@ -3757,10 +4077,222 @@ function FixesTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: Sta
     }
   });
 
+  const renderRemediationSection = () => {
+    const isMitigated = !!audit.mitigatedStoragePath;
+    
+    return (
+      <div className="card space-y-4" style={{ borderColor: isMitigated ? 'var(--primary-dim)' : 'var(--border)' }}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Scale size={15} style={{ color: 'var(--primary)' }} />
+            <span className="text-sm font-semibold">Dataset Bias Remediation</span>
+            <span className="badge badge-medium">Generative Mitigation</span>
+          </div>
+          {isMitigated && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs" style={{ color: 'var(--muted)' }}>Inspect Attribute:</span>
+              <select 
+                value={selectedAttribute} 
+                onChange={(e) => setSelectedAttribute(e.target.value)}
+                className="text-xs rounded border px-2 py-1"
+                style={{ 
+                  background: 'var(--surface-2)', 
+                  borderColor: 'var(--border)', 
+                  color: 'var(--fg)',
+                  outline: 'none'
+                }}
+              >
+                {audit.protectedCols?.map((col: string) => (
+                  <option key={col} value={col}>{col}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {!isMitigated ? (
+          <div className="space-y-3">
+            <p className="text-xs text-slate-300" style={{ color: 'var(--fg)' }}>
+              Automatically mitigate representation and label bias in the original dataset using Generative Synthetic Balancing. This process identifies demographic intersections and generates synthetic samples (with controlled Gaussian noise) for underrepresented cohorts to equalize representation and positive outcomes.
+            </p>
+            <div className="p-3 rounded-lg border space-y-2 text-xs" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
+              <div className="font-semibold" style={{ color: 'var(--primary)' }}>Generative Logic & Calibration Details:</div>
+              <ul className="list-disc list-inside space-y-1" style={{ color: 'var(--muted)' }}>
+                <li>Identifies demographic intersections (e.g. Race × Gender).</li>
+                <li>Generates synthetic rows targeting balanced cohort counts (<code style={{ color: 'var(--accent)' }}>max_count</code>).</li>
+                <li>Coerces positive/negative features using class-specific medians (with ±10% noise) and modes.</li>
+                <li>Ensures outcome labels align with the highest observed positive rate to mitigate historical bias.</li>
+              </ul>
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <button 
+                className="btn btn-outline btn-sm flex items-center gap-1.5"
+                disabled={isGenerating}
+                onClick={handleRemediate}
+                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    Generating Balanced Dataset...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={13} />
+                    Generate Balanced Dataset
+                  </>
+                )}
+              </button>
+            </div>
+            {generationError && (
+              <div className="text-xs mt-2" style={{ color: 'var(--danger)' }}>
+                {generationError}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4 p-3 rounded-lg border" style={{ background: 'rgba(6, 214, 160, 0.04)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} style={{ color: 'var(--success)' }} />
+                <div>
+                  <div className="text-xs font-semibold" style={{ color: 'var(--success)' }}>Mitigated Dataset Ready</div>
+                  <div className="text-[10px]" style={{ color: 'var(--muted)' }}>Saved as a new dataset in the cloud storage bucket.</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a 
+                  href={getDownloadMitigatedUrl(audit.id)} 
+                  className="btn btn-outline btn-sm flex items-center gap-1.5"
+                  style={{ cursor: 'pointer' }}
+                >
+                  <Download size={13} />
+                  Download Mitigated Dataset
+                </a>
+                <button 
+                  className="btn btn-outline btn-sm text-[11px] flex items-center gap-1.5"
+                  disabled={isGenerating}
+                  onClick={handleRemediate}
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  {isGenerating ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />} Re-generate
+                </button>
+              </div>
+            </div>
+            
+            {generationError && (
+              <div className="text-xs mt-2" style={{ color: 'var(--danger)' }}>
+                {generationError}
+              </div>
+            )}
+            
+            {/* Comparison panels */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Original Stats Card */}
+              <div className="card space-y-3" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
+                <div className="text-[11px] font-bold tracking-wide uppercase" style={{ color: 'var(--muted)' }}>Original Dataset</div>
+                
+                <div className="grid grid-cols-2 gap-2 border-b pb-2" style={{ borderColor: 'var(--border)' }}>
+                  <div>
+                    <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>Disparate Impact</div>
+                    <div className="text-base font-bold" style={{ color: originalDI && originalDI < 0.8 ? 'var(--danger)' : 'var(--success)' }}>
+                      {originalDI != null ? originalDI.toFixed(3) : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>Statistical Parity Diff</div>
+                    <div className="text-base font-bold" style={{ color: originalSPD && Math.abs(originalSPD) > 0.1 ? 'var(--status-warning)' : 'var(--fg)' }}>
+                      {originalSPD != null ? originalSPD.toFixed(3) : '-'}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Distribution List */}
+                <div className="space-y-2.5">
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--placeholder)' }}>Cohort Distribution:</div>
+                  {allGroups.map((group) => {
+                    const count = originalCounts[group] || 0;
+                    const pct = originalPcts[group] || 0;
+                    const posRate = originalLabelDist[group]?.positive;
+                    
+                    return (
+                      <div key={group} className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold truncate" style={{ color: 'var(--fg)' }}>{group}</span>
+                          <span style={{ color: 'var(--muted)' }}>{count.toLocaleString()} rows ({pct.toFixed(1)}%)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 rounded-full" style={{ background: 'var(--border)' }}>
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--primary)' }} />
+                          </div>
+                          <span className="text-[10px] font-mono shrink-0" style={{ color: 'var(--success)' }}>Pos Rate: {posRate != null ? `${posRate.toFixed(1)}%` : '-'}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Mitigated Stats Card */}
+              <div className="card space-y-3" style={{ background: 'var(--surface-2)', borderColor: 'var(--primary-dim)' }}>
+                <div className="text-[11px] font-bold tracking-wide uppercase" style={{ color: 'var(--primary)' }}>Mitigated Dataset (Balanced)</div>
+                
+                <div className="grid grid-cols-2 gap-2 border-b pb-2" style={{ borderColor: 'var(--border)' }}>
+                  <div>
+                    <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>Disparate Impact</div>
+                    <div className="text-base font-bold flex items-center gap-1.5" style={{ color: mitigatedDI && mitigatedDI < 0.8 ? 'var(--danger)' : 'var(--success)' }}>
+                      {mitigatedDI != null ? mitigatedDI.toFixed(3) : '-'}
+                      {originalDI != null && mitigatedDI != null && mitigatedDI > originalDI && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ color: 'var(--success)', background: 'rgba(6, 214, 160, 0.1)' }}>
+                          +{((mitigatedDI - originalDI) * 100).toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>Statistical Parity Diff</div>
+                    <div className="text-base font-bold" style={{ color: mitigatedSPD && Math.abs(mitigatedSPD) > 0.1 ? 'var(--status-warning)' : 'var(--success)' }}>
+                      {mitigatedSPD != null ? mitigatedSPD.toFixed(3) : '-'}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Distribution List */}
+                <div className="space-y-2.5">
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--placeholder)' }}>Cohort Distribution:</div>
+                  {allGroups.map((group) => {
+                    const count = mitigatedCounts[group] || 0;
+                    const pct = mitigatedPcts[group] || 0;
+                    const posRate = mitigatedLabelDist[group]?.positive;
+                    
+                    return (
+                      <div key={group} className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold truncate" style={{ color: 'var(--fg)' }}>{group}</span>
+                          <span style={{ color: 'var(--muted)' }}>{count.toLocaleString()} rows ({pct.toFixed(1)}%)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 rounded-full" style={{ background: 'var(--border)' }}>
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--primary)' }} />
+                          </div>
+                          <span className="text-[10px] font-mono shrink-0" style={{ color: 'var(--success)' }}>Pos Rate: {posRate != null ? `${posRate.toFixed(1)}%` : '-'}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
   if (fixes.length === 0) return (
     <div className="space-y-3">
       {biasOrigin.length > 0 && <BiasOriginTracerCard items={biasOrigin} />}
-      <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} />
+      {renderRemediationSection()}
+      <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} initialParetoData={audit.paretoData} />
       <div className="card flex items-center gap-3 py-8" style={{ background: 'rgba(6, 214, 160, 0.04)', borderColor: 'rgba(6, 214, 160, 0.2)' }}>
         <CheckCircle2 size={20} style={{ color: 'var(--success)' }} />
         <div className="text-sm font-medium" style={{ color: 'var(--success)' }}>No critical issues requiring fixes.</div>
@@ -3768,12 +4300,27 @@ function FixesTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: Sta
     </div>
   );
 
+  const currentFix = fixes[selectedFixIdx] || fixes[0];
+  const matchingTracer = currentFix ? biasOrigin.find((item: any) => 
+    currentFix.title.toLowerCase().includes(item.attribute.toLowerCase()) || 
+    currentFix.description.toLowerCase().includes(item.attribute.toLowerCase())
+  ) : null;
+
+  const handleCopyCode = () => {
+    const snippet = CODE_SNIPPETS[currentFix?.technique];
+    if (!snippet) return;
+    navigator.clipboard.writeText(snippet).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
   return (
     <div className="space-y-3">
-      {biasOrigin.length > 0 && <BiasOriginTracerCard items={biasOrigin} />}
+      {renderRemediationSection()}
 
       {/* Pareto Frontier */}
-      <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} />
+      <ParetoFrontier auditId={audit.id} hasModel={!audit.dataOnly} initialParetoData={audit.paretoData} />
 
       {stakeholderMode === 'legal' && (
         <div className="card" style={{ borderColor: 'var(--accent-dim)', background: 'var(--accent-dim)' }}>
@@ -3783,9 +4330,140 @@ function FixesTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: Sta
         </div>
       )}
 
-      {fixes.map((f, i) => (
-        <FixCard key={i} fix={f} />
-      ))}
+      {/* Refactored Sidebar Layout */}
+      <div className="card flex flex-col md:flex-row h-[560px] p-0 overflow-hidden border rounded-xl" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        {/* Left Sidebar */}
+        <div className="w-full md:w-72 flex flex-col border-b md:border-b-0 md:border-r border-[var(--border)] bg-[var(--surface-2)] shrink-0 overflow-y-auto">
+          <div className="p-3 border-b border-[var(--border)] text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5 bg-[var(--surface-3)]">
+            <Wrench size={13} className="text-[var(--primary)]" />
+            Remediation Menu
+          </div>
+          <div className="flex-1 divide-y divide-[var(--border)]">
+            {fixes.map((f, idx) => {
+              const active = idx === selectedFixIdx;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedFixIdx(idx)}
+                  className={`w-full text-left p-3.5 transition-all flex flex-col gap-1 focus:outline-none ${
+                    active 
+                      ? 'bg-[var(--sidebar-active-bg)] border-l-4 border-[var(--sidebar-active-border)] text-[var(--sidebar-active-text)]' 
+                      : 'hover:bg-[var(--border-light)] text-[var(--fg)]'
+                  }`}
+                  style={{ background: active ? 'var(--sidebar-active-bg)' : 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-xs font-bold leading-tight">{f.title}</span>
+                    <span className={`badge ${sevBadge(f.severity)} text-[9px] px-1.5 py-0.5 rounded uppercase shrink-0`}>
+                      {f.severity}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[var(--muted)] truncate">{f.technique}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Content Area */}
+        {currentFix ? (
+          <div className="flex-1 flex flex-col overflow-y-auto p-5 space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+              <div>
+                <h3 className="text-base font-extrabold text-[var(--fg)]">{currentFix.title}</h3>
+                <p className="text-xs text-[var(--muted)] mt-0.5">Remediation Strategy</p>
+              </div>
+              <span className={`badge ${sevBadge(currentFix.severity)}`}>
+                {currentFix.severity} Severity
+              </span>
+            </div>
+
+            {/* Description */}
+            <div className="text-xs text-[var(--fg)] leading-relaxed bg-[var(--surface-2)] p-3.5 rounded-lg border border-[var(--border)]">
+              {currentFix.description}
+            </div>
+
+            {/* KPIs Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                <span className="text-[10px] text-[var(--muted)] font-semibold uppercase block">Mitigation Technique</span>
+                <span className="text-xs font-bold text-[var(--primary)] block mt-1">{currentFix.technique}</span>
+              </div>
+              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                <span className="text-[10px] text-[var(--muted)] font-semibold uppercase block">Projected Outcome</span>
+                <span className="text-xs font-bold text-[var(--fg)] block mt-1">{currentFix.projected}</span>
+              </div>
+              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                <span className="text-[10px] text-[var(--muted)] font-semibold uppercase block">Projected Improvement</span>
+                <span className="text-xs font-bold text-[var(--success)] block mt-1">+{currentFix.projectedImprovementPct}%</span>
+              </div>
+              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                <span className="text-[10px] text-[var(--muted)] font-semibold uppercase block">Estimated Accuracy Impact</span>
+                <span className="text-xs font-bold text-[var(--accent)] block mt-1">{currentFix.accuracyImpact}</span>
+              </div>
+            </div>
+
+            {/* Warnings (Bias Origin Tracer Integration) */}
+            {matchingTracer && (
+              <div 
+                className="p-3.5 rounded-lg border flex gap-3 text-xs" 
+                style={{ 
+                  background: matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'rgba(255, 49, 95, 0.05)' : 'rgba(255, 181, 71, 0.05)',
+                  borderColor: matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'rgba(255, 49, 95, 0.2)' : 'rgba(255, 181, 71, 0.2)' 
+                }}
+              >
+                <AlertTriangle size={16} className={matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'text-[var(--danger)] shrink-0' : 'text-[var(--accent)] shrink-0'} />
+                <div>
+                  <strong className="block mb-1 font-bold" style={{ color: matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'var(--danger)' : 'var(--accent)' }}>
+                    Bias Origin Tracer Alert: {matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'Model Amplification Detected' : 'Learned from Historical Data'}
+                  </strong>
+                  <span style={{ color: 'var(--fg)' }}>{matchingTracer.summary}</span>
+                  <div className="text-[10px] text-[var(--muted)] mt-1.5 font-semibold">
+                    Original Dataset DI: {matchingTracer.dataDI} | Model Predicted DI: {matchingTracer.modelDI}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Code Snippet */}
+            {CODE_SNIPPETS[currentFix.technique] && (
+              <div className="space-y-1.5">
+                <span className="text-[10px] text-[var(--muted)] font-bold uppercase tracking-wider block">Remediation Snippet (Python)</span>
+                <div className="code-block-pro shadow-inner">
+                  <div className="code-block-pro-header flex justify-between items-center px-3 py-1.5 bg-[var(--surface-3)] border-b border-[var(--border)]">
+                    <span className="font-mono text-[10px] text-[var(--muted)]">python • {currentFix.technique}</span>
+                    <button
+                      onClick={handleCopyCode}
+                      className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--surface-3)] hover:bg-[var(--border)] border border-[var(--border)] text-[10px] font-semibold transition-colors cursor-pointer text-[var(--muted)] hover:text-[var(--fg)]"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {copied ? (
+                        <>
+                          <Check size={11} className="text-[var(--success)]" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={11} />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <pre className="p-3 overflow-x-auto font-mono text-[11px] leading-relaxed bg-[var(--code-bg)] text-[var(--code-fg)]" style={{ margin: 0 }}>
+                    <code>{highlightPython(CODE_SNIPPETS[currentFix.technique])}</code>
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-xs text-[var(--muted)]">
+            Select a technique on the left to view mitigation steps.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -3819,12 +4497,61 @@ postprocessor = ThresholdOptimizer(
 postprocessor.fit(X_val, y_val, sensitive_features=A_val)`,
 };
 
+function highlightPython(code: string) {
+  const regex = /(#[^\n]*)|("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')|(\b(?:def|class|import|from|return|as|in|for|if|else|elif|try|except|and|or|not)\b)|(\b\w+(?=\())|([=+\-*\/%<>!&|^~]+)/g;
+  
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+  let keyIdx = 0;
+  
+  while ((match = regex.exec(code)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(code.substring(lastIndex, match.index));
+    }
+    
+    if (match[1]) {
+      // Comment
+      parts.push(<span key={`c-${keyIdx++}`} className="cmt">{match[1]}</span>);
+    } else if (match[2]) {
+      // String
+      parts.push(<span key={`s-${keyIdx++}`} className="str">{match[2]}</span>);
+    } else if (match[3]) {
+      // Keyword
+      parts.push(<span key={`k-${keyIdx++}`} className="kw">{match[3]}</span>);
+    } else if (match[4]) {
+      // Function call/definition
+      parts.push(<span key={`f-${keyIdx++}`} className="fn">{match[4]}</span>);
+    } else if (match[5]) {
+      // Operator
+      parts.push(<span key={`o-${keyIdx++}`} className="op">{match[5]}</span>);
+    }
+    
+    lastIndex = regex.lastIndex;
+  }
+  
+  if (lastIndex < code.length) {
+    parts.push(code.substring(lastIndex));
+  }
+  
+  return parts;
+}
+
 function FixCard({ fix }: { fix: any }) {
   const [showCode, setShowCode] = useState(false);
+  const [copied, setCopied] = useState(false);
   const snippet = CODE_SNIPPETS[fix.technique] || null;
 
+  const handleCopy = () => {
+    if (!snippet) return;
+    navigator.clipboard.writeText(snippet).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
   return (
-    <div className="card">
+    <div className="card animate-fade-in">
       <div className="flex items-center gap-2 mb-2">
         <Wrench size={14} style={{ color: 'var(--primary)' }} />
         <span className="text-sm font-semibold">{fix.title}</span>
@@ -3850,15 +4577,30 @@ function FixCard({ fix }: { fix: any }) {
             {showCode ? 'Hide' : 'Show'} code snippet
           </button>
           {showCode && (
-            <pre className="text-xs p-3 rounded-lg overflow-x-auto" style={{
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              color: 'var(--fg)',
-              fontFamily: 'monospace',
-              lineHeight: 1.6,
-            }}>
-              {snippet}
-            </pre>
+            <div className="code-block-pro mt-2 shadow-inner">
+              <div className="code-block-pro-header">
+                <span className="font-mono text-[10px]">python • {fix.technique}</span>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--surface-3)] hover:bg-[var(--border)] border border-[var(--border)] text-[10px] font-semibold transition-colors cursor-pointer text-[var(--muted)] hover:text-[var(--fg)]"
+                >
+                  {copied ? (
+                    <>
+                      <Check size={11} className="text-[var(--success)]" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={11} />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <pre>
+                <code>{highlightPython(snippet)}</code>
+              </pre>
+            </div>
           )}
         </div>
       )}
@@ -4054,6 +4796,769 @@ function LegalTab({ audit, mode }: { audit: any; mode: StakeholderMode }) {
         createdAt={audit.createdAt}
         updatedAt={audit.updatedAt}
       />
+    </div>
+  );
+}
+
+/* ==================== WHAT-IF SIMULATOR ==================== */
+function WhatIfTab({ audit }: { audit: any }) {
+  const [features, setFeatures] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(false);
+  const [predicting, setPredicting] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState('');
+  const [history, setHistory] = useState<any[]>([]);
+  const [mirroredProfile, setMirroredProfile] = useState<Record<string, any> | null>(null);
+  const [mirroredResult, setMirroredResult] = useState<any>(null);
+  const [mirrorLoading, setMirrorLoading] = useState(false);
+  const prevResultRef = useRef<any>(null);
+
+  const loadRepresentative = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await getSampleRow(audit.id);
+      const row = data.sampleRow || {};
+      setFeatures(row);
+      setMirroredProfile(null);
+      setMirroredResult(null);
+      prevResultRef.current = null;
+    } catch (err: any) {
+      setError(err.message || 'Failed to load representative row');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadRandom = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await whatifRandomRow(audit.id);
+      const row = data.features || {};
+      setFeatures(row);
+      setMirroredProfile(null);
+      setMirroredResult(null);
+      prevResultRef.current = null;
+    } catch (err: any) {
+      setError(err.message || 'Failed to load random row');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRepresentative();
+  }, [audit.id]);
+
+  useEffect(() => {
+    if (Object.keys(features).length === 0) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        setPredicting(true);
+        setError('');
+        const res = await whatifPredict(audit.id, features);
+        if (result) {
+          prevResultRef.current = result;
+        }
+        setResult(res);
+
+        // Add to history
+        setHistory((prev) => {
+          const match = prev.find((h) => JSON.stringify(h.profile) === JSON.stringify(res.profile));
+          if (match) return prev;
+          return [res, ...prev].slice(0, 5);
+        });
+
+        // Update mirror comparison if active
+        if (mirroredProfile) {
+          const dataBias = audit.dataBias || {};
+          const protectedCols = audit.config?.protectedCols || audit.protectedCols || [];
+          const updatedMirrorProfile = { ...features };
+          protectedCols.forEach((col: string) => {
+            const biasRow: any = Object.values(dataBias).find((b: any) => b.attribute?.toLowerCase() === col.toLowerCase());
+            if (biasRow && biasRow.privileged_group) {
+              updatedMirrorProfile[col] = biasRow.privileged_group;
+            } else if (biasRow && biasRow.privilegedGroup) {
+              updatedMirrorProfile[col] = biasRow.privilegedGroup;
+            }
+          });
+          setMirroredProfile(updatedMirrorProfile);
+          try {
+            setMirrorLoading(true);
+            const mRes = await whatifPredict(audit.id, updatedMirrorProfile);
+            setMirroredResult(mRes);
+          } catch (e) {
+            console.error('Failed to update mirror', e);
+          } finally {
+            setMirrorLoading(false);
+          }
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to calculate prediction');
+      } finally {
+        setPredicting(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [features, audit.id]);
+
+  const triggerMirror = async () => {
+    if (Object.keys(features).length === 0) return;
+    try {
+      setMirrorLoading(true);
+      const dataBias = audit.dataBias || {};
+      const protectedCols = audit.config?.protectedCols || audit.protectedCols || [];
+      const mirror = { ...features };
+      protectedCols.forEach((col: string) => {
+        const biasRow: any = Object.values(dataBias).find((b: any) => b.attribute?.toLowerCase() === col.toLowerCase());
+        if (biasRow && biasRow.privileged_group) {
+          mirror[col] = biasRow.privileged_group;
+        } else if (biasRow && biasRow.privilegedGroup) {
+          mirror[col] = biasRow.privilegedGroup;
+        }
+      });
+      setMirroredProfile(mirror);
+      const res = await whatifPredict(audit.id, mirror);
+      setMirroredResult(res);
+    } catch (err: any) {
+      setError(err.message || 'Failed to calculate mirror prediction');
+    } finally {
+      setMirrorLoading(false);
+    }
+  };
+
+  const schema = audit.schema || {};
+  const columns = schema.columns || [];
+  const labelCol = audit.labelCol || audit.config?.labelCol || '';
+  const protectedCols = audit.config?.protectedCols || audit.protectedCols || [];
+  const featureColumns = columns.filter((c: any) => c.name !== labelCol);
+
+  const isNumeric = (dtype: string) => {
+    const d = String(dtype).toLowerCase();
+    return d.includes('int') || d.includes('float') || d.includes('num') || d.includes('double');
+  };
+
+  // Sort contributions
+  const contribs = Object.entries(result?.featureContributions || {}) as [string, number][];
+  const sortedContribs = [...contribs]
+    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .slice(0, 8);
+  const maxContrib = Math.max(...sortedContribs.map(([_, val]) => Math.abs(val)), 0.01);
+
+  // Intersectional check
+  const dataBias = audit.dataBias || {};
+  const intersectional = audit.intersectional || [];
+  const criticalIntersections = intersectional.filter((item: any) => {
+    const colA = item.col_a || item.colA || '';
+    const valA = item.val_a || item.valA || '';
+    const colB = item.col_b || item.colB || '';
+    const valB = item.val_b || item.valB || '';
+    const severity = item.severity || '';
+
+    return String(features[colA]) === String(valA) &&
+           String(features[colB]) === String(valB) &&
+           (severity === 'CRITICAL' || severity === 'HIGH');
+  });
+
+  return (
+    <div className="whatif-container">
+      {/* Left Panel - Dynamic Form */}
+      <div className="whatif-left">
+        <div className="whatif-section-header">Applicant Profile</div>
+        <div className="whatif-toolbar">
+          <button
+            type="button"
+            className="btn btn-outline btn-sm flex items-center gap-1.5"
+            onClick={loadRepresentative}
+            disabled={loading}
+          >
+            <RotateCcw size={13} /> Reset to Average
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm flex items-center gap-1.5"
+            onClick={loadRandom}
+            disabled={loading}
+          >
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Load Random Row
+          </button>
+        </div>
+
+        {error && (
+          <div className="card text-xs p-3 mb-2" style={{ color: 'var(--danger)', borderColor: 'rgba(255,22,93,0.2)', background: 'rgba(255,22,93,0.03)' }}>
+            {error}
+          </div>
+        )}
+
+        <div className="whatif-form-scroll card" style={{ padding: '16px' }}>
+          {loading ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 gap-2">
+              <Loader2 className="animate-spin" size={24} style={{ color: 'var(--primary)' }} />
+              <span className="text-xs text-muted">Loading schema attributes...</span>
+            </div>
+          ) : featureColumns.length === 0 ? (
+            <div className="whatif-empty-state">No schema columns available.</div>
+          ) : (
+            featureColumns.map((c: any) => {
+              const isProtected = protectedCols.includes(c.name);
+              const uniqueCount = c.unique_count ?? c.uniqueCount ?? 0;
+              const sampleValues = c.sample_values ?? c.sampleValues ?? [];
+
+              return (
+                <div
+                  key={c.name}
+                  className={`whatif-field ${isProtected ? 'whatif-field-protected' : ''}`}
+                >
+                  <label className="whatif-field-label">
+                    <span>{c.name}</span>
+                    {isProtected && (
+                      <span title="Protected Attribute under assessment">
+                        <AlertTriangle
+                          size={12}
+                          className="whatif-protected-icon"
+                        />
+                      </span>
+                    )}
+                  </label>
+                  {isNumeric(c.dtype) ? (
+                    <input
+                      type="number"
+                      value={features[c.name] ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? '' : Number(e.target.value);
+                        setFeatures((prev) => ({ ...prev, [c.name]: val }));
+                      }}
+                    />
+                  ) : uniqueCount <= 10 ? (
+                    <select
+                      value={features[c.name] ?? ''}
+                      onChange={(e) => {
+                        setFeatures((prev) => ({ ...prev, [c.name]: e.target.value }));
+                      }}
+                    >
+                      <option value="">Select...</option>
+                      {Array.from(new Set([...sampleValues, features[c.name]].filter(Boolean))).map((v: any) => (
+                        <option key={v} value={v}>{String(v)}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={features[c.name] ?? ''}
+                      onChange={(e) => {
+                        setFeatures((prev) => ({ ...prev, [c.name]: e.target.value }));
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Right Panel - Result Cards */}
+      <div className="whatif-right">
+        {/* Card 1: Prediction Result */}
+        <div className={`whatif-prediction-card ${result?.decision === 'APPROVED' ? 'approved' : 'rejected'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="whatif-section-header" style={{ marginBottom: 0 }}>Prediction Result</span>
+            {predicting && <Loader2 className="animate-spin" size={16} style={{ color: 'var(--primary)' }} />}
+          </div>
+          {loading ? (
+            <div className="py-6 flex justify-center"><Loader2 className="animate-spin" size={20} /></div>
+          ) : !result ? (
+            <div className="whatif-empty-state">Construct profile to see prediction</div>
+          ) : (
+            <>
+              <div className={`whatif-prediction-label ${result.decision === 'APPROVED' ? 'approved' : 'rejected'}`}>
+                {result.decision}
+              </div>
+              {result.confidence != null ? (
+                <div className="whatif-confidence">
+                  Confidence: {(result.confidence * 100).toFixed(1)}%
+                </div>
+              ) : (
+                <div className="whatif-confidence">
+                  Decision probability score: {result.rawScore?.toFixed(4)} (Threshold: {result.threshold})
+                </div>
+              )}
+
+              {history.length > 0 && (
+                <div className="whatif-history">
+                  <span className="whatif-history-label">History:</span>
+                  {history.map((h, index) => (
+                    <div
+                      key={index}
+                      className={`whatif-history-dot ${h.decision === 'APPROVED' ? 'approved' : 'rejected'}`}
+                      title={`Score: ${h.rawScore} - Click to load`}
+                      onClick={() => {
+                        setFeatures(h.profile);
+                        setMirroredProfile(null);
+                        setMirroredResult(null);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Card 2: Feature Influence */}
+        <div className="whatif-contrib-card">
+          <div className="whatif-section-header">Feature Influence</div>
+          {loading ? (
+            <div className="py-6 flex justify-center"><Loader2 className="animate-spin" size={20} /></div>
+          ) : sortedContribs.length === 0 ? (
+            <div className="whatif-empty-state">No contribution statistics available.</div>
+          ) : (
+            <div className="space-y-3">
+              {sortedContribs.map(([name, val]) => {
+                const isPos = val > 0;
+                const pct = maxContrib > 0 ? (Math.abs(val) / maxContrib) * 100 : 0;
+                const valStr = isPos ? `+${val.toFixed(4)}` : val.toFixed(4);
+
+                const prevVal = prevResultRef.current?.featureContributions?.[name];
+                const hasPrev = prevVal !== undefined && prevVal !== null;
+                const prevIsPos = prevVal > 0;
+                const prevPct = hasPrev && maxContrib > 0 ? (Math.abs(prevVal) / maxContrib) * 100 : 0;
+
+                return (
+                  <div key={name} className="whatif-contrib-row">
+                    <div className="whatif-contrib-name" title={name}>{name}</div>
+                    <div className="whatif-contrib-track" style={{ position: 'relative' }}>
+                      {/* Ghost bar (underneath, absolutely positioned) */}
+                      {hasPrev && (
+                        <div
+                          className={`whatif-contrib-bar ${prevIsPos ? 'positive' : 'negative'}`}
+                          style={{
+                            width: `${prevPct}%`,
+                            opacity: 0.22,
+                            position: 'absolute',
+                            top: 0,
+                            zIndex: 1,
+                            pointerEvents: 'none',
+                          }}
+                          title={`Previous value: ${prevVal.toFixed(4)}`}
+                        />
+                      )}
+                      {/* Solid bar (current value, relatively positioned to layer on top) */}
+                      <div
+                        className={`whatif-contrib-bar ${isPos ? 'positive' : 'negative'}`}
+                        style={{ width: `${pct}%`, position: 'relative', zIndex: 2 }}
+                      />
+                    </div>
+                    <div className={`whatif-contrib-value ${isPos ? 'positive' : 'negative'}`}>
+                      {valStr}
+                    </div>
+                  </div>
+                );
+              })}
+              {prevResultRef.current && (
+                <div className="text-[10px] text-center mt-2" style={{ color: 'var(--placeholder)' }}>
+                  <span className="inline-block w-2.5 h-1.5 rounded mr-1" style={{ background: 'color-mix(in srgb, var(--muted) 35%, transparent)' }} />
+                  Ghost = previous value, Solid = current value
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Card 3: Fairness Implication */}
+        <div className="whatif-fairness-card">
+          <div className="whatif-section-header">Fairness & Demographic Insights</div>
+          
+          {protectedCols.length === 0 ? (
+            <div className="whatif-empty-state">No protected attributes configured.</div>
+          ) : (
+            <div className="space-y-3">
+              {protectedCols.map((col: string) => {
+                const currentVal = features[col];
+                const biasRow: any = Object.values(dataBias).find((b: any) => b.attribute?.toLowerCase() === col.toLowerCase());
+                if (!biasRow) return null;
+
+                const privGroup = biasRow.privileged_group || biasRow.privilegedGroup;
+                const isPrivileged = String(currentVal) === String(privGroup);
+                const positiveRate = isPrivileged 
+                  ? (biasRow.metrics?.positive_rate_privileged ?? biasRow.metrics?.positiveRatePrivileged)
+                  : (biasRow.metrics?.positive_rate_unprivileged ?? biasRow.metrics?.positiveRateUnprivileged);
+                const disparateImpact = biasRow.metrics?.disparate_impact ?? biasRow.metrics?.disparateImpact;
+
+                return (
+                  <div key={col} className="whatif-fairness-group">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-semibold uppercase">{col} ({currentVal || 'N/A'})</span>
+                      <span className={`badge ${isPrivileged ? 'badge-pass' : 'badge-neutral'}`}>
+                        {isPrivileged ? 'Privileged Group' : 'Unprivileged Group'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span style={{ color: 'var(--muted)' }}>Historical Approval:</span>{' '}
+                        <strong>{positiveRate != null ? `${(positiveRate * 100).toFixed(1)}%` : 'N/A'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--muted)' }}>DI Ratio:</span>{' '}
+                        <strong style={{ color: biasRow.verdict === 'FAIL' ? 'var(--danger)' : 'var(--success)' }}>
+                          {disparateImpact != null ? disparateImpact.toFixed(2) : 'N/A'}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {criticalIntersections.map((item: any, idx: number) => {
+                const colA = item.col_a || item.colA;
+                const colB = item.col_b || item.colB;
+                const valA = item.val_a || item.valA;
+                const valB = item.val_b || item.valB;
+                const di = item.di_vs_overall ?? item.diVsOverall;
+                return (
+                  <div key={idx} className="whatif-fairness-group critical flex items-start gap-2">
+                    <AlertTriangle size={14} className="text-red-500 shrink-0 mt-0.5" style={{ color: 'var(--danger)' }} />
+                    <div className="text-xs">
+                      <strong>Intersectional Risk Alert:</strong> Profile matches intersectional group{' '}
+                      <span className="font-semibold">{valA} ({colA})</span> &{' '}
+                      <span className="font-semibold">{valB} ({colB})</span> which has a critical bias rating{' '}
+                      (DI: {di != null ? di.toFixed(2) : 'N/A'}).
+                    </div>
+                  </div>
+                );
+              })}
+
+              <button
+                type="button"
+                className="btn btn-outline btn-sm w-full mt-2"
+                onClick={triggerMirror}
+                disabled={mirrorLoading || Object.keys(features).length === 0}
+              >
+                {mirrorLoading ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" /> Calculating Mirror...
+                  </>
+                ) : (
+                  'Mirror to Privileged Group'
+                )}
+              </button>
+
+              {mirroredResult && (
+                <div className="whatif-mirror-grid">
+                  <div className="whatif-mirror-cell">
+                    <div className="text-[10px] font-bold uppercase text-muted mb-1" style={{ color: 'var(--muted)' }}>Current Profile</div>
+                    <div className={`whatif-prediction-label ${result?.decision === 'APPROVED' ? 'approved' : 'rejected'}`}>
+                      {result?.decision || 'REJECTED'}
+                    </div>
+                    <div className="text-[11px] mt-1" style={{ color: 'var(--placeholder)' }}>
+                      Score: {result?.rawScore?.toFixed(4)}
+                    </div>
+                  </div>
+                  <div className="whatif-mirror-cell">
+                    <div className="text-[10px] font-bold uppercase text-muted mb-1" style={{ color: 'var(--muted)' }}>Privileged Mirror</div>
+                    <div className={`whatif-prediction-label ${mirroredResult.decision === 'APPROVED' ? 'approved' : 'rejected'}`}>
+                      {mirroredResult.decision}
+                    </div>
+                    <div className="text-[11px] mt-1" style={{ color: 'var(--placeholder)' }}>
+                      Score: {mirroredResult.rawScore?.toFixed(4)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ==================== CAUSAL FAIRNESS ==================== */
+function CausalTab({ audit }: { audit: any }) {
+  const [data, setData] = useState<any>(audit.causalFairness || null);
+  const [loading, setLoading] = useState(false);
+  const [recomputing, setRecomputing] = useState(false);
+  const [error, setError] = useState('');
+  const [selectedAttribute, setSelectedAttribute] = useState('');
+
+  async function loadCausal(force = false) {
+    try {
+      if (force) {
+        setRecomputing(true);
+      } else {
+        setLoading(true);
+      }
+      setError('');
+      const res = await getCausalAnalysis(audit.id, force);
+      setData(res);
+      
+      const attrs = Object.keys(res.per_attribute || {});
+      if (attrs.length > 0) {
+        if (!selectedAttribute || force || !attrs.includes(selectedAttribute)) {
+          setSelectedAttribute(attrs[0]);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Causal analysis execution failed');
+    } finally {
+      setLoading(false);
+      setRecomputing(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!data) {
+      loadCausal(false);
+    } else {
+      const attrs = Object.keys(data.per_attribute || {});
+      if (attrs.length > 0 && !selectedAttribute) {
+        setSelectedAttribute(attrs[0]);
+      }
+    }
+  }, [audit.id]);
+
+  const protectedCols = audit.config?.protectedCols || audit.protectedCols || [];
+  const labelCol = audit.labelCol || audit.config?.labelCol || '';
+
+  if (loading) {
+    return (
+      <div className="card flex flex-col items-center justify-center p-12 gap-3 min-h-[400px]">
+        <Loader2 className="animate-spin" size={32} style={{ color: 'var(--primary)' }} />
+        <div className="text-sm font-semibold">Running Causal Inference Model...</div>
+        <div className="text-xs text-muted max-w-sm text-center">
+          Building causal DAG, querying Gemini, and running DoWhy path estimation on-demand. This may take 10-15 seconds.
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="card flex flex-col items-center justify-center p-8 text-center min-h-[300px]">
+        <XCircle size={40} style={{ color: 'var(--danger)', marginBottom: 12 }} />
+        <h3 className="text-base font-semibold mb-1">Causal Inference Failed</h3>
+        <p className="text-sm text-muted max-w-md">{error || 'Unable to retrieve causal graph findings.'}</p>
+        <button
+          className="btn btn-outline btn-sm mt-4"
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const selectedRes = data.per_attribute?.[selectedAttribute];
+  const allAttributes = Object.keys(data.per_attribute || {});
+  
+  // Build chart data
+  const chartData = allAttributes.map((attr) => {
+    const res = data.per_attribute[attr];
+    if (res?.error) return null;
+    return {
+      name: attr,
+      Direct: Math.abs(res.direct_effect || 0),
+      Indirect: Math.abs(res.indirect_effect || 0),
+    };
+  }).filter(Boolean);
+
+  const getDiscBadge = (type: string) => {
+    switch (type) {
+      case 'DIRECT_DISCRIMINATION':
+        return <span className="badge badge-critical">Direct Discrimination (High Risk)</span>;
+      case 'INDIRECT_DISCRIMINATION':
+        return <span className="badge badge-medium">Indirect Discrimination (Medium Risk)</span>;
+      case 'MIXED_DISCRIMINATION':
+        return <span className="badge badge-critical">Mixed Discrimination (High Risk)</span>;
+      case 'NO_CAUSAL_EFFECT':
+        return <span className="badge badge-pass">No Causal Disparity (Low Risk)</span>;
+      default:
+        return <span className="badge badge-neutral">Unknown Status</span>;
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6 w-full animate-fade-in" style={{ animation: 'fade-in 0.3s ease-out' }}>
+      {/* Top Row: Left (Decomposition Chart), Right (Estimation details & assessment) */}
+      <div className="flex flex-wrap gap-6 w-full">
+        {/* Left Column: Causal Effect Decomposition */}
+        <div style={{ flex: '1 1 450px', minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="card" style={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div className="whatif-section-header">Causal Effect Decomposition</div>
+            {chartData.length === 0 ? (
+              <div className="py-8 text-center text-xs text-muted flex-1 flex items-center justify-center">No estimation metrics computed.</div>
+            ) : (
+              <div className="w-full flex-1 min-h-[200px] mt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartData}
+                    layout="vertical"
+                    margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+                    <XAxis type="number" stroke="var(--muted)" fontSize={10} />
+                    <YAxis type="category" dataKey="name" stroke="var(--muted)" fontSize={10} width={80} />
+                    <Tooltip
+                      contentStyle={{ background: 'var(--surface)', borderColor: 'var(--border)', borderRadius: '8px' }}
+                      labelStyle={{ color: 'var(--fg)', fontWeight: 600, fontSize: 11 }}
+                      itemStyle={{ fontSize: 11 }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 10 }} />
+                    <Bar dataKey="Direct" name="Direct Causal Effect" stackId="a" fill="#34A853" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="Indirect" name="Indirect Causal Effect" stackId="a" fill="#FBBC05" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Attribute Selector & Details / Assessment */}
+        <div style={{ flex: '1 1 450px', minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Selector & Recalculate */}
+          <div className="flex items-center justify-between flex-wrap gap-3 w-full">
+            <div className="flex gap-1.5 flex-wrap">
+              {allAttributes.map((attr) => (
+                <button
+                  key={attr}
+                  type="button"
+                  className={`btn btn-sm ${selectedAttribute === attr ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setSelectedAttribute(attr)}
+                >
+                  {attr}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              type="button"
+              className="btn btn-outline btn-sm flex items-center gap-1.5 ml-auto"
+              disabled={recomputing || loading}
+              onClick={() => loadCausal(true)}
+            >
+              {recomputing ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" />
+                  Recalculating...
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={13} />
+                  Force Recalculate
+                </>
+              )}
+            </button>
+          </div>
+
+          {selectedRes ? (
+            <div className="space-y-3">
+              {/* Implication Details */}
+              {selectedRes.error ? (
+                <div className="card text-xs p-4" style={{ borderColor: 'rgba(255,22,93,0.3)', background: 'rgba(255,22,93,0.03)' }}>
+                  <div className="font-semibold text-red-500 mb-1">Estimation Error</div>
+                  <div style={{ color: 'var(--muted)' }}>{selectedRes.error}</div>
+                  <div className="mt-2 text-[10px] text-muted italic">{selectedRes.fallback_note}</div>
+                </div>
+              ) : (
+                <>
+                  {/* Implication Card */}
+                  <div className="card space-y-2" style={{ padding: '20px' }}>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="whatif-section-header" style={{ marginBottom: 0 }}>Causal Assessment</span>
+                      {getDiscBadge(selectedRes.discrimination_type)}
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-3 text-center py-2.5 my-1 rounded-xl" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                      <div>
+                        <div className="text-[10px] uppercase text-muted font-bold">Total Effect</div>
+                        <div className="text-base font-extrabold">{selectedRes.total_causal_effect?.toFixed(4)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase text-muted font-bold">Direct Effect</div>
+                        <div className="text-base font-extrabold text-green-600" style={{ color: '#34A853' }}>
+                          {selectedRes.direct_effect?.toFixed(4)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase text-muted font-bold">Indirect Effect</div>
+                        <div className="text-base font-extrabold text-yellow-600" style={{ color: '#FBBC05' }}>
+                          {selectedRes.indirect_effect?.toFixed(4)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-xs pt-1">
+                      <strong>Legal Standing:</strong>{' '}
+                      <span style={{ color: 'var(--fg)' }}>{selectedRes.legal_implication}</span>
+                    </div>
+                  </div>
+
+                  {/* Intervention Card */}
+                  <div className="card" style={{ padding: '16px', borderColor: 'rgba(6, 214, 160, 0.2)', background: 'rgba(6, 214, 160, 0.03)' }}>
+                    <div className="flex items-start gap-2.5 text-xs">
+                      <Shield size={16} className="text-emerald-500 shrink-0 mt-0.5" style={{ color: 'var(--success)' }} />
+                      <div>
+                        <strong className="text-emerald-600 block mb-0.5" style={{ color: 'var(--success)' }}>Recommended Causal Intervention</strong>
+                        <span style={{ color: 'var(--fg)' }}>{selectedRes.recommended_intervention}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Paths traced */}
+                  {((selectedRes.direct_paths?.length || 0) > 0 || (selectedRes.indirect_paths?.length || 0) > 0) && (
+                    <div className="card space-y-2.5" style={{ padding: '16px' }}>
+                      <div className="whatif-section-header" style={{ marginBottom: 0 }}>Causal Pathways Traced</div>
+                      <div className="space-y-2 text-xs">
+                        {selectedRes.direct_paths?.length > 0 && (
+                          <div>
+                            <span className="font-semibold block text-[11px] text-muted">Direct Paths (Direct Discrimination risk):</span>
+                            <div className="font-mono bg-gray-50 dark:bg-black/20 p-1.5 rounded mt-1 overflow-x-auto" style={{ background: 'var(--surface-2)' }}>
+                              {selectedRes.direct_paths.map((p: string, idx: number) => (
+                                <div key={idx}>{p}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {selectedRes.indirect_paths?.length > 0 && (
+                          <div>
+                            <span className="font-semibold block text-[11px] text-muted">Indirect Paths (Indirect/Systemic Discrimination risk):</span>
+                            <div className="font-mono bg-gray-50 dark:bg-black/20 p-1.5 rounded mt-1 overflow-x-auto" style={{ background: 'var(--surface-2)' }}>
+                              {selectedRes.indirect_paths.map((p: string, idx: number) => (
+                                <div key={idx}>{p}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="card py-8 text-center text-xs text-muted">Select an attribute to display detail analysis.</div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Row: Graph Visualization */}
+      <div className="w-full flex flex-col gap-3">
+        <div className="whatif-section-header" style={{ marginBottom: 0 }}>Causal Graph (DAG)</div>
+        <div className="card flex flex-col w-full" style={{ padding: '24px' }}>
+          <CausalGraph
+            dotString={data.causal_graph_dot}
+            protectedCols={protectedCols}
+            mediators={selectedRes?.mediators || []}
+            labelCol={labelCol}
+          />
+          <div className="text-[11px] text-muted mt-3">
+            * The Directed Acyclic Graph represents structural causal assumptions proposed by Gemini. Path effects are estimated using linear mediation models in DoWhy.
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

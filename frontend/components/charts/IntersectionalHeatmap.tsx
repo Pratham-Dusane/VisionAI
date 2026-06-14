@@ -3,6 +3,61 @@
 import { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 
+export function getContrastText(bgColorHexOrVar: string, isThemeDark: boolean): string {
+  const clean = bgColorHexOrVar.trim().toLowerCase();
+  
+  if (clean.includes('var(--status-critical-dim)') || clean.includes('rgba(217, 48, 37')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--status-warning-dim)') || clean.includes('rgba(176, 96, 0')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--status-pass-dim)') || clean.includes('rgba(24, 128, 56')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--warning-dim)')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  if (clean.includes('var(--surface-2)')) {
+    return isThemeDark ? '#F9FAFB' : '#111827';
+  }
+  
+  if (clean.startsWith('rgba') || clean.startsWith('rgb')) {
+    const match = clean.match(/\d+/g);
+    if (match && match.length >= 3) {
+      const r = parseInt(match[0], 10);
+      const g = parseInt(match[1], 10);
+      const b = parseInt(match[2], 10);
+      let a = 1.0;
+      const matchFloat = clean.match(/[\d\.]+/g);
+      if (matchFloat && matchFloat.length >= 4) {
+        a = parseFloat(matchFloat[3]);
+      }
+      
+      const bgR = isThemeDark ? 18 : 255;
+      const bgG = isThemeDark ? 26 : 255;
+      const bgB = isThemeDark ? 42 : 255;
+      
+      const blendR = r * a + bgR * (1 - a);
+      const blendG = g * a + bgG * (1 - a);
+      const blendB = b * a + bgB * (1 - a);
+      
+      const luminance = (0.2126 * blendR + 0.7152 * blendG + 0.0722 * blendB) / 255;
+      return luminance > 0.5 ? '#111827' : '#F9FAFB';
+    }
+  }
+  
+  if (clean.startsWith('#')) {
+    const r = parseInt(clean.slice(1, 3), 16) || 0;
+    const g = parseInt(clean.slice(3, 5), 16) || 0;
+    const b = parseInt(clean.slice(5, 7), 16) || 0;
+    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    return luminance > 0.5 ? '#111827' : '#F9FAFB';
+  }
+  
+  return isThemeDark ? '#F9FAFB' : '#111827';
+}
+
 interface IntersectionalHeatmapProps {
   data: Array<{
     group: string;
@@ -21,6 +76,7 @@ interface IntersectionalHeatmapProps {
 
 export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedPair, setSelectedPair] = useState<string>('');
   const [selectedCell, setSelectedCell] = useState<any>(null);
@@ -91,7 +147,29 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
       return 0.38 + Math.min(Math.abs(1 - di), 0.45) * 0.85;
     };
 
-    // Column labels (top)
+    const bgR = isDark ? 18 : 255;
+    const bgG = isDark ? 26 : 255;
+    const bgB = isDark ? 42 : 255;
+
+    const getBlendedCellBg = (hexColor: string, di: number | null) => {
+      if (di === null) return isDark ? '#121a2a' : '#FFFFFF';
+      const r = parseInt(hexColor.slice(1,3), 16) || 0;
+      const g = parseInt(hexColor.slice(3,5), 16) || 0;
+      const b = parseInt(hexColor.slice(5,7), 16) || 0;
+      const alpha = opacityScale(di);
+      const blendR = r * alpha + bgR * (1 - alpha);
+      const blendG = g * alpha + bgG * (1 - alpha);
+      const blendB = b * alpha + bgB * (1 - alpha);
+      const toHex = (c: number) => Math.round(Math.max(0, Math.min(255, c))).toString(16).padStart(2, '0');
+      return `#${toHex(blendR)}${toHex(blendG)}${toHex(blendB)}`;
+    };
+
+    const getContrastColor = (hexColor: string, di: number | null) => {
+      const blendedBg = getBlendedCellBg(hexColor, di);
+      return getContrastText(blendedBg, isDark);
+    };
+
+    // Axis labels (top)
     svg.append('g')
       .selectAll('text')
       .data(colValues)
@@ -147,12 +225,13 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
           .attr('stroke-opacity', 0.45);
 
         // DI value text
+        const cellTextFill = getContrastColor(colorScale(di), di);
         cell.append('text')
           .attr('x', x + cellSize / 2)
           .attr('y', y + cellSize / 2 + 1)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')
-          .attr('fill', di !== null ? 'var(--fg)' : 'var(--placeholder)')
+          .attr('fill', cellTextFill)
           .attr('font-size', 13)
           .attr('font-weight', 700)
           .text(di !== null ? di.toFixed(2) : '-');
@@ -163,7 +242,7 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
             .attr('x', x + cellSize / 2)
             .attr('y', y + cellSize / 2 + 14)
             .attr('text-anchor', 'middle')
-            .attr('fill', 'var(--placeholder)')
+            .attr('fill', cellTextFill)
             .attr('font-size', 8)
             .text(`n=${entry.sample_size}`);
         }
@@ -337,7 +416,15 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--muted)' }}>Severity</span>
                   <span className={`badge ${selectedCell.severity === 'CRITICAL' ? 'badge-critical' : selectedCell.severity === 'HIGH' ? 'badge-high' : 'badge-pass'}`}
-                    style={{ fontSize: 9, padding: '1px 6px' }}>
+                    style={{ 
+                      fontSize: 9, 
+                      padding: '1px 6px',
+                      color: getContrastText(
+                        selectedCell.severity === 'CRITICAL' ? 'var(--status-critical-dim)' :
+                        selectedCell.severity === 'HIGH' ? 'var(--status-warning-dim)' : 'var(--status-pass-dim)',
+                        isDark
+                      )
+                    }}>
                     {selectedCell.severity}
                   </span>
                 </div>
@@ -347,7 +434,7 @@ export default function IntersectionalHeatmap({ data }: IntersectionalHeatmapPro
                     style={{
                       background: 'color-mix(in srgb, var(--warning-dim) 72%, var(--surface))',
                       border: '1px solid color-mix(in srgb, var(--warning) 36%, transparent)',
-                      color: 'var(--warning)',
+                      color: getContrastText('var(--warning-dim)', isDark),
                     }}
                   >
                     {selectedCell.statistical_note || 'Low confidence estimate (sample size under 30).'}

@@ -134,3 +134,36 @@ def get_cached_narrative_sync(audit_id: str, stakeholder_type: str) -> Optional[
     return loop.run_until_complete(
         get_cached_narrative(audit_id, stakeholder_type)
     )
+
+
+async def generate_single_narrative_async(
+    audit_id: str,
+    audit_results: dict,
+    domain: str,
+    stakeholder_type: str,
+) -> str:
+    """
+    Generate a single stakeholder narrative on demand and cache it asynchronously.
+    Used for lazy-loading narratives when user opens the AI Narratives tab.
+    
+    Args:
+        audit_id: Firestore audit document ID
+        audit_results: Full audit results dictionary
+        domain: Application domain
+        stakeholder_type: One of "technical", "executive", "legal"
+    
+    Returns:
+        Generated narrative text
+    """
+    # Check cache first (in case another request already generated it)
+    cached = await get_cached_narrative(audit_id, stakeholder_type)
+    if cached:
+        return cached
+    
+    # Generate new narrative
+    narrative = await generate_audit_narrative(audit_results, domain, stakeholder_type)
+    
+    # Cache in Firestore
+    await cache_narrative(audit_id, stakeholder_type, narrative)
+    
+    return narrative

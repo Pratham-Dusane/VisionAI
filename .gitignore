@@ -1,4 +1,6 @@
 .agent/
+.venv/
+node_modules/
 __pycache__/
 *.py[cod]
 *.csv
@@ -8,3 +10,5 @@ uiuxplan.md
 !**/.env.example
 !**/.env.local.example
 **/serviceAccountKey.json
+backend/temp_uploads/
+*.joblib
