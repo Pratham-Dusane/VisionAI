@@ -30,3 +30,4 @@ if (hasConfig) {
 }
 
 export { auth, db, storage, googleProvider };
+export const firebaseStorageBucket = firebaseConfig.storageBucket || '';

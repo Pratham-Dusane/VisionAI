@@ -91,7 +91,10 @@ def download_from_storage(storage_path: str) -> Path:
     blob = bucket.blob(object_path)
 
     if not blob.exists():
-        raise FileNotFoundError(f"File not found in storage: {storage_path}")
+        # Keep the failure explicit so cross-environment path issues are easier to diagnose.
+        raise FileNotFoundError(
+            f"File not found in storage: {storage_path} (bucket={bucket.name}, object={object_path})"
+        )
 
     ext = Path(object_path).suffix
     with tempfile.NamedTemporaryFile(delete=False, suffix=ext, dir=TEMP_UPLOAD_DIR) as tmp:

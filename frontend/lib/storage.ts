@@ -1,5 +1,5 @@
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from './firebase';
+import { ref, uploadBytesResumable } from 'firebase/storage';
+import { storage, firebaseStorageBucket } from './firebase';
 
 // Get storage instance
 function getStorageInstance() {
@@ -18,9 +18,13 @@ export interface UploadProgress {
 
 type ProgressCallback = (progress: UploadProgress) => void;
 
+function toStorageUri(storagePath: string) {
+  return firebaseStorageBucket ? `gs://${firebaseStorageBucket}/${storagePath}` : storagePath;
+}
+
 /**
  * Upload a dataset file to Firebase Storage.
- * Returns the storage path (used by backend to download the file).
+ * Returns a portable GCS URI (used by backend to download the file).
  */
 export async function uploadDatasetFile(
   file: File,
@@ -60,9 +64,9 @@ export async function uploadDatasetFile(
         onProgress?.({
           progress: 100,
           state: 'complete',
-          storagePath,
+          storagePath: toStorageUri(storagePath),
         });
-        resolve(storagePath);
+        resolve(toStorageUri(storagePath));
       }
     );
   });
@@ -109,9 +113,9 @@ export async function uploadModelFile(
         onProgress?.({
           progress: 100,
           state: 'complete',
-          storagePath,
+          storagePath: toStorageUri(storagePath),
         });
-        resolve(storagePath);
+        resolve(toStorageUri(storagePath));
       }
     );
   });

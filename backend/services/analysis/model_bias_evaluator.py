@@ -84,17 +84,21 @@ def ensure_demo_wrappers_registered():
         setattr(main_mod, "QuantizedModelWrapper", QuantizedModelWrapper)
 
     # Scikit-learn loss function namespace redirection (compatibility shim)
-    # Redirects top-level '_loss' unpickling requests to 'sklearn._loss'
+    # Redirects top-level '_loss' unpickling requests to 'sklearn._loss._loss'
     try:
-        import sklearn._loss as sklearn_loss
-        sys.modules["_loss"] = sklearn_loss
-        
-        # Also redirect _loss.link if present
+        import sklearn._loss._loss as sklearn_loss_loss
+        sys.modules["_loss"] = sklearn_loss_loss
+    except ImportError:
         try:
-            import sklearn._loss.link as sklearn_loss_link
-            sys.modules["_loss.link"] = sklearn_loss_link
+            import sklearn._loss as sklearn_loss
+            sys.modules["_loss"] = sklearn_loss
         except ImportError:
             pass
+
+    # Also redirect _loss.link if present
+    try:
+        import sklearn._loss.link as sklearn_loss_link
+        sys.modules["_loss.link"] = sklearn_loss_link
     except ImportError:
         pass
 
