@@ -66,42 +66,8 @@ def _load_model(local_path: Path):
     ext = local_path.suffix.lower()
 
     if ext in (".pkl", ".joblib"):
-        # Inject wrapper classes for demo models
-        import types
-        main_mod = sys.modules.get("__main__")
-        if main_mod is None:
-            main_mod = types.ModuleType("__main__")
-            sys.modules["__main__"] = main_mod
-
-        # BiasedFineTunedModel class for demo
-        if not hasattr(main_mod, "BiasedFineTunedModel"):
-            class BiasedFineTunedModel:
-                def __init__(self, base_model=None, bias_weights=None, predictions=None, probabilities=None):
-                    self.base_model = base_model
-                    self.bias_weights = bias_weights or {}
-                    self.predictions = predictions
-                    self.probabilities = probabilities
-                def predict(self, X):
-                    import numpy as np
-                    if self.predictions is not None:
-                        if hasattr(X, "index"):
-                            return np.array([self.predictions[i] if i < len(self.predictions) else 0 for i in X.index])
-                        return np.array(self.predictions[:len(X)])
-                    if self.base_model is not None:
-                        return self.base_model.predict(X)
-                    return [0] * len(X)
-                def predict_proba(self, X):
-                    import numpy as np
-                    if self.probabilities is not None:
-                        if hasattr(X, "index"):
-                            default_prob = [0.5, 0.5]
-                            return np.array([self.probabilities[i] if i < len(self.probabilities) else default_prob for i in X.index])
-                        return np.array(self.probabilities[:len(X)])
-                    if self.base_model is not None and hasattr(self.base_model, "predict_proba"):
-                        return self.base_model.predict_proba(X)
-                    return [[0.5, 0.5]] * len(X)
-            setattr(main_mod, "BiasedFineTunedModel", BiasedFineTunedModel)
-
+        from services.analysis.model_bias_evaluator import ensure_demo_wrappers_registered
+        ensure_demo_wrappers_registered()
         return joblib.load(str(local_path))
 
     elif ext == ".onnx":

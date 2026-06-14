@@ -95,6 +95,8 @@ def load_model_as_predict_fn(model_path: str, model_type: str | None = None) -> 
 
 def _load_pkl_model(model_path: str) -> Callable:
     """Load scikit-learn / joblib model."""
+    from services.analysis.model_bias_evaluator import ensure_demo_wrappers_registered
+    ensure_demo_wrappers_registered()
     model = joblib.load(model_path)
 
     if hasattr(model, "predict_proba"):

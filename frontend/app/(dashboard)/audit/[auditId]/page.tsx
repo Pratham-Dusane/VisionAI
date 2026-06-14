@@ -605,136 +605,136 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
 
       <div className="audit-content-shell">
         <div className="audit-content-area">
-        {redTeam?.worstCase && (
-          <div className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.35)', background: 'var(--danger-dim)' }}>
-            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--danger)' }}>WORST CASE SCENARIO</div>
-            <div className="text-sm" style={{ color: 'var(--fg)' }}>{redTeam.worstCase.message}</div>
-            <div className="text-xs mt-2" style={{ color: 'var(--muted)' }}>
-              Evaluated {redTeam.evaluatedThresholds} thresholds across {redTeam.evaluatedSlices} demographic slices.
-            </div>
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="flex items-start gap-4">
-          {/* Score ring */}
-          {isFetchingLaundering ? (
-            <div className="skeleton shrink-0" style={{ width: 88, height: 88, borderRadius: '50%' }} title="Recomputing score with laundering data..." />
-          ) : (
-            <div className="relative shrink-0">
-              <svg width="88" height="88" viewBox="0 0 88 88">
-                <circle cx="44" cy="44" r="38" fill="none" stroke="var(--surface-2)" strokeWidth="6" />
-                <circle cx="44" cy="44" r="38" fill="none" stroke={scoreColor(score)} strokeWidth="6"
-                  strokeDasharray={`${score * 2.39} 239`} strokeLinecap="round" transform="rotate(-90 44 44)" />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-black" style={{ color: gradeColor(grade) }}>{grade}</span>
-                <span className="text-xs font-bold" style={{ color: scoreColor(score) }}>{score}/100</span>
+          {redTeam?.worstCase && (
+            <div className="card" style={{ borderColor: 'rgba(255, 22, 93, 0.35)', background: 'var(--danger-dim)' }}>
+              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--danger)' }}>WORST CASE SCENARIO</div>
+              <div className="text-sm" style={{ color: 'var(--fg)' }}>{redTeam.worstCase.message}</div>
+              <div className="text-xs mt-2" style={{ color: 'var(--muted)' }}>
+                Evaluated {redTeam.evaluatedThresholds} thresholds across {redTeam.evaluatedSlices} demographic slices.
               </div>
             </div>
           )}
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="page-title">{audit.name}</h1>
-              <span className={`badge ${audit.status === 'COMPLETE' ? 'badge-pass' : 'badge-medium'}`}>{audit.status}</span>
-            </div>
-            <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--muted)' }}>
-              <span>{audit.domain}</span><span>•</span>
-              <span>{new Date(audit.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-              <span>•</span><span>{audit.rowCount?.toLocaleString()} rows</span>
-              <span>•</span><span>{audit.columnCount} cols</span>
-              {audit.model_identifier && (
-                <>
-                  <span>•</span>
-                  <a
-                    href={`/attestation/${encodeURIComponent(audit.model_identifier)}`}
-                    className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
-                    style={{ color: 'var(--primary)' }}
-                  >
-                    <Shield size={12} className="inline mr-0.5" />
-                    Attestation Chain: {audit.model_identifier}
-                  </a>
-                </>
-              )}
-            </div>
-            {sev.penalties?.length > 0 && (
-              <div className="text-xs mt-1" style={{ color: 'var(--placeholder)' }}>
-                {sev.penalties.length} penalty deductions applied
+          {/* Header */}
+          <div className="flex items-start gap-4">
+            {/* Score ring */}
+            {isFetchingLaundering ? (
+              <div className="skeleton shrink-0" style={{ width: 88, height: 88, borderRadius: '50%' }} title="Recomputing score with laundering data..." />
+            ) : (
+              <div className="relative shrink-0">
+                <svg width="88" height="88" viewBox="0 0 88 88">
+                  <circle cx="44" cy="44" r="38" fill="none" stroke="var(--surface-2)" strokeWidth="6" />
+                  <circle cx="44" cy="44" r="38" fill="none" stroke={scoreColor(score)} strokeWidth="6"
+                    strokeDasharray={`${score * 2.39} 239`} strokeLinecap="round" transform="rotate(-90 44 44)" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-black" style={{ color: gradeColor(grade) }}>{grade}</span>
+                  <span className="text-xs font-bold" style={{ color: scoreColor(score) }}>{score}/100</span>
+                </div>
               </div>
             )}
-          </div>
 
-          <div className="flex flex-col items-end gap-2 shrink-0">
-            <StakeholderToggle value={stakeholderMode} onChange={setStakeholderMode} />
-            <div className="flex items-center gap-2">
-              <button className="btn btn-outline btn-sm" onClick={onRunRedTeam} disabled={redTeamLoading || audit.dataOnly}>
-                {redTeamLoading ? <Loader2 size={13} className="animate-spin" /> : <Shield size={13} />} Red Team
-              </button>
-              <button className="btn btn-outline btn-sm" onClick={() => exportPDF(auditId)}><Download size={13} /> PDF</button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="page-title">{audit.name}</h1>
+                <span className={`badge ${audit.status === 'COMPLETE' ? 'badge-pass' : 'badge-medium'}`}>{audit.status}</span>
+              </div>
+              <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--muted)' }}>
+                <span>{audit.domain}</span><span>•</span>
+                <span>{new Date(audit.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                <span>•</span><span>{audit.rowCount?.toLocaleString()} rows</span>
+                <span>•</span><span>{audit.columnCount} cols</span>
+                {audit.model_identifier && (
+                  <>
+                    <span>•</span>
+                    <a
+                      href={`/attestation/${encodeURIComponent(audit.model_identifier)}`}
+                      className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
+                      style={{ color: 'var(--primary)' }}
+                    >
+                      <Shield size={12} className="inline mr-0.5" />
+                      Attestation Chain: {audit.model_identifier}
+                    </a>
+                  </>
+                )}
+              </div>
+              {sev.penalties?.length > 0 && (
+                <div className="text-xs mt-1" style={{ color: 'var(--placeholder)' }}>
+                  {sev.penalties.length} penalty deductions applied
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <StakeholderToggle value={stakeholderMode} onChange={setStakeholderMode} />
+              <div className="flex items-center gap-2">
+                <button className="btn btn-outline btn-sm" onClick={onRunRedTeam} disabled={redTeamLoading || audit.dataOnly}>
+                  {redTeamLoading ? <Loader2 size={13} className="animate-spin" /> : <Shield size={13} />} Red Team
+                </button>
+                <button className="btn btn-outline btn-sm" onClick={() => exportPDF(auditId)}><Download size={13} /> PDF</button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Mobile Tabs fallback (hidden on desktop where right sidebar shows) */}
-        <div className="tab-bar audit-mobile-tabs" style={{ overflowX: 'auto' }}>
-          {tabs.map((t) => {
-            const Icon = t.icon;
-            return (
-              <button key={t.key} onClick={() => setTab(t.key)}
-                data-tab-key={t.key}
-                className={`tab-item flex items-center gap-1.5 ${tab === t.key ? 'active' : ''}`}>
-                <Icon size={13} /> {t.label}
-              </button>
-            );
-          })}
-        </div>
+          {/* Mobile Tabs fallback (hidden on desktop where right sidebar shows) */}
+          <div className="tab-bar audit-mobile-tabs" style={{ overflowX: 'auto' }}>
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              return (
+                <button key={t.key} onClick={() => setTab(t.key)}
+                  data-tab-key={t.key}
+                  className={`tab-item flex items-center gap-1.5 ${tab === t.key ? 'active' : ''}`}>
+                  <Icon size={13} /> {t.label}
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Tab content */}
-        {visibleTabKeys.has('overview') && tab === 'overview' && <OverviewTab audit={audit} stakeholderMode={stakeholderMode} />}
-        {visibleTabKeys.has('data') && tab === 'data' && (
-          <DataTab
-            audit={audit}
-            guidedSandboxActive={guidedSandboxActive}
-            onGuidedMetricClick={handleGuidedMetricClick}
-          />
-        )}
-        {visibleTabKeys.has('model') && tab === 'model' && <ModelTab audit={audit} />}
-        {visibleTabKeys.has('intersectional') && tab === 'intersectional' && <IntersectionalTab audit={audit} />}
-        {visibleTabKeys.has('explainability') && tab === 'explainability' && <ExplainabilityTab audit={audit} />}
-        {visibleTabKeys.has('results') && tab === 'results' && <ResultsTab audit={audit} onNavigateTab={setTab} visibleTabKeys={visibleTabKeys} />}
-        {visibleTabKeys.has('narratives') && tab === 'narratives' && (
-          <NarrativesTab
-            audit={audit}
-            mode={stakeholderMode}
-            onNarrativeGenerated={(modeStr, narrativeStr) => {
-              setAudit((prev: any) => {
-                if (!prev) return prev;
-                return {
-                  ...prev,
-                  narratives: {
-                    ...(prev.narratives || {}),
-                    [modeStr]: narrativeStr,
-                  },
-                };
-              });
-            }}
-          />
-        )}
-        {visibleTabKeys.has('fixes') && tab === 'fixes' && (
-          <FixesTab
-            audit={audit}
-            stakeholderMode={stakeholderMode}
-            onAuditUpdated={(updatedAudit: any) => setAudit(updatedAudit)}
-          />
-        )}
-        {visibleTabKeys.has('causal') && tab === 'causal' && (
-          <CausalTab audit={audit} />
-        )}
-        {visibleTabKeys.has('whatif') && tab === 'whatif' && (
-          <WhatIfTab audit={audit} />
-        )}
-        {visibleTabKeys.has('legal') && tab === 'legal' && <LegalTab audit={audit} mode={stakeholderMode} />}
+          {/* Tab content */}
+          {visibleTabKeys.has('overview') && tab === 'overview' && <OverviewTab audit={audit} stakeholderMode={stakeholderMode} />}
+          {visibleTabKeys.has('data') && tab === 'data' && (
+            <DataTab
+              audit={audit}
+              guidedSandboxActive={guidedSandboxActive}
+              onGuidedMetricClick={handleGuidedMetricClick}
+            />
+          )}
+          {visibleTabKeys.has('model') && tab === 'model' && <ModelTab audit={audit} />}
+          {visibleTabKeys.has('intersectional') && tab === 'intersectional' && <IntersectionalTab audit={audit} />}
+          {visibleTabKeys.has('explainability') && tab === 'explainability' && <ExplainabilityTab audit={audit} />}
+          {visibleTabKeys.has('results') && tab === 'results' && <ResultsTab audit={audit} onNavigateTab={setTab} visibleTabKeys={visibleTabKeys} />}
+          {visibleTabKeys.has('narratives') && tab === 'narratives' && (
+            <NarrativesTab
+              audit={audit}
+              mode={stakeholderMode}
+              onNarrativeGenerated={(modeStr, narrativeStr) => {
+                setAudit((prev: any) => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    narratives: {
+                      ...(prev.narratives || {}),
+                      [modeStr]: narrativeStr,
+                    },
+                  };
+                });
+              }}
+            />
+          )}
+          {visibleTabKeys.has('fixes') && tab === 'fixes' && (
+            <FixesTab
+              audit={audit}
+              stakeholderMode={stakeholderMode}
+              onAuditUpdated={(updatedAudit: any) => setAudit(updatedAudit)}
+            />
+          )}
+          {visibleTabKeys.has('causal') && tab === 'causal' && (
+            <CausalTab audit={audit} />
+          )}
+          {visibleTabKeys.has('whatif') && tab === 'whatif' && (
+            <WhatIfTab audit={audit} />
+          )}
+          {visibleTabKeys.has('legal') && tab === 'legal' && <LegalTab audit={audit} mode={stakeholderMode} />}
         </div>
 
         <AuditRightSidebar tabs={tabs} activeTab={tab} onTabChange={setTab} />
@@ -1338,7 +1338,7 @@ function OverviewTab({ audit, stakeholderMode }: { audit: any; stakeholderMode: 
         <Mini label="Proxy Variables" value={String(proxies.length)}
           sub={`${proxies.filter((p: any) => p.risk_level === 'HIGH').length} HIGH risk`}
           color={proxies.length > 0 ? 'var(--accent)' : 'var(--success)'} />
-        <Mini label="Feature Laundering" 
+        <Mini label="Feature Laundering"
           value={audit.featureLaundering === null ? '...' : String(laundering.filter((l: any) => l.laundering_detected).length)}
           sub={audit.featureLaundering === null ? 'Loading...' : `of ${laundering.length} tested`}
           color={audit.featureLaundering === null ? 'var(--muted)' : laundering.some((l: any) => l.laundering_detected) ? 'var(--danger)' : 'var(--success)'} />
@@ -2201,7 +2201,7 @@ function NarrativesTab({
       }
 
       const data = await res.json();
-      
+
       setChatMessages((prev) => [...prev, { id: Date.now() + 1, role: 'assistant', text: data.reply, createdAt: Date.now() }]);
       setContinuePrompt(keepTalkingAuto ? '' : 'Any other questions?');
       setChatLoading(false);
@@ -2496,41 +2496,43 @@ function NarrativesTab({
                             ) : 'You'}
                           </div>
                           {msg.role === 'assistant' ? (
-                            <div className="chat-md-content" dangerouslySetInnerHTML={{ __html: (() => {
-                              const raw = msg.text || '';
-                              const lines = raw.split('\n');
-                              const htmlParts: string[] = [];
-                              let inList = false;
+                            <div className="chat-md-content" dangerouslySetInnerHTML={{
+                              __html: (() => {
+                                const raw = msg.text || '';
+                                const lines = raw.split('\n');
+                                const htmlParts: string[] = [];
+                                let inList = false;
 
-                              const fmt = (t: string) => t
-                                .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--fg)">$1</strong>')
-                                .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                                .replace(/`(.+?)`/g, '<code style="background:var(--surface-2);padding:1px 4px;border-radius:3px;font-size:11px;color:var(--primary);border:1px solid var(--border)">$1</code>');
+                                const fmt = (t: string) => t
+                                  .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--fg)">$1</strong>')
+                                  .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                                  .replace(/`(.+?)`/g, '<code style="background:var(--surface-2);padding:1px 4px;border-radius:3px;font-size:11px;color:var(--primary);border:1px solid var(--border)">$1</code>');
 
-                              for (const line of lines) {
-                                const trimmed = line.trim();
-                                if (!trimmed) {
-                                  if (inList) { htmlParts.push('</ul>'); inList = false; }
-                                  continue;
+                                for (const line of lines) {
+                                  const trimmed = line.trim();
+                                  if (!trimmed) {
+                                    if (inList) { htmlParts.push('</ul>'); inList = false; }
+                                    continue;
+                                  }
+                                  if (trimmed.startsWith('## ')) {
+                                    if (inList) { htmlParts.push('</ul>'); inList = false; }
+                                    htmlParts.push(`<div style="font-weight:700;color:var(--primary);margin:6px 0 3px;font-size:12px">${fmt(trimmed.slice(3))}</div>`);
+                                  } else if (trimmed.startsWith('# ')) {
+                                    if (inList) { htmlParts.push('</ul>'); inList = false; }
+                                    htmlParts.push(`<div style="font-weight:700;color:var(--fg);margin:6px 0 3px;font-size:13px">${fmt(trimmed.slice(2))}</div>`);
+                                  } else if (/^[-*]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
+                                    if (!inList) { htmlParts.push('<ul style="margin:4px 0;padding-left:16px;list-style:disc">'); inList = true; }
+                                    const content = trimmed.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '');
+                                    htmlParts.push(`<li style="margin:2px 0">${fmt(content)}</li>`);
+                                  } else {
+                                    if (inList) { htmlParts.push('</ul>'); inList = false; }
+                                    htmlParts.push(`<p style="margin:3px 0">${fmt(trimmed)}</p>`);
+                                  }
                                 }
-                                if (trimmed.startsWith('## ')) {
-                                  if (inList) { htmlParts.push('</ul>'); inList = false; }
-                                  htmlParts.push(`<div style="font-weight:700;color:var(--primary);margin:6px 0 3px;font-size:12px">${fmt(trimmed.slice(3))}</div>`);
-                                } else if (trimmed.startsWith('# ')) {
-                                  if (inList) { htmlParts.push('</ul>'); inList = false; }
-                                  htmlParts.push(`<div style="font-weight:700;color:var(--fg);margin:6px 0 3px;font-size:13px">${fmt(trimmed.slice(2))}</div>`);
-                                } else if (/^[-*]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
-                                  if (!inList) { htmlParts.push('<ul style="margin:4px 0;padding-left:16px;list-style:disc">'); inList = true; }
-                                  const content = trimmed.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '');
-                                  htmlParts.push(`<li style="margin:2px 0">${fmt(content)}</li>`);
-                                } else {
-                                  if (inList) { htmlParts.push('</ul>'); inList = false; }
-                                  htmlParts.push(`<p style="margin:3px 0">${fmt(trimmed)}</p>`);
-                                }
-                              }
-                              if (inList) htmlParts.push('</ul>');
-                              return htmlParts.join('');
-                            })() }} />
+                                if (inList) htmlParts.push('</ul>');
+                                return htmlParts.join('');
+                              })()
+                            }} />
                           ) : msg.text}
                         </div>
                       ))}
@@ -3328,7 +3330,7 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
       </div>
 
       <div className="text-xs mb-3" style={{ color: 'var(--muted)' }}>
-        Generates 100 synthetic profiles per missing intersection using approved-applicant median baselines.
+        Generates 100+ synthetic profiles per missing intersection using approved-applicant median baselines.
         Tests how your model treats unseen demographic groups with statistically significant sample sizes.
       </div>
 
@@ -3502,7 +3504,7 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
 
 function getContrastText(bgColorHexOrVar: string, isThemeDark: boolean): string {
   const clean = bgColorHexOrVar.trim().toLowerCase();
-  
+
   if (clean.includes('var(--status-critical-dim)') || clean.includes('rgba(217, 48, 37')) {
     return isThemeDark ? '#F9FAFB' : '#111827';
   }
@@ -3518,7 +3520,7 @@ function getContrastText(bgColorHexOrVar: string, isThemeDark: boolean): string 
   if (clean.includes('var(--surface-2)')) {
     return isThemeDark ? '#F9FAFB' : '#111827';
   }
-  
+
   if (clean.startsWith('rgba') || clean.startsWith('rgb')) {
     const match = clean.match(/\d+/g);
     if (match && match.length >= 3) {
@@ -3530,20 +3532,20 @@ function getContrastText(bgColorHexOrVar: string, isThemeDark: boolean): string 
       if (matchFloat && matchFloat.length >= 4) {
         a = parseFloat(matchFloat[3]);
       }
-      
+
       const bgR = isThemeDark ? 18 : 255;
       const bgG = isThemeDark ? 26 : 255;
       const bgB = isThemeDark ? 42 : 255;
-      
+
       const blendR = r * a + bgR * (1 - a);
       const blendG = g * a + bgG * (1 - a);
       const blendB = b * a + bgB * (1 - a);
-      
+
       const luminance = (0.2126 * blendR + 0.7152 * blendG + 0.0722 * blendB) / 255;
       return luminance > 0.5 ? '#111827' : '#F9FAFB';
     }
   }
-  
+
   if (clean.startsWith('#')) {
     const r = parseInt(clean.slice(1, 3), 16) || 0;
     const g = parseInt(clean.slice(3, 5), 16) || 0;
@@ -3551,7 +3553,7 @@ function getContrastText(bgColorHexOrVar: string, isThemeDark: boolean): string 
     const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
     return luminance > 0.5 ? '#111827' : '#F9FAFB';
   }
-  
+
   return isThemeDark ? '#F9FAFB' : '#111827';
 }
 
@@ -3596,8 +3598,8 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
                   <td className="font-medium text-xs">
                     {d.group}
                     {d.low_confidence && (
-                      <span 
-                        className="ml-2 px-1.5 py-0.5 rounded text-xs" 
+                      <span
+                        className="ml-2 px-1.5 py-0.5 rounded text-xs"
                         title={d.statistical_note}
                         style={{
                           background: isDark ? '#2A3040' : '#E9EEF6',
@@ -3613,12 +3615,12 @@ function IntersectionGroup({ intersectionKey, items }: { intersectionKey: string
                   <td style={{ color: d.di_vs_overall < 0.8 && !d.low_confidence ? 'var(--danger)' : d.di_vs_overall >= 0.8 ? 'var(--success)' : 'var(--muted)', fontWeight: 600 }}>
                     {d.di_vs_overall?.toFixed(2)}</td>
                   <td>
-                    <span 
+                    <span
                       className={`badge ${sevBadge(d.severity)}`}
                       style={{
                         color: getContrastText(
                           d.severity === 'CRITICAL' ? 'var(--status-critical-dim)' :
-                          d.severity === 'HIGH' ? 'var(--status-warning-dim)' : 'var(--status-pass-dim)',
+                            d.severity === 'HIGH' ? 'var(--status-warning-dim)' : 'var(--status-pass-dim)',
                           isDark
                         )
                       }}
@@ -4079,7 +4081,7 @@ function FixesTab({
 
   const renderRemediationSection = () => {
     const isMitigated = !!audit.mitigatedStoragePath;
-    
+
     return (
       <div className="card space-y-4" style={{ borderColor: isMitigated ? 'var(--primary-dim)' : 'var(--border)' }}>
         <div className="flex items-center justify-between gap-3">
@@ -4091,13 +4093,13 @@ function FixesTab({
           {isMitigated && (
             <div className="flex items-center gap-2">
               <span className="text-xs" style={{ color: 'var(--muted)' }}>Inspect Attribute:</span>
-              <select 
-                value={selectedAttribute} 
+              <select
+                value={selectedAttribute}
                 onChange={(e) => setSelectedAttribute(e.target.value)}
                 className="text-xs rounded border px-2 py-1"
-                style={{ 
-                  background: 'var(--surface-2)', 
-                  borderColor: 'var(--border)', 
+                style={{
+                  background: 'var(--surface-2)',
+                  borderColor: 'var(--border)',
                   color: 'var(--fg)',
                   outline: 'none'
                 }}
@@ -4125,7 +4127,7 @@ function FixesTab({
               </ul>
             </div>
             <div className="flex items-center gap-2 pt-2">
-              <button 
+              <button
                 className="btn btn-outline btn-sm flex items-center gap-1.5"
                 disabled={isGenerating}
                 onClick={handleRemediate}
@@ -4161,15 +4163,15 @@ function FixesTab({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <a 
-                  href={getDownloadMitigatedUrl(audit.id)} 
+                <a
+                  href={getDownloadMitigatedUrl(audit.id)}
                   className="btn btn-outline btn-sm flex items-center gap-1.5"
                   style={{ cursor: 'pointer' }}
                 >
                   <Download size={13} />
                   Download Mitigated Dataset
                 </a>
-                <button 
+                <button
                   className="btn btn-outline btn-sm text-[11px] flex items-center gap-1.5"
                   disabled={isGenerating}
                   onClick={handleRemediate}
@@ -4179,19 +4181,19 @@ function FixesTab({
                 </button>
               </div>
             </div>
-            
+
             {generationError && (
               <div className="text-xs mt-2" style={{ color: 'var(--danger)' }}>
                 {generationError}
               </div>
             )}
-            
+
             {/* Comparison panels */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Original Stats Card */}
               <div className="card space-y-3" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
                 <div className="text-[11px] font-bold tracking-wide uppercase" style={{ color: 'var(--muted)' }}>Original Dataset</div>
-                
+
                 <div className="grid grid-cols-2 gap-2 border-b pb-2" style={{ borderColor: 'var(--border)' }}>
                   <div>
                     <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>Disparate Impact</div>
@@ -4206,7 +4208,7 @@ function FixesTab({
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Distribution List */}
                 <div className="space-y-2.5">
                   <div className="text-[10px] font-semibold" style={{ color: 'var(--placeholder)' }}>Cohort Distribution:</div>
@@ -4214,7 +4216,7 @@ function FixesTab({
                     const count = originalCounts[group] || 0;
                     const pct = originalPcts[group] || 0;
                     const posRate = originalLabelDist[group]?.positive;
-                    
+
                     return (
                       <div key={group} className="space-y-1">
                         <div className="flex items-center justify-between text-[11px]">
@@ -4236,7 +4238,7 @@ function FixesTab({
               {/* Mitigated Stats Card */}
               <div className="card space-y-3" style={{ background: 'var(--surface-2)', borderColor: 'var(--primary-dim)' }}>
                 <div className="text-[11px] font-bold tracking-wide uppercase" style={{ color: 'var(--primary)' }}>Mitigated Dataset (Balanced)</div>
-                
+
                 <div className="grid grid-cols-2 gap-2 border-b pb-2" style={{ borderColor: 'var(--border)' }}>
                   <div>
                     <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>Disparate Impact</div>
@@ -4256,7 +4258,7 @@ function FixesTab({
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Distribution List */}
                 <div className="space-y-2.5">
                   <div className="text-[10px] font-semibold" style={{ color: 'var(--placeholder)' }}>Cohort Distribution:</div>
@@ -4264,7 +4266,7 @@ function FixesTab({
                     const count = mitigatedCounts[group] || 0;
                     const pct = mitigatedPcts[group] || 0;
                     const posRate = mitigatedLabelDist[group]?.positive;
-                    
+
                     return (
                       <div key={group} className="space-y-1">
                         <div className="flex items-center justify-between text-[11px]">
@@ -4301,8 +4303,8 @@ function FixesTab({
   );
 
   const currentFix = fixes[selectedFixIdx] || fixes[0];
-  const matchingTracer = currentFix ? biasOrigin.find((item: any) => 
-    currentFix.title.toLowerCase().includes(item.attribute.toLowerCase()) || 
+  const matchingTracer = currentFix ? biasOrigin.find((item: any) =>
+    currentFix.title.toLowerCase().includes(item.attribute.toLowerCase()) ||
     currentFix.description.toLowerCase().includes(item.attribute.toLowerCase())
   ) : null;
 
@@ -4345,11 +4347,10 @@ function FixesTab({
                 <button
                   key={idx}
                   onClick={() => setSelectedFixIdx(idx)}
-                  className={`w-full text-left p-3.5 transition-all flex flex-col gap-1 focus:outline-none ${
-                    active 
-                      ? 'bg-[var(--sidebar-active-bg)] border-l-4 border-[var(--sidebar-active-border)] text-[var(--sidebar-active-text)]' 
+                  className={`w-full text-left p-3.5 transition-all flex flex-col gap-1 focus:outline-none ${active
+                      ? 'bg-[var(--sidebar-active-bg)] border-l-4 border-[var(--sidebar-active-border)] text-[var(--sidebar-active-text)]'
                       : 'hover:bg-[var(--border-light)] text-[var(--fg)]'
-                  }`}
+                    }`}
                   style={{ background: active ? 'var(--sidebar-active-bg)' : 'transparent', border: 'none', cursor: 'pointer' }}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -4406,11 +4407,11 @@ function FixesTab({
 
             {/* Warnings (Bias Origin Tracer Integration) */}
             {matchingTracer && (
-              <div 
-                className="p-3.5 rounded-lg border flex gap-3 text-xs" 
-                style={{ 
+              <div
+                className="p-3.5 rounded-lg border flex gap-3 text-xs"
+                style={{
                   background: matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'rgba(255, 49, 95, 0.05)' : 'rgba(255, 181, 71, 0.05)',
-                  borderColor: matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'rgba(255, 49, 95, 0.2)' : 'rgba(255, 181, 71, 0.2)' 
+                  borderColor: matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'rgba(255, 49, 95, 0.2)' : 'rgba(255, 181, 71, 0.2)'
                 }}
               >
                 <AlertTriangle size={16} className={matchingTracer.origin === 'AMPLIFIED_BY_MODEL' ? 'text-[var(--danger)] shrink-0' : 'text-[var(--accent)] shrink-0'} />
@@ -4499,17 +4500,17 @@ postprocessor.fit(X_val, y_val, sensitive_features=A_val)`,
 
 function highlightPython(code: string) {
   const regex = /(#[^\n]*)|("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')|(\b(?:def|class|import|from|return|as|in|for|if|else|elif|try|except|and|or|not)\b)|(\b\w+(?=\())|([=+\-*\/%<>!&|^~]+)/g;
-  
+
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
   let match;
   let keyIdx = 0;
-  
+
   while ((match = regex.exec(code)) !== null) {
     if (match.index > lastIndex) {
       parts.push(code.substring(lastIndex, match.index));
     }
-    
+
     if (match[1]) {
       // Comment
       parts.push(<span key={`c-${keyIdx++}`} className="cmt">{match[1]}</span>);
@@ -4526,14 +4527,14 @@ function highlightPython(code: string) {
       // Operator
       parts.push(<span key={`o-${keyIdx++}`} className="op">{match[5]}</span>);
     }
-    
+
     lastIndex = regex.lastIndex;
   }
-  
+
   if (lastIndex < code.length) {
     parts.push(code.substring(lastIndex));
   }
-  
+
   return parts;
 }
 
@@ -4959,8 +4960,8 @@ function WhatIfTab({ audit }: { audit: any }) {
     const severity = item.severity || '';
 
     return String(features[colA]) === String(valA) &&
-           String(features[colB]) === String(valB) &&
-           (severity === 'CRITICAL' || severity === 'HIGH');
+      String(features[colB]) === String(valB) &&
+      (severity === 'CRITICAL' || severity === 'HIGH');
   });
 
   return (
@@ -5171,7 +5172,7 @@ function WhatIfTab({ audit }: { audit: any }) {
         {/* Card 3: Fairness Implication */}
         <div className="whatif-fairness-card">
           <div className="whatif-section-header">Fairness & Demographic Insights</div>
-          
+
           {protectedCols.length === 0 ? (
             <div className="whatif-empty-state">No protected attributes configured.</div>
           ) : (
@@ -5183,7 +5184,7 @@ function WhatIfTab({ audit }: { audit: any }) {
 
                 const privGroup = biasRow.privileged_group || biasRow.privilegedGroup;
                 const isPrivileged = String(currentVal) === String(privGroup);
-                const positiveRate = isPrivileged 
+                const positiveRate = isPrivileged
                   ? (biasRow.metrics?.positive_rate_privileged ?? biasRow.metrics?.positiveRatePrivileged)
                   : (biasRow.metrics?.positive_rate_unprivileged ?? biasRow.metrics?.positiveRateUnprivileged);
                 const disparateImpact = biasRow.metrics?.disparate_impact ?? biasRow.metrics?.disparateImpact;
@@ -5294,7 +5295,7 @@ function CausalTab({ audit }: { audit: any }) {
       setError('');
       const res = await getCausalAnalysis(audit.id, force);
       setData(res);
-      
+
       const attrs = Object.keys(res.per_attribute || {});
       if (attrs.length > 0) {
         if (!selectedAttribute || force || !attrs.includes(selectedAttribute)) {
@@ -5353,7 +5354,7 @@ function CausalTab({ audit }: { audit: any }) {
 
   const selectedRes = data.per_attribute?.[selectedAttribute];
   const allAttributes = Object.keys(data.per_attribute || {});
-  
+
   // Build chart data
   const chartData = allAttributes.map((attr) => {
     const res = data.per_attribute[attr];
@@ -5432,7 +5433,7 @@ function CausalTab({ audit }: { audit: any }) {
                 </button>
               ))}
             </div>
-            
+
             <button
               type="button"
               className="btn btn-outline btn-sm flex items-center gap-1.5 ml-auto"
@@ -5470,7 +5471,7 @@ function CausalTab({ audit }: { audit: any }) {
                       <span className="whatif-section-header" style={{ marginBottom: 0 }}>Causal Assessment</span>
                       {getDiscBadge(selectedRes.discrimination_type)}
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-3 text-center py-2.5 my-1 rounded-xl" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                       <div>
                         <div className="text-[10px] uppercase text-muted font-bold">Total Effect</div>

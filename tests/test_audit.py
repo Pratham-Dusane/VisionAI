@@ -137,3 +137,23 @@ def test_shadow_testing(sample_df):
     result = audit.shadow_test()
     assert "missing_intersections" in result
     assert "shadow_profiles" in result
+
+
+def test_shadow_testing_with_biased_finetuned_model(sample_df, tmp_path):
+    """Test that load_model can successfully unpickle BiasedFineTunedModel."""
+    import joblib
+    from services.analysis.model_bias_evaluator import load_model, ensure_demo_wrappers_registered
+    
+    ensure_demo_wrappers_registered()
+    import sys
+    BiasedFineTunedModel = sys.modules["__main__"].BiasedFineTunedModel
+    
+    # Create and dump a model instance
+    model = BiasedFineTunedModel(predictions=[1]*len(sample_df), probabilities=[[0.1, 0.9]]*len(sample_df))
+    model_file = tmp_path / "model.joblib"
+    joblib.dump(model, model_file)
+    
+    # Unpickle it using load_model
+    loaded_model = load_model(str(model_file))
+    assert loaded_model is not None
+    assert loaded_model.__class__.__name__ == "BiasedFineTunedModel"

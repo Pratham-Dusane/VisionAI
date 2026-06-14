@@ -10,14 +10,93 @@ import joblib
 from pathlib import Path
 
 
+from sklearn.base import BaseEstimator, ClassifierMixin
+
+class BiasedFineTunedModel:
+    def __init__(self, base_model=None, bias_weights=None, predictions=None, probabilities=None):
+        self.base_model = base_model
+        self.bias_weights = bias_weights or {}
+        self.predictions = predictions
+        self.probabilities = probabilities
+    def predict(self, X):
+        import numpy as np
+        if self.predictions is not None:
+            if hasattr(X, "index"):
+                return np.array([self.predictions[i] if i < len(self.predictions) else 0 for i in X.index])
+            return np.array(self.predictions[:len(X)])
+        if self.base_model is not None:
+            return self.base_model.predict(X)
+        return np.array([0] * len(X))
+    def predict_proba(self, X):
+        import numpy as np
+        if self.probabilities is not None:
+            if hasattr(X, "index"):
+                default_prob = [0.5, 0.5]
+                return np.array([self.probabilities[i] if i < len(self.probabilities) else default_prob for i in X.index])
+            return np.array(self.probabilities[:len(X)])
+        if self.base_model is not None and hasattr(self.base_model, "predict_proba"):
+            return self.base_model.predict_proba(X)
+        return np.array([[0.5, 0.5]] * len(X))
+
+class QuantizedModelWrapper(BaseEstimator, ClassifierMixin):
+    def __init__(self, base_model, noise_scale=0.12, seed=42):
+        self.base_model = base_model
+        self.noise_scale = noise_scale
+        self.seed = seed
+        self.classes_ = base_model.classes_
+
+    def fit(self, X, y):
+        return self
+
+    def predict_proba(self, X):
+        import numpy as np
+        proba = self.base_model.predict_proba(X)
+        rng = np.random.RandomState(self.seed + len(X))
+        scores = proba[:, 1]
+        sensitivity = 1.0 - 2.0 * np.abs(scores - 0.5)
+        noise = rng.normal(0, self.noise_scale, size=len(scores))
+        noise *= sensitivity
+        noisy_scores = np.clip(scores + noise, 0.001, 0.999)
+        return np.column_stack([1 - noisy_scores, noisy_scores])
+
+    def predict(self, X):
+        import numpy as np
+        proba = self.predict_proba(X)
+        return self.classes_[np.argmax(proba, axis=1)]
+
+
+def ensure_demo_wrappers_registered():
+    """Register demo wrapper classes in __main__ to prevent pickle deserialization errors."""
+    import sys
+    import types
+    
+    main_mod = sys.modules.get("__main__")
+    if main_mod is None:
+        main_mod = types.ModuleType("__main__")
+        sys.modules["__main__"] = main_mod
+
+    # Register BiasedFineTunedModel for unpickling
+    if not hasattr(main_mod, "BiasedFineTunedModel"):
+        setattr(main_mod, "BiasedFineTunedModel", BiasedFineTunedModel)
+
+    # Register QuantizedModelWrapper for unpickling
+    if not hasattr(main_mod, "QuantizedModelWrapper"):
+        setattr(main_mod, "QuantizedModelWrapper", QuantizedModelWrapper)
+
+
 def load_model(model_path: str):
     """Load sklearn-compatible model from file."""
+    import logging
+    logger = logging.getLogger(__name__)
     path = Path(model_path)
     if not path.exists():
+        logger.error(f"Model path does not exist: {model_path}")
         return None
     try:
+        ensure_demo_wrappers_registered()
         return joblib.load(path)
-    except Exception:
+    except Exception as e:
+        logger.exception(f"Failed to load model from path {model_path}: {e}")
         return None
 
 
