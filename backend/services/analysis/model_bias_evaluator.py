@@ -66,7 +66,7 @@ class QuantizedModelWrapper(BaseEstimator, ClassifierMixin):
 
 
 def ensure_demo_wrappers_registered():
-    """Register demo wrapper classes in __main__ to prevent pickle deserialization errors."""
+    """Register demo wrapper classes and compatibility modules to prevent pickle deserialization errors."""
     import sys
     import types
     
@@ -82,6 +82,21 @@ def ensure_demo_wrappers_registered():
     # Register QuantizedModelWrapper for unpickling
     if not hasattr(main_mod, "QuantizedModelWrapper"):
         setattr(main_mod, "QuantizedModelWrapper", QuantizedModelWrapper)
+
+    # Scikit-learn loss function namespace redirection (compatibility shim)
+    # Redirects top-level '_loss' unpickling requests to 'sklearn._loss'
+    try:
+        import sklearn._loss as sklearn_loss
+        sys.modules["_loss"] = sklearn_loss
+        
+        # Also redirect _loss.link if present
+        try:
+            import sklearn._loss.link as sklearn_loss_link
+            sys.modules["_loss.link"] = sklearn_loss_link
+        except ImportError:
+            pass
+    except ImportError:
+        pass
 
 
 def load_model(model_path: str):
