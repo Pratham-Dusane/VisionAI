@@ -40,6 +40,7 @@ export async function createAudit(params: {
   deployedSince?: string;
   decisionsPerMonth?: number;
   jurisdiction: string;
+  model_identifier?: string;
 }) {
   const res = await fetch(`${API_BASE}/api/audits`, {
     method: 'POST',
@@ -1067,4 +1068,100 @@ export async function deleteTransferBiasAnalysis(analysisId: string) {
     analysisId: string;
   }>;
 }
+
+/**
+ * List all Sentinels for an organization.
+ */
+export async function listSentinels(orgId: string) {
+  const res = await fetch(`${API_BASE}/api/sentinel?orgId=${encodeURIComponent(orgId)}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to list sentinels (${res.status})`);
+  }
+  return res.json();
+}
+
+/**
+ * Create a new Sentinel.
+ */
+export async function createSentinel(orgId: string, data: any) {
+  const res = await fetch(`${API_BASE}/api/sentinel?orgId=${encodeURIComponent(orgId)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to create sentinel (${res.status})`);
+  }
+  return res.json();
+}
+
+/**
+ * Get live status of a Sentinel proxy.
+ */
+export async function getSentinelStatus(sentinelId: string) {
+  const res = await fetch(`${API_BASE}/api/sentinel/${sentinelId}/status`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to fetch sentinel status (${res.status})`);
+  }
+  return res.json();
+}
+
+/**
+ * Get review queue for a Sentinel proxy.
+ */
+export async function getSentinelReviewQueue(sentinelId: string, status: string = 'PENDING') {
+  const res = await fetch(`${API_BASE}/api/sentinel/${sentinelId}/review-queue?status=${status}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to fetch sentinel review queue (${res.status})`);
+  }
+  return res.json();
+}
+
+/**
+ * Resolve a review queue item.
+ */
+export async function resolveReviewQueueItem(sentinelId: string, reviewId: string, data: { final_decision: string; reviewed_by: string; notes?: string }) {
+  const res = await fetch(`${API_BASE}/api/sentinel/${sentinelId}/review-queue/${reviewId}?final_decision=${encodeURIComponent(data.final_decision)}&reviewed_by=${encodeURIComponent(data.reviewed_by)}&notes=${encodeURIComponent(data.notes || '')}`, {
+    method: 'PATCH',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to resolve review item (${res.status})`);
+  }
+  return res.json();
+}
+
+/**
+ * Reset a Sentinel breaker.
+ */
+export async function resetSentinelBreaker(sentinelId: string, resetBy: string) {
+  const res = await fetch(`${API_BASE}/api/sentinel/${sentinelId}/reset-breaker?reset_by=${encodeURIComponent(resetBy)}`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to reset breaker (${res.status})`);
+  }
+  return res.json();
+}
+
+/**
+ * Delete a Sentinel proxy.
+ */
+export async function deleteSentinel(sentinelId: string) {
+  const res = await fetch(`${API_BASE}/api/sentinel/${sentinelId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to delete sentinel (${res.status})`);
+  }
+  return res.json();
+}
+
+
 

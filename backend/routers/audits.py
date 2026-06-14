@@ -92,6 +92,9 @@ def _build_pdf_branding(db, audit: dict) -> dict:
     }
 
 
+
+
+
 class CreateAuditRequest(BaseModel):
     orgId: str
     name: str
@@ -107,6 +110,7 @@ class CreateAuditRequest(BaseModel):
     deployedSince: str | None = None
     decisionsPerMonth: int | None = None
     jurisdiction: str = "Global"
+    model_identifier: str | None = None
 
 
 class PredictRequest(BaseModel):
@@ -858,6 +862,30 @@ def _run_pipeline_background(config: dict, audit_id: str, doc_ref):
             "explainabilityError": results.get("explainabilityError"),
         }
         doc_ref.update(update)
+        
+        # Bias Attestation Chain Hook
+        try:
+            from services.attestation.chain import issue_attestation, resolve_model_identifier
+            model_id = config.get("model_identifier") or config.get("modelIdentifier")
+            if not model_id:
+                model_id = resolve_model_identifier(config.get("modelStoragePath") or config.get("storagePath"))
+            
+            score = float(results.get("severity", {}).get("fairness_score", 0))
+            letter_grade = str(results.get("severity", {}).get("letter_grade", "?"))
+            
+            issue_attestation(
+                org_id=config.get("orgId", "default"),
+                audit_id=audit_id,
+                model_identifier=model_id,
+                fairness_score=score,
+                letter_grade=letter_grade,
+                results_snapshot=results,
+                interventions_applied=[]
+            )
+            doc_ref.update({"model_identifier": model_id})
+            logging.info(f"[ATTESTATION] Successfully issued attestation for model {model_id} (audit {audit_id})")
+        except Exception as att_err:
+            logging.error(f"[ATTESTATION] Failed to issue attestation: {str(att_err)}")
     except Exception as e:
         try:
             doc_ref.update({
@@ -917,6 +945,7 @@ async def create_audit(req: CreateAuditRequest, background_tasks: BackgroundTask
     try:
         db = firestore.client()
 
+
         audit_doc = {
             "orgId": req.orgId,
             "name": req.name,
@@ -936,6 +965,7 @@ async def create_audit(req: CreateAuditRequest, background_tasks: BackgroundTask
             "createdAt": datetime.utcnow().isoformat(),
             "pipeline": {},
             "pipelineMeta": {},
+            "model_identifier": req.model_identifier,
         }
         doc_ref = db.collection("audits").document()
         doc_ref.set(audit_doc)

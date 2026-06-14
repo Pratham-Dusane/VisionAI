@@ -138,3 +138,65 @@ def _cast_value(series: pd.Series, val_str: str):
         return val_str
     except (ValueError, TypeError):
         return val_str
+
+
+def disparate_impact(
+    df: pd.DataFrame,
+    label_col: str,
+    positive_label: str,
+    col: str,
+    privileged_value: str | None = None,
+) -> float | None:
+    """Compute Disparate Impact ratio for a column."""
+    if col not in df.columns:
+        return None
+    groups = df[col].dropna().unique()
+    if len(groups) < 2:
+        return 1.0
+
+    group_rates = {}
+    for g in groups:
+        mask = df[col] == g
+        group_rates[str(g)] = _positive_rate(df[mask], label_col, positive_label)
+
+    if privileged_value is None or str(privileged_value) not in group_rates:
+        privileged = max(group_rates, key=group_rates.get)
+    else:
+        privileged = str(privileged_value)
+
+    p_priv = group_rates[privileged]
+    if p_priv == 0:
+        return 1.0
+
+    unpriv_mask = df[col] != _cast_value(df[col], privileged)
+    p_unpriv = _positive_rate(df[unpriv_mask], label_col, positive_label)
+
+    return round(p_unpriv / p_priv, 4)
+
+
+def statistical_parity_difference(
+    df: pd.DataFrame,
+    label_col: str,
+    positive_label: str,
+    col: str,
+) -> float:
+    """Compute Statistical Parity Difference for a column."""
+    if col not in df.columns:
+        return 0.0
+    groups = df[col].dropna().unique()
+    if len(groups) < 2:
+        return 0.0
+
+    group_rates = {}
+    for g in groups:
+        mask = df[col] == g
+        group_rates[str(g)] = _positive_rate(df[mask], label_col, positive_label)
+
+    privileged = max(group_rates, key=group_rates.get)
+    p_priv = group_rates[privileged]
+
+    unpriv_mask = df[col] != _cast_value(df[col], privileged)
+    p_unpriv = _positive_rate(df[unpriv_mask], label_col, positive_label)
+
+    return round(p_unpriv - p_priv, 4)
+

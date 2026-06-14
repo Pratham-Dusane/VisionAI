@@ -644,6 +644,19 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
               <span>{new Date(audit.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
               <span>•</span><span>{audit.rowCount?.toLocaleString()} rows</span>
               <span>•</span><span>{audit.columnCount} cols</span>
+              {audit.model_identifier && (
+                <>
+                  <span>•</span>
+                  <a
+                    href={`/attestation/${encodeURIComponent(audit.model_identifier)}`}
+                    className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
+                    style={{ color: 'var(--primary)' }}
+                  >
+                    <Shield size={12} className="inline mr-0.5" />
+                    Attestation Chain: {audit.model_identifier}
+                  </a>
+                </>
+              )}
             </div>
             {sev.penalties?.length > 0 && (
               <div className="text-xs mt-1" style={{ color: 'var(--placeholder)' }}>

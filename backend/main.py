@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from core.firebase_init import initialize_firebase
-from routers import uploads, audits, org_settings, benchmarks, cicd, drift, whatif, causal, pipeline, llm_bias, quantization, transfer
+from routers import uploads, audits, org_settings, benchmarks, cicd, drift, whatif, causal, pipeline, llm_bias, quantization, transfer, feature_stores, attestation, sentinel
 
 import os
 
@@ -90,6 +90,9 @@ app.include_router(pipeline.router, prefix="/api/pipelines", tags=["pipelines"])
 app.include_router(llm_bias.router, prefix="/api/audits", tags=["llm-bias"])
 app.include_router(quantization.router, prefix="/api/quantization", tags=["quantization"])
 app.include_router(transfer.router, prefix="/api/transfer-bias", tags=["transfer-bias"])
+app.include_router(feature_stores.router, prefix="/api/feature-stores", tags=["feature-stores"])
+app.include_router(attestation.router, prefix="/api/attestation", tags=["attestation"])
+app.include_router(sentinel.router)
 
 # Mock endpoints for LLM and RAG simulator testing
 from pydantic import BaseModel
@@ -143,3 +146,25 @@ async def mock_llm_endpoint(request: MockLLMRequest):
         
     text = generate_mock_llm_response(request.prompt, domain)
     return {"text": text}
+
+@app.post("/api/mock-predict")
+async def mock_predict(data: dict):
+    """
+    Mock model endpoint for Sentinel demo.
+    Returns biased predictions for 'gender': 'Female' to trip the breaker.
+    """
+    import random
+    gender = data.get("gender")
+    if not gender and "applicant" in data:
+        gender = data["applicant"].get("gender")
+    
+    # Intentionally skew predictions to demonstrate Disparate Impact violation:
+    # Female selection rate: ~30%, Male selection rate: ~90%
+    if gender == "Female":
+        prediction = "approved" if random.random() < 0.3 else "denied"
+    elif gender == "Male":
+        prediction = "approved" if random.random() < 0.9 else "denied"
+    else:
+        prediction = "approved" if random.random() < 0.7 else "denied"
+        
+    return {"prediction": prediction}

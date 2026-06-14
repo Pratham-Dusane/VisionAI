@@ -1,12 +1,13 @@
 # VisionAI
 
-VisionAI is an AI fairness observability platform for teams that need to inspect, explain, and operationalize bias analysis across datasets and deployed models.
+VisionAI is an AI fairness observability platform for teams that need to inspect, explain, and operationalize bias analysis across datasets, deployed models, and live inference pipelines.
 
 This repository contains the full product surface:
 
-- A Next.js frontend for audit creation, dashboards, explainability, drift monitoring, and settings
-- A FastAPI backend for preprocessing, analysis orchestration, exports, benchmarking, and CI/CD fairness checks
+- A Next.js frontend for audit creation, dashboards, explainability, drift monitoring, Sentinel management, and advanced analysis tools
+- A FastAPI backend for preprocessing, analysis orchestration, exports, benchmarking, CI/CD fairness checks, and real-time Sentinel provisioning
 - A Cloud Run worker for heavy analysis and regulatory sync jobs
+- A standalone Sentinel proxy service for real-time fairness monitoring of live model endpoints
 - A Python SDK for local and embedded fairness analysis workflows
 - Infrastructure manifests for Google Cloud and Firebase deployment
 
@@ -20,6 +21,12 @@ VisionAI helps organizations evaluate fairness risk across the full ML lifecycle
 - Generate explainability output, stakeholder narratives, and legal/compliance mappings
 - Monitor production drift and fairness degradation over time
 - Provide CI/CD gating through a lightweight fairness endpoint
+- Proxy live model traffic through Sentinel to detect and intercept biased decisions in real time
+- Evaluate LLM and RAG pipelines for demographic bias in generated text
+- Trace bias propagation across transfer learning pipelines
+- Measure fairness degradation from model quantization and edge deployment
+- Generate cryptographic attestation certificates for audit compliance
+- Map causal fairness relationships between features and outcomes
 
 ## Repository Layout
 
@@ -28,12 +35,16 @@ VisionAI helps organizations evaluate fairness risk across the full ML lifecycle
 | `frontend/` | Customer-facing web application built with Next.js |
 | `backend/` | FastAPI service, analysis routers, and server-side orchestration |
 | `worker/` | Cloud Run Job entrypoint for analysis and regulatory sync |
+| `sentinel/` | Standalone real-time fairness proxy service (FastAPI, circuit breaker, rolling window DI) |
 | `visionai-sdk/` | Python package for local fairness analysis workflows |
 | `infra/` | Cloud Run, Firestore, and deployment manifests |
+| `tests/` | Unit and integration test suites |
 | `examples/` | Reusable CI/CD examples |
 | `data to test/` | Local sample datasets and models |
 
 ## Product Capabilities
+
+### Core Fairness Analysis
 
 | Capability | Description |
 | --- | --- |
@@ -47,6 +58,31 @@ VisionAI helps organizations evaluate fairness risk across the full ML lifecycle
 | CI/CD gating | Block deployments when fairness thresholds are violated |
 | Regulatory sync | Monitor and store new AI regulations and compliance alerts |
 
+### Advanced Analysis (PRD v2)
+
+| Capability | Description |
+| --- | --- |
+| What-If Simulator | Manually construct an applicant profile, submit it to the audited model, and see live prediction, feature contribution, and fairness implications in real time |
+| Bias Transfer Learning Detector | Upload base and fine-tuned models, compare predictions across demographics, and detect fairness regression introduced during transfer learning |
+| Causal Fairness Engine | Build causal DAGs, estimate total/direct/indirect effects of protected attributes on outcomes, and distinguish legitimate from illegitimate causal pathways |
+| LLM and RAG Pipeline Bias Evaluator | Send demographic-varied prompts to LLM or RAG endpoints, measure sentiment and toxicity differentials, and produce a bias scorecard with probe-level detail |
+| Edge Quantization Fairness Profiler | Compare a full-precision model against its quantized counterpart, measure per-group accuracy degradation, and identify demographic groups disproportionately affected by quantization |
+| Native Feature Store Integration | Connect to Feast, Tecton, or custom feature stores, profile feature distributions for demographic skew, and flag biased feature pipelines before they reach model training |
+| Bias Attestation Chain | Generate cryptographic attestation certificates for audits, verify certificate authenticity, and maintain an immutable compliance record |
+| Pipeline Orchestration | Define multi-step fairness analysis pipelines, run them as sequential or parallel workflows, and retrieve intermediate and final results |
+
+### Sentinel: Real-Time Fairness Proxy
+
+| Capability | Description |
+| --- | --- |
+| Proxy provisioning | Deploy a dedicated Cloud Run service that sits between your application and your model endpoint |
+| Rolling window DI | Track disparate impact ratio across a sliding window of recent decisions |
+| Circuit breaker | Automatically intercept, shadow-log, or block all decisions when DI falls below threshold |
+| Autonomous agent | Periodically re-evaluate fairness metrics using Gemini and adjust breaker state |
+| Manual review queue | Route intercepted decisions to a Firestore-backed review queue for human oversight |
+| Dashboard monitoring | View breaker state, traffic charts, DI metrics, and intercepted decisions from the frontend |
+| Simulated traffic | Run demo traffic through the Sentinel to observe bias detection and circuit breaker behavior without a live model |
+
 ## Architecture Summary
 
 The runtime architecture is intentionally modular:
@@ -54,7 +90,34 @@ The runtime architecture is intentionally modular:
 - The frontend uploads files directly to Firebase/Google Cloud Storage and then sends storage paths to the backend
 - The backend stores audit state in Firestore and dispatches long-running work to the Cloud Run worker
 - The worker runs the full analysis pipeline, writes results back to Firestore, and uses Gemini-backed services for narrative and regulatory workflows
+- The Sentinel proxy intercepts live model traffic, monitors fairness in a rolling window, and trips a circuit breaker when disparate impact violations are detected
 - The Python SDK mirrors the same analytical building blocks for local and embedded usage
+
+```
+                                  +------------------+
+                                  |   Next.js        |
+                                  |   Frontend       |
+                                  +--------+---------+
+                                           |
+                                           v
+                                  +--------+---------+
+                                  |   FastAPI         |
+                                  |   Backend         |
+                                  +---+----+-----+---+
+                                      |    |     |
+                            +---------+    |     +----------+
+                            v              v                v
+                  +---------+----+  +------+------+  +------+------+
+                  | Cloud Run    |  |  Firestore  |  |  Sentinel   |
+                  | Worker Jobs  |  |  + Storage  |  |  Proxy      |
+                  +--------------+  +-------------+  +------+------+
+                                                            |
+                                                            v
+                                                     +------+------+
+                                                     | Target Model|
+                                                     | Endpoint    |
+                                                     +-------------+
+```
 
 ## Local Development
 
@@ -143,7 +206,19 @@ npm run dev
 
 Open `http://localhost:3000` in your browser.
 
-### 7) Optional Worker Smoke Test
+### 7) Optional: Run Sentinel Locally
+
+The Sentinel proxy can be tested locally if you have Redis running:
+
+```powershell
+cd sentinel
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+```
+
+For demo purposes, the backend includes a simulated Sentinel mode that does not require gcloud or a separate Redis instance. When you create a Sentinel from the frontend and gcloud is not available, the backend simulates the proxy locally.
+
+### 8) Optional Worker Smoke Test
 
 The worker can be run locally for infrastructure smoke validation:
 
@@ -166,22 +241,23 @@ VisionAI is designed around Google Cloud and Firebase services.
 | Service | How VisionAI Uses It |
 | --- | --- |
 | Firebase Auth | User authentication in the frontend |
-| Firestore | Organizations, audits, drift batches, notifications, benchmarks, API keys, regulations, and system state |
+| Firestore | Organizations, audits, drift batches, notifications, benchmarks, API keys, regulations, attestation certificates, Sentinel state, and system metadata |
 | Cloud Storage | Dataset, model, and drift batch uploads |
-| Cloud Run | Hosts the FastAPI backend |
+| Cloud Run | Hosts the FastAPI backend and Sentinel proxy instances |
 | Cloud Run Jobs | Executes heavy analysis and regulatory sync workloads |
 | Cloud Scheduler | Triggers weekly regulatory sync jobs |
-| Vertex AI / Gemini | Narrative generation, blind spot detection, justified bias classification, and regulatory research |
+| Vertex AI / Gemini | Narrative generation, blind spot detection, justified bias classification, regulatory research, and Sentinel autonomous agent reasoning |
 | Groq | Fallback provider for chat responses |
 | BigQuery | Optional analytics sink for benchmarking and drift metrics |
 | Secret Manager | Production secret storage for API keys and runtime credentials |
-| Cloud Build / Artifact Registry | Container build and image distribution |
+| Cloud Build / Artifact Registry | Container build and image distribution for backend, frontend, worker, and Sentinel |
 
 ### Google Runtime Model
 
 - The frontend reads public Firebase configuration and calls the backend API
 - The backend uses Firebase Admin and Google Cloud credentials to read and write project data
 - The worker consumes the same project data and runs long-lived computations outside the web request path
+- Sentinel proxy instances run as separate Cloud Run services, one per provisioned model endpoint, and write breaker state to Firestore
 - Regulatory sync and audit analysis are both isolated as jobs so user-facing requests stay responsive
 
 ## Security and Privacy
@@ -196,6 +272,8 @@ Security and privacy are first-class design constraints in VisionAI.
 - Public collection access is limited; regulations and system metadata are read-only for authenticated users
 - Production secrets are intended to live in Secret Manager or runtime environment injection, not in client code
 - Org settings control exposure for features such as Explain My Rejection and Shadow Testing
+- Sentinel proxy traffic and intercepted decisions are stored per-organization in Firestore and are not shared across tenants
+- Attestation certificates are cryptographically signed and independently verifiable
 
 Recommended operational practices:
 
@@ -311,10 +389,38 @@ The frontend and operational workflows rely on these backend routes:
 | Audit workflow | `POST /api/audits`, `GET /api/audits/{audit_id}`, `GET /api/audits/{audit_id}/pareto` |
 | Audit exports | `GET /api/audits/{audit_id}/export/pdf`, `GET /api/audits/{audit_id}/export/legal`, `GET /api/audits/{audit_id}/export/anon` |
 | Audit interactions | `GET /api/audits/{audit_id}/sample-row`, `POST /api/audits/{audit_id}/predict`, `POST /api/audits/{audit_id}/minimum-flip`, `POST /api/audits/{audit_id}/red-team`, `POST /api/audits/{audit_id}/shadow-test`, `GET /api/audits/{audit_id}/explain/{row_index}` |
+| What-If Simulator | `POST /api/audits/{audit_id}/whatif/predict`, `POST /api/audits/{audit_id}/whatif/mirror`, `GET /api/audits/{audit_id}/whatif/random-row` |
+| Causal Fairness | `POST /api/audits/{audit_id}/causal/build-dag`, `POST /api/audits/{audit_id}/causal/estimate-effects` |
+| LLM/RAG Bias | `POST /api/audits/{audit_id}/llm-bias/evaluate` |
+| Quantization Profiler | `POST /api/quantization/evaluate`, `GET /api/quantization/report/{report_id}` |
+| Transfer Bias | `POST /api/transfer-bias/evaluate` |
+| Feature Stores | `POST /api/feature-stores/connect`, `POST /api/feature-stores/profile`, `GET /api/feature-stores/history/{fs_id}` |
+| Attestation | `POST /api/attestation/generate`, `POST /api/attestation/verify` |
+| Pipelines | `POST /api/pipelines/run`, `GET /api/pipelines/{pipeline_id}` |
+| Sentinel | `POST /api/sentinel/{org_id}`, `GET /api/sentinel/{org_id}`, `DELETE /api/sentinel/{org_id}/{sentinel_id}`, `GET /api/sentinel/{org_id}/{sentinel_id}/status`, `POST /api/sentinel/{org_id}/{sentinel_id}/reset` |
 | Upload preprocessing | `POST /api/uploads/dataset`, `POST /api/uploads/preprocess` |
 | Organization settings | `GET /api/orgs/{org_id}/settings`, `PUT /api/orgs/{org_id}/settings` |
 | Benchmarks | `GET /api/benchmarks/{domain}` |
 | Drift monitoring | `POST /api/drift/upload`, `GET /api/drift/{org_id}`, `GET /api/drift/{org_id}/notifications`, `GET /api/drift/{org_id}/notifications/count` |
+
+## Testing
+
+Tests are located in the `tests/` directory at the repository root:
+
+```powershell
+cd tests
+pytest -v
+```
+
+Available test suites:
+
+| Test file | Coverage |
+| --- | --- |
+| `test_audit.py` | Audit creation, analysis pipeline, and result retrieval |
+| `test_attestation.py` | Attestation certificate generation and verification |
+| `test_feature_stores.py` | Feature store connection, profiling, and skew detection |
+| `test_llm_bias.py` | LLM and RAG bias evaluation probe generation and scoring |
+| `test_sentinel.py` | Sentinel provisioning, status checks, and circuit breaker behavior |
 
 ## Deployment Notes
 
@@ -323,8 +429,18 @@ Production deployment uses the Google Cloud stack defined in `infra/` and descri
 - Backend API runs on Cloud Run
 - Heavy analysis and regulatory sync run in Cloud Run Jobs
 - The worker image is built from `worker/Dockerfile` via Cloud Build
+- Sentinel proxy instances are deployed as individual Cloud Run services from `sentinel/Dockerfile`
 - Firestore rules are defined in `infra/firestore.rules`
 - The frontend is deployed separately as a Next.js service
+
+GitHub Actions workflows for continuous deployment:
+
+| Workflow | Trigger | Target |
+| --- | --- | --- |
+| `deploy-backend.yml` | Push to `main` (changes in `backend/`) | Cloud Run service `visionai-api` |
+| `deploy-frontend.yml` | Push to `main` (changes in `frontend/`) | Cloud Run service `visionai-frontend` |
+| `deploy-worker.yml` | Push to `main` (changes in `worker/`) | Cloud Run Job `visionai-worker` |
+| `deploy-sentinel.yml` | Push to `main` (changes in `sentinel/`) | Artifact Registry image `visionai-sentinel` |
 
 For deployment-specific commands and IAM setup, see:
 
@@ -336,9 +452,10 @@ For deployment-specific commands and IAM setup, see:
 
 ## Support and Operating Model
 
-VisionAI is structured so the web app, worker, and SDK can evolve independently while sharing the same fairness methodology.
+VisionAI is structured so the web app, worker, Sentinel, and SDK can evolve independently while sharing the same fairness methodology.
 
 - The frontend is optimized for guided product workflows
 - The backend provides stable API boundaries for the UI and automation
 - The worker isolates long-running compute from request/response latency
+- The Sentinel provides real-time fairness enforcement at the model inference layer
 - The SDK enables internal teams to reuse the analysis stack directly in Python

@@ -46,6 +46,66 @@ interface LLMBiasResponse {
   };
 }
 
+// Simple markdown renderer for LLM output responses
+const renderMarkdown = (md: string) => {
+  const lines = md.split('\n');
+  const elements: any[] = [];
+  let listItems: string[] = [];
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      elements.push(
+        <ul key={`list-${elements.length}`} className="space-y-1 ml-4 mb-3 list-disc">
+          {listItems.map((item, j) => (
+            <li key={j} className="text-xs" style={{ color: 'var(--fg)' }}>
+              <span dangerouslySetInnerHTML={{ __html: inlineFormat(item) }} />
+            </li>
+          ))}
+        </ul>
+      );
+      listItems = [];
+    }
+  };
+
+  const inlineFormat = (text: string) => {
+    return text
+      .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--fg)">$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code style="background:var(--surface-2);padding:1px 4px;border-radius:3px;font-size:10px;color:var(--primary);border:1px solid var(--border)">$1</code>');
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    if (line.startsWith('# ')) {
+      flushList();
+      elements.push(<h2 key={i} className="text-sm font-bold mb-2 mt-4" style={{ color: 'var(--fg)' }}>{line.slice(2)}</h2>);
+    } else if (line.startsWith('## ')) {
+      flushList();
+      elements.push(<h3 key={i} className="text-xs font-bold mb-2 mt-3" style={{ color: 'var(--primary)' }}>{line.slice(3)}</h3>);
+    } else if (line.startsWith('### ')) {
+      flushList();
+      elements.push(<h4 key={i} className="text-[11px] font-bold mb-1 mt-2" style={{ color: 'var(--primary)' }}>{line.slice(4)}</h4>);
+    } else if (line.startsWith('---')) {
+      flushList();
+      elements.push(<hr key={i} className="my-3" style={{ borderColor: 'var(--border)' }} />);
+    } else if (line.startsWith('- ') || line.startsWith('* ') || /^\d+\.\s/.test(line)) {
+      const content = line.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '');
+      listItems.push(content);
+    } else if (line === '') {
+      flushList();
+    } else {
+      flushList();
+      elements.push(
+        <p key={i} className="text-xs mb-2 leading-relaxed" style={{ color: 'var(--fg)' }}
+          dangerouslySetInnerHTML={{ __html: inlineFormat(line) }} />
+      );
+    }
+  }
+  flushList();
+  return elements;
+};
+
 export default function LLMAuditPage() {
   const { org } = useAuth();
   
@@ -469,9 +529,9 @@ export default function LLMAuditPage() {
                                           <div className="text-[9px] text-muted font-semibold uppercase tracking-wider">
                                             Probe Template {idx + 1} Result
                                           </div>
-                                          <p className="text-[11px] leading-relaxed text-fg italic font-serif">
-                                            "{resp}"
-                                          </p>
+                                          <div className="text-xs leading-relaxed text-fg space-y-1.5 pt-1">
+                                            {renderMarkdown(resp)}
+                                          </div>
                                         </div>
                                       ))}
                                     </div>

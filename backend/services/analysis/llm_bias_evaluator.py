@@ -1,6 +1,7 @@
 import numpy as np
 import httpx
 import logging
+import os
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -77,37 +78,49 @@ encoder_model = None
 def get_toxicity_model():
     global toxicity_model
     if toxicity_model is None:
-        try:
-            from detoxify import Detoxify
-            toxicity_model = Detoxify('original')
-            logger.info("Loaded real Detoxify model.")
-        except Exception as e:
-            logger.warning(f"Could not load real Detoxify model: {e}. Using mock.")
+        if os.environ.get("FORCE_MOCK_AUDIT_MODELS", "true") == "true":
+            logger.info("Forcing Mock Detoxify model.")
             toxicity_model = MockDetoxify()
+        else:
+            try:
+                from detoxify import Detoxify
+                toxicity_model = Detoxify('original')
+                logger.info("Loaded real Detoxify model.")
+            except Exception as e:
+                logger.warning(f"Could not load real Detoxify model: {e}. Using mock.")
+                toxicity_model = MockDetoxify()
     return toxicity_model
 
 def get_sentiment_analyzer():
     global sentiment_analyzer
     if sentiment_analyzer is None:
-        try:
-            from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-            sentiment_analyzer = SentimentIntensityAnalyzer()
-            logger.info("Loaded real vaderSentiment analyzer.")
-        except Exception as e:
-            logger.warning(f"Could not load real vaderSentiment: {e}. Using mock.")
+        if os.environ.get("FORCE_MOCK_AUDIT_MODELS", "true") == "true":
+            logger.info("Forcing Mock Sentiment Intensity Analyzer.")
             sentiment_analyzer = MockSentimentIntensityAnalyzer()
+        else:
+            try:
+                from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+                sentiment_analyzer = SentimentIntensityAnalyzer()
+                logger.info("Loaded real vaderSentiment analyzer.")
+            except Exception as e:
+                logger.warning(f"Could not load real vaderSentiment: {e}. Using mock.")
+                sentiment_analyzer = MockSentimentIntensityAnalyzer()
     return sentiment_analyzer
 
 def get_encoder():
     global encoder_model
     if encoder_model is None:
-        try:
-            from sentence_transformers import SentenceTransformer
-            encoder_model = SentenceTransformer("all-MiniLM-L6-v2")
-            logger.info("Loaded real SentenceTransformer model.")
-        except Exception as e:
-            logger.warning(f"Could not load real SentenceTransformer: {e}. Using mock.")
+        if os.environ.get("FORCE_MOCK_AUDIT_MODELS", "true") == "true":
+            logger.info("Forcing Mock SentenceTransformer model.")
             encoder_model = MockSentenceTransformer()
+        else:
+            try:
+                from sentence_transformers import SentenceTransformer
+                encoder_model = SentenceTransformer("all-MiniLM-L6-v2")
+                logger.info("Loaded real SentenceTransformer model.")
+            except Exception as e:
+                logger.warning(f"Could not load real SentenceTransformer: {e}. Using mock.")
+                encoder_model = MockSentenceTransformer()
     return encoder_model
 
 

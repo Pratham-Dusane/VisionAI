@@ -15,11 +15,13 @@ import {
   Menu,
   X,
   MessageSquare,
+  Database,
+  ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
 
-type NavIconName = 'dashboard' | 'drift' | 'reports' | 'settings' | 'pipelines' | 'messageSquare' | 'quantization' | 'transfer';
+type NavIconName = 'dashboard' | 'drift' | 'reports' | 'settings' | 'pipelines' | 'messageSquare' | 'quantization' | 'transfer' | 'database' | 'sentinel';
 
 const NAV_GROUPS: { title: string; items: { label: string; href: string; icon: NavIconName }[]; expandable?: boolean }[] = [
   {
@@ -38,6 +40,12 @@ const NAV_GROUPS: { title: string; items: { label: string; href: string; icon: N
     ]
   },
   {
+    title: 'Feature Store',
+    items: [
+      { label: 'Feature Stores', href: '/settings/feature-stores', icon: 'database' as NavIconName },
+    ]
+  },
+  {
     title: 'Optimization',
     items: [
       { label: 'Quantization Profiler', href: '/quantization', icon: 'quantization' as NavIconName },
@@ -48,6 +56,8 @@ const NAV_GROUPS: { title: string; items: { label: string; href: string; icon: N
     items: [
       { label: 'Drift Monitor', href: '/drift', icon: 'drift' as NavIconName },
       { label: 'Reports', href: '/reports', icon: 'reports' as NavIconName },
+      { label: 'Attestation Chains', href: '/attestation/default-model', icon: 'reports' as NavIconName },
+      { label: 'Sentinel Proxy', href: '/sentinel', icon: 'sentinel' as NavIconName },
     ]
   },
   {
@@ -97,6 +107,18 @@ function NavIcon({ type, active }: { type: NavIconName; active: boolean }) {
   if (type === 'messageSquare') {
     return (
       <MessageSquare className="sidebar-nav-icon" size={18} strokeWidth={strokeWidth} style={{ fill: active ? 'var(--icon-fill)' : 'none' }} />
+    );
+  }
+
+  if (type === 'database') {
+    return (
+      <Database className="sidebar-nav-icon" size={18} strokeWidth={strokeWidth} style={{ fill: active ? 'var(--icon-fill)' : 'none' }} />
+    );
+  }
+
+  if (type === 'sentinel') {
+    return (
+      <ShieldAlert className="sidebar-nav-icon" size={18} strokeWidth={strokeWidth} style={{ fill: active ? 'var(--icon-fill)' : 'none' }} />
     );
   }
 

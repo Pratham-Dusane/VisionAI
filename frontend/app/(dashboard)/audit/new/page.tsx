@@ -194,6 +194,7 @@ export default function NewAuditPage() {
   const [launchError, setLaunchError] = useState('');
   const [threshold, setThreshold] = useState(0.8);
   const [jurisdiction, setJurisdiction] = useState('Global');
+  const [modelIdentifier, setModelIdentifier] = useState('');
 
   // Progressive Disclosure states
   const [showAllColumns, setShowAllColumns] = useState(false);
@@ -790,6 +791,27 @@ export default function NewAuditPage() {
               {showAdvanced && (
                 <div className="p-4 pt-2 space-y-4 border-t" style={{ borderColor: 'var(--border)' }}>
                   <div>
+                    <label className="text-xs font-semibold mb-1 flex items-center gap-1.5" style={{ color: 'var(--muted)' }}>
+                      Model Identifier
+                      <span className="tooltip inline-flex items-center cursor-help">
+                        <Info size={13} style={{ color: 'var(--primary)' }} />
+                        <span className="tooltip-content text-xs" style={{ width: '240px', whiteSpace: 'normal', lineHeight: '1.4' }}>
+                          A stable name for this model across retrains (e.g. &apos;loan-screening&apos;). Used to link audit versions into an attestation chain.
+                        </span>
+                      </span>
+                    </label>
+                    <input
+                      className="input"
+                      placeholder="e.g., loan-screening"
+                      value={modelIdentifier}
+                      onChange={(e) => setModelIdentifier(e.target.value)}
+                    />
+                    <span className="text-xs mt-1 block" style={{ color: 'var(--placeholder)' }}>
+                      Stable name to track models across retrains and form an attestation chain (optional)
+                    </span>
+                  </div>
+
+                  <div>
                     <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--muted)' }}>
                       Jurisdiction
                     </label>
@@ -910,6 +932,12 @@ export default function NewAuditPage() {
                 <span>{auditName || 'Untitled Audit'}</span>
                 <span style={{ color: 'var(--muted)' }}>Domain</span>
                 <span>{domain || '-'}</span>
+                {modelIdentifier && (
+                  <>
+                    <span style={{ color: 'var(--muted)' }}>Model Identifier</span>
+                    <span>{modelIdentifier}</span>
+                  </>
+                )}
                 <span style={{ color: 'var(--muted)' }}>Dataset</span>
                 <span>{dataFile?.name || '-'} ({rowCount.toLocaleString()} rows)</span>
                 <span style={{ color: 'var(--muted)' }}>Model</span>
@@ -976,6 +1004,7 @@ export default function NewAuditPage() {
                       deployedSince: deployedSince || undefined,
                       decisionsPerMonth: decisionsPerMonth ? parseInt(decisionsPerMonth) : undefined,
                       jurisdiction,
+                      model_identifier: modelIdentifier || undefined,
                     });
                     router.push(`/audit/${result.auditId}`);
                   } catch (err: any) {
