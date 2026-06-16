@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { getApiBase } from '@/lib/apiBase';
 
 interface ParetoFrontierProps {
   auditId: string;
@@ -32,7 +33,7 @@ export default function ParetoFrontier({ auditId, hasModel, initialParetoData }:
     setLoading(true);
     setError('');
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/api/audits/${auditId}/pareto`);
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'Failed to compute Pareto frontier' }));

@@ -2,6 +2,7 @@
 
 import TopNav from '@/components/layout/TopNav';
 import { getSentinelStatus, getSentinelReviewQueue, resolveReviewQueueItem, resetSentinelBreaker } from '@/lib/api';
+import { getApiBase } from '@/lib/apiBase';
 import { useAuth } from '@/lib/auth-context';
 import { Shield, ShieldAlert, ShieldCheck, Loader2, ArrowLeft, RefreshCw, AlertCircle, Check, X, Clock, HelpCircle } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
@@ -274,7 +275,7 @@ export default function SentinelLiveMonitor() {
   const handleSimulateTraffic = async () => {
     setSimulating(true);
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin.replace(':3000', ':8000');
+      const apiBase = getApiBase();
       const res = await fetch(`${apiBase}/api/sentinel/${sentinelId}/simulate-traffic`, {
         method: 'POST',
       });

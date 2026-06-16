@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { getApiBase } from '@/lib/apiBase';
 import TopNav from '@/components/layout/TopNav';
 import {
   ShieldCheck,
@@ -61,7 +62,7 @@ export default function AttestationChainPage({ params }: { params: Promise<{ mod
     reason?: string;
   } | null>(null);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+  const API_BASE = getApiBase();
 
   useEffect(() => {
     if (org?.id && modelIdentifier) {

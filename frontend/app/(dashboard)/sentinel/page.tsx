@@ -2,6 +2,7 @@
 
 import TopNav from '@/components/layout/TopNav';
 import { listSentinels, createSentinel, deleteSentinel } from '@/lib/api';
+import { getApiBase } from '@/lib/apiBase';
 import { useAuth } from '@/lib/auth-context';
 import { Shield, ShieldAlert, ShieldCheck, Loader2, Plus, ArrowRight, ExternalLink, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -94,7 +95,7 @@ export default function SentinelListPage() {
   }, [org?.id, orgLoading]);
 
   const handlePrefillDemo = () => {
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin.replace(':3000', ':8000');
+    const apiBase = getApiBase();
     setModelName('Demo Lending Model');
     setTargetEndpoint(`${apiBase}/api/mock-predict`);
     setTargetAuthHeader('');
