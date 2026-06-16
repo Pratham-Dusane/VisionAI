@@ -25,7 +25,7 @@ class CreateSentinelRequest(BaseModel):
     breaker_mode: str = "intercept"
     alert_webhook_url: str | None = None
 
-@router.post("/")
+@router.post("")
 async def create_sentinel(orgId: str, request: CreateSentinelRequest, raw_request: Request):
     """
     Provisions a new Sentinel proxy for an organization.
@@ -147,7 +147,7 @@ async def create_sentinel(orgId: str, request: CreateSentinelRequest, raw_reques
         ),
     }
 
-@router.get("/")
+@router.get("")
 async def list_sentinels(orgId: str):
     """Lists all configured Sentinels for an organization."""
     db = firestore.client()

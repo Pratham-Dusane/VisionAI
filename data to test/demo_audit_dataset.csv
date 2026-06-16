@@ -1,0 +1,1501 @@
+applicant_id,gender,race,age,credit_score,annual_income,debt_to_income,employment_years,loan_amount,zip_code,marital_status,neighborhood_score,education_level,num_dependents,has_cosigner,previous_defaults,nationality,disability_status,loan_approved
+1,Male,Black,46,603,71962.06,0.2455,7,23215.25,20004,Married,3.85,Bachelor's,3,0,3,US Citizen,None,0
+2,Female,White,48,747,71431.84,0.2394,13,32552.41,10003,Single,9.07,High School,0,0,0,US Citizen,Other,1
+3,Female,White,49,791,69113.55,0.3339,19,58732.11,10005,Single,8.11,Bachelor's,3,0,0,US Citizen,None,1
+4,Female,White,26,659,65633.89,0.1229,4,23172.58,10002,Single,7.73,Bachelor's,1,1,0,US Citizen,None,1
+5,Male,White,55,699,74016.13,0.3027,30,24378.43,10002,Single,8.3,Master's,1,0,0,Visa Holder,None,1
+6,Male,White,44,711,85413.66,0.5032,18,54949.38,10003,Single,8.97,Bachelor's,2,0,1,US Citizen,Physical,1
+7,Male,Black,32,542,27327.28,0.3982,7,19922.14,20003,Married,4.42,PhD,3,0,0,US Citizen,None,0
+8,Female,Black,37,681,34875.78,0.3749,7,27740.41,20002,Single,1.68,High School,3,0,3,US Citizen,None,0
+9,Female,Black,22,589,25000.0,0.3358,0,53584.74,20001,Divorced,6.3,PhD,3,1,0,US Citizen,None,0
+10,Female,Hispanic,38,647,45007.32,0.4878,8,152949.75,30001,Married,5.09,Bachelor's,4,0,0,US Citizen,None,0
+11,Male,Hispanic,25,630,45639.58,0.2509,3,55480.29,30002,Married,9.34,Bachelor's,0,0,1,US Citizen,None,0
+12,Female,Black,22,584,39961.52,0.6316,1,50556.55,20002,Divorced,3.6,High School,1,1,0,Permanent Resident,None,0
+13,Female,Asian,22,709,45928.25,0.562,0,52657.35,40001,Single,6.5,Bachelor's,0,0,0,US Citizen,None,0
+14,Male,White,54,708,67276.7,0.3308,17,17133.09,10004,Married,8.39,Master's,3,0,0,US Citizen,Physical,1
+15,Male,White,35,699,60856.39,0.2986,11,39376.23,10003,Married,8.41,Master's,0,0,1,US Citizen,None,1
+16,Male,White,58,679,62408.3,0.4237,25,35566.64,10002,Married,8.01,High School,3,0,0,US Citizen,None,1
+17,Male,Black,30,662,70691.93,0.5114,7,45483.69,20004,Married,3.66,Bachelor's,1,1,0,US Citizen,None,1
+18,Male,Hispanic,22,767,39433.11,0.2533,1,39401.36,30001,Married,3.76,High School,1,0,1,Permanent Resident,None,1
+19,Male,White,29,727,50856.71,0.2368,8,47372.15,10004,Married,6.69,PhD,0,1,0,US Citizen,None,1
+20,Male,Asian,50,769,101344.1,0.1413,19,29201.43,40001,Married,5.03,Master's,1,1,2,US Citizen,None,1
+21,Female,White,40,643,40766.3,0.3791,10,37836.38,10004,Married,9.98,High School,3,0,0,US Citizen,None,0
+22,Male,Asian,32,719,44066.19,0.38,5,15375.34,40002,Married,5.67,Master's,0,0,1,Visa Holder,None,0
+23,Male,White,43,659,54626.7,0.138,14,29029.42,10001,Married,7.15,Master's,1,0,0,Visa Holder,Physical,0
+24,Male,White,47,638,73731.93,0.2454,3,96142.19,10001,Single,8.33,Bachelor's,0,0,1,US Citizen,None,1
+25,Male,White,54,679,87664.47,0.1383,19,45395.39,10005,Married,7.51,Master's,1,0,1,US Citizen,None,1
+26,Female,White,57,785,84095.13,0.2221,20,35787.55,10001,Divorced,6.79,Bachelor's,0,0,2,US Citizen,None,1
+27,Male,White,38,772,105049.93,0.3661,5,136938.38,10002,Married,7.32,Bachelor's,1,0,0,Permanent Resident,None,1
+28,Male,White,27,733,25000.0,0.212,2,14008.44,10005,Married,6.77,Bachelor's,3,1,0,US Citizen,None,0
+29,Female,Hispanic,31,560,53501.03,0.3439,8,16703.63,20003,Divorced,5.12,Bachelor's,1,0,1,US Citizen,None,0
+30,Male,Black,38,626,48142.54,0.1847,11,120438.92,20001,Married,5.09,Bachelor's,1,0,0,Permanent Resident,None,1
+31,Female,White,31,736,43403.77,0.3524,6,37502.87,10005,Divorced,6.26,High School,2,1,0,US Citizen,None,1
+32,Male,Black,26,652,37818.92,0.3747,3,30643.99,20001,Married,6.12,Master's,0,0,3,US Citizen,None,0
+33,Male,Black,39,520,43649.95,0.2925,11,15686.52,20001,Married,4.61,Bachelor's,1,0,0,US Citizen,None,1
+34,Female,White,41,671,85467.87,0.3073,17,49681.47,10004,Divorced,6.8,Bachelor's,2,0,3,US Citizen,None,0
+35,Female,White,42,716,73634.46,0.3516,13,53163.21,10001,Divorced,7.12,Master's,0,0,0,US Citizen,None,1
+36,Female,White,33,749,54147.94,0.2322,4,16879.48,10003,Divorced,8.9,Bachelor's,2,0,1,US Citizen,None,1
+37,Male,White,39,599,87655.24,0.1228,17,32919.06,10003,Single,8.48,Bachelor's,1,0,0,US Citizen,None,1
+38,Male,Black,26,628,25000.0,0.5967,4,28713.97,20005,Divorced,4.86,PhD,3,0,1,US Citizen,None,0
+39,Female,White,51,727,48239.42,0.254,14,43442.09,10004,Single,6.78,Master's,4,1,2,US Citizen,None,0
+40,Male,Black,46,699,30085.98,0.3684,9,16589.49,20004,Married,5.35,High School,0,0,0,Visa Holder,None,0
+41,Male,Black,22,688,33496.28,0.5013,1,87235.2,20004,Married,4.52,Bachelor's,1,0,2,US Citizen,None,0
+42,Male,White,31,752,62455.48,0.7235,6,68945.85,10004,Married,9.59,PhD,1,0,0,US Citizen,None,1
+43,Male,Black,22,584,45530.38,0.2307,1,28163.36,20004,Married,4.44,Bachelor's,0,0,0,US Citizen,None,0
+44,Female,White,34,615,56840.13,0.384,7,31210.41,10004,Divorced,9.52,Bachelor's,3,0,2,US Citizen,None,1
+45,Male,Asian,37,686,44384.15,0.2151,7,33007.98,40001,Married,7.25,High School,3,1,0,Visa Holder,None,1
+46,Female,White,26,775,60247.32,0.2653,4,21061.12,10001,Divorced,6.26,High School,1,0,1,US Citizen,None,0
+47,Male,Hispanic,26,750,50709.91,0.2636,4,26624.83,30002,Married,10.0,Master's,2,0,0,US Citizen,Other,1
+48,Male,Black,25,689,57329.31,0.2449,3,30055.79,20001,Married,2.33,Master's,0,0,2,Permanent Resident,None,1
+49,Male,White,44,743,43598.57,0.295,17,112308.84,20005,Single,5.13,PhD,2,0,0,US Citizen,None,0
+50,Male,Black,36,666,59607.86,0.2031,9,70448.19,10001,Married,1.39,Master's,3,0,0,US Citizen,None,0
+51,Female,Asian,30,676,33583.52,0.4436,6,69860.68,40003,Married,10.0,High School,2,0,0,Permanent Resident,Physical,0
+52,Female,Black,37,630,42490.15,0.4166,14,47049.14,40002,Single,7.69,High School,1,0,0,US Citizen,None,0
+53,Female,Hispanic,30,768,51705.47,0.4307,7,16611.84,30002,Divorced,5.72,PhD,2,0,0,US Citizen,None,1
+54,Female,Hispanic,32,598,46416.4,0.3241,6,35275.93,30001,Single,6.15,Bachelor's,1,0,0,US Citizen,Physical,0
+55,Female,White,60,808,62626.9,0.2859,30,71635.2,10001,Single,7.8,Bachelor's,2,0,0,Permanent Resident,None,1
+56,Female,White,56,702,72294.1,0.3645,4,15051.23,10001,Divorced,5.38,Master's,1,0,0,US Citizen,None,1
+57,Male,Black,23,732,25000.0,0.2403,3,56703.27,20004,Married,6.69,Bachelor's,1,1,1,US Citizen,Other,0
+58,Male,White,51,642,95684.01,0.257,8,184577.82,10001,Single,9.09,High School,2,0,0,Visa Holder,None,1
+59,Male,Hispanic,42,698,56548.24,0.2468,10,76364.38,30004,Married,3.65,Master's,3,1,0,US Citizen,None,0
+60,Male,Asian,26,665,72208.25,0.1931,3,97715.98,40003,Married,7.42,PhD,0,0,0,US Citizen,None,0
+61,Male,White,51,642,70532.02,0.05,17,42312.47,10004,Single,7.41,High School,4,0,0,US Citizen,None,1
+62,Male,White,58,732,77016.36,0.4607,30,71507.12,10001,Single,7.25,Master's,2,0,1,US Citizen,None,1
+63,Female,Hispanic,24,725,28147.2,0.2976,1,21971.53,30003,Divorced,4.48,Bachelor's,2,0,0,US Citizen,None,0
+64,Male,White,31,673,73172.61,0.4396,7,63392.74,10001,Single,7.37,Bachelor's,3,0,1,Visa Holder,None,0
+65,Male,Hispanic,44,562,50550.03,0.4783,11,57415.62,30004,Married,4.71,Master's,1,0,1,US Citizen,None,0
+66,Male,White,44,714,81658.93,0.1457,15,44486.36,10005,Married,8.78,PhD,3,1,1,US Citizen,None,1
+67,Male,Black,41,633,53108.71,0.2494,12,91236.03,20002,Married,4.46,High School,0,0,0,US Citizen,None,0
+68,Female,White,45,750,33760.55,0.6373,15,24905.67,10004,Divorced,6.67,High School,0,0,0,US Citizen,None,0
+69,Male,Black,39,706,48726.79,0.5901,9,31858.51,20003,Single,4.46,High School,2,0,2,US Citizen,None,0
+70,Female,White,27,716,31313.38,0.3262,3,38825.15,10004,Divorced,7.33,Bachelor's,3,1,1,US Citizen,None,0
+71,Female,Black,46,769,55078.54,0.4409,17,17663.79,20005,Married,4.22,High School,3,0,0,US Citizen,None,0
+72,Male,White,54,732,63333.88,0.2243,26,42567.76,10005,Married,8.31,Bachelor's,2,0,0,Permanent Resident,None,0
+73,Male,Black,33,615,66479.13,0.4319,6,10902.51,20001,Married,4.09,High School,2,1,1,US Citizen,None,1
+74,Female,Hispanic,34,555,45043.86,0.2939,5,75574.04,30003,Divorced,4.64,Bachelor's,1,0,1,US Citizen,None,0
+75,Female,White,25,705,44736.06,0.0861,3,37520.63,10002,Divorced,5.87,High School,5,0,1,US Citizen,None,1
+76,Female,White,47,701,74838.38,0.1714,16,25219.56,10003,Divorced,7.49,Master's,1,0,0,US Citizen,None,1
+77,Female,White,48,772,80258.6,0.3325,21,20250.58,10001,Single,8.99,High School,2,1,0,Permanent Resident,None,0
+78,Male,Black,35,672,53852.02,0.2443,6,30816.17,20002,Married,4.31,Bachelor's,2,1,0,US Citizen,None,0
+79,Male,Black,47,557,51969.5,0.3719,6,58793.22,20002,Married,3.75,Master's,2,1,0,US Citizen,None,1
+80,Male,Black,32,652,25197.96,0.251,5,53285.38,20004,Married,3.36,Master's,1,0,0,US Citizen,None,0
+81,Female,White,48,756,55509.25,0.2361,12,22161.76,10002,Single,5.43,High School,4,1,1,US Citizen,None,1
+82,Female,White,30,804,42141.82,0.4324,5,20085.88,10002,Married,8.91,High School,2,0,0,US Citizen,None,1
+83,Male,Black,35,702,55759.36,0.4097,7,57516.61,20002,Married,5.23,Master's,4,0,2,US Citizen,None,0
+84,Male,White,40,761,63132.8,0.2988,14,21902.52,10004,Married,8.42,Bachelor's,0,0,0,US Citizen,None,1
+85,Male,Asian,40,713,78628.99,0.4055,10,37870.85,40003,Single,7.33,Master's,2,0,0,US Citizen,Physical,1
+86,Male,White,37,741,56355.25,0.3577,10,39601.74,10005,Single,6.53,Bachelor's,2,0,0,US Citizen,None,1
+87,Female,Black,34,727,45554.38,0.5836,8,45181.52,20004,Single,4.02,Bachelor's,2,0,0,US Citizen,None,0
+88,Female,White,51,646,85959.81,0.2748,19,66223.41,10001,Married,6.9,Bachelor's,4,1,1,US Citizen,None,1
+89,Female,White,37,700,62127.38,0.2784,10,15001.81,10003,Married,7.0,Master's,0,0,0,US Citizen,None,0
+90,Male,Black,22,585,43086.94,0.2239,1,9529.89,20005,Divorced,3.88,Master's,0,0,0,US Citizen,None,0
+91,Male,Black,53,666,59200.33,0.3285,14,24410.95,20004,Married,6.16,High School,1,1,0,US Citizen,Physical,1
+92,Female,Asian,51,783,58701.53,0.4458,27,128164.5,40002,Married,9.63,Bachelor's,0,0,0,US Citizen,None,1
+93,Female,White,27,687,36240.8,0.486,3,149570.31,10004,Divorced,6.45,High School,5,0,1,US Citizen,None,0
+94,Female,White,49,588,58484.9,0.4452,9,130852.24,30004,Single,7.3,Bachelor's,0,0,0,US Citizen,None,0
+95,Female,Black,30,611,55024.99,0.1947,6,31726.67,20002,Divorced,4.83,Master's,1,0,1,Visa Holder,None,0
+96,Male,Black,38,703,53171.18,0.51,7,10430.81,20003,Married,3.03,Bachelor's,0,0,1,Permanent Resident,Physical,0
+97,Male,White,45,749,52663.4,0.0794,18,7043.59,10002,Married,7.56,PhD,2,0,0,US Citizen,None,1
+98,Male,White,39,743,93912.54,0.4078,19,23627.66,10005,Married,7.92,Bachelor's,1,1,0,US Citizen,None,1
+99,Male,White,33,704,66669.48,0.2559,5,31613.78,10005,Single,7.41,PhD,0,0,1,US Citizen,None,0
+100,Male,Hispanic,28,576,27575.35,0.4343,5,90258.93,30003,Single,6.44,Master's,1,0,1,US Citizen,None,0
+101,Male,White,31,748,53402.27,0.1401,2,66666.9,10004,Married,7.5,High School,1,0,0,US Citizen,None,1
+102,Female,White,32,674,54663.3,0.4705,8,42581.86,10001,Married,4.06,High School,5,0,0,US Citizen,Physical,0
+103,Male,White,41,820,94798.88,0.1242,8,19479.32,10005,Married,6.35,Bachelor's,0,0,0,US Citizen,None,1
+104,Male,White,34,751,46168.31,0.2198,6,18535.71,10001,Divorced,9.22,High School,2,1,0,Permanent Resident,None,1
+105,Female,White,49,688,81240.61,0.2102,11,43385.88,10004,Divorced,8.12,Bachelor's,5,0,0,Permanent Resident,None,1
+106,Male,Black,50,597,86875.8,0.1695,22,59156.14,20001,Single,1.0,Bachelor's,3,0,0,US Citizen,None,0
+107,Male,White,35,714,54280.19,0.3113,12,47777.82,10002,Married,5.69,PhD,5,1,0,US Citizen,Physical,1
+108,Female,Hispanic,37,644,44287.3,0.5967,10,17602.24,30003,Single,6.58,Bachelor's,4,0,0,US Citizen,Other,1
+109,Male,White,47,781,59205.36,0.62,11,57266.29,10005,Married,6.81,Master's,1,0,0,US Citizen,None,1
+110,Male,Black,40,653,55011.58,0.3917,18,48929.59,20005,Single,1.0,PhD,2,0,2,US Citizen,None,1
+111,Male,Hispanic,35,612,53604.65,0.484,6,17163.38,30002,Single,7.09,Master's,0,0,1,US Citizen,None,0
+112,Male,Black,43,772,70304.25,0.4079,3,20972.67,10002,Married,5.59,High School,1,1,2,US Citizen,None,0
+113,Female,Black,40,643,66842.75,0.4699,13,58802.94,10001,Single,3.26,Bachelor's,3,0,0,US Citizen,None,0
+114,Female,White,28,762,38578.56,0.2889,3,30817.71,10004,Single,8.99,Bachelor's,2,0,0,US Citizen,None,1
+115,Female,White,51,686,38690.12,0.3534,24,110459.38,20005,Married,6.55,Bachelor's,2,0,0,Permanent Resident,None,1
+116,Female,Black,44,665,52891.33,0.4745,12,51574.9,20004,Divorced,3.57,Bachelor's,2,1,1,US Citizen,None,1
+117,Female,Asian,30,728,55803.06,0.2606,7,25831.71,40001,Single,6.37,Master's,1,1,0,US Citizen,Physical,1
+118,Male,Black,36,520,58676.77,0.3707,14,36056.99,20004,Single,1.66,Bachelor's,3,0,0,US Citizen,None,1
+119,Female,Black,42,781,46949.9,0.403,7,37963.04,30001,Divorced,5.12,Bachelor's,1,0,2,US Citizen,None,0
+120,Male,Black,33,730,54460.78,0.4792,6,21810.06,20005,Single,5.28,PhD,0,0,1,Permanent Resident,None,0
+121,Female,White,53,698,92531.67,0.2021,19,19171.66,10003,Divorced,6.95,High School,3,0,2,US Citizen,None,0
+122,Female,White,68,659,87526.01,0.3238,30,59336.09,10003,Divorced,8.35,Bachelor's,1,1,0,US Citizen,None,1
+123,Male,Black,28,664,43078.97,0.6094,3,65623.64,20005,Single,2.11,Master's,3,1,0,US Citizen,None,0
+124,Male,Asian,24,715,46087.03,0.4397,1,55417.3,40001,Married,7.89,High School,2,1,0,Permanent Resident,None,0
+125,Male,White,45,739,70362.21,0.4619,17,104895.79,10005,Married,7.89,Bachelor's,1,0,1,US Citizen,None,1
+126,Male,Black,43,653,84960.6,0.3829,11,24853.62,20005,Single,3.46,High School,3,1,1,US Citizen,None,0
+127,Female,White,39,747,55850.49,0.3685,11,117241.31,10005,Single,8.0,Master's,2,1,2,US Citizen,None,1
+128,Female,Black,50,741,56993.08,0.5303,8,19328.87,20001,Divorced,3.18,Bachelor's,1,0,0,US Citizen,None,0
+129,Male,White,27,751,49115.3,0.4872,7,17874.32,10003,Single,8.83,Bachelor's,0,0,1,US Citizen,None,0
+130,Male,White,49,662,93074.75,0.0658,9,10593.85,10005,Single,8.13,Bachelor's,3,1,0,US Citizen,None,1
+131,Male,Hispanic,29,748,78859.06,0.1921,4,26580.77,30003,Married,6.05,High School,0,0,0,US Citizen,None,0
+132,Male,White,60,810,93469.2,0.4571,23,25524.51,10003,Single,6.95,High School,3,1,0,US Citizen,None,0
+133,Male,Black,55,820,71035.09,0.3468,30,52478.36,20005,Married,5.66,Bachelor's,1,0,1,US Citizen,None,1
+134,Male,Hispanic,28,586,49231.24,0.2694,2,43076.1,30004,Single,7.31,Bachelor's,2,0,0,Permanent Resident,None,0
+135,Female,Asian,32,724,25000.0,0.1795,11,15755.09,40003,Single,9.09,Bachelor's,4,1,0,US Citizen,None,0
+136,Male,White,51,605,89607.26,0.2334,23,27586.77,10005,Married,6.85,Bachelor's,0,0,0,US Citizen,None,1
+137,Male,White,37,750,67562.5,0.1317,11,28000.47,10001,Married,8.48,Bachelor's,2,1,0,US Citizen,None,1
+138,Female,White,41,689,66625.13,0.5809,8,10475.69,10001,Married,9.17,Bachelor's,3,0,0,US Citizen,None,1
+139,Male,Asian,38,820,55798.07,0.2973,12,18275.88,40002,Married,6.68,Bachelor's,3,0,0,US Citizen,None,1
+140,Female,Asian,22,663,39233.15,0.323,0,21171.91,40001,Married,8.83,High School,2,0,0,US Citizen,None,0
+141,Female,Black,35,521,40924.63,0.4806,12,99065.6,10005,Divorced,4.74,Master's,2,0,3,Permanent Resident,None,1
+142,Male,Hispanic,28,629,64003.84,0.4655,3,41523.53,10001,Single,3.97,Master's,3,0,2,US Citizen,None,1
+143,Male,Black,31,520,45344.1,0.4935,6,57729.18,20005,Married,3.44,High School,3,1,0,US Citizen,None,0
+144,Male,Black,50,692,97123.4,0.5088,14,12720.31,20004,Married,2.33,Bachelor's,3,0,3,US Citizen,None,1
+145,Male,White,28,606,63732.94,0.2243,3,83780.05,10001,Married,7.45,Bachelor's,1,0,0,US Citizen,None,0
+146,Male,Hispanic,42,661,40492.26,0.3143,16,90289.05,30003,Single,5.26,Bachelor's,5,0,0,US Citizen,None,1
+147,Female,White,38,605,55871.81,0.4223,12,8965.67,10004,Married,7.73,Bachelor's,1,0,0,US Citizen,None,1
+148,Male,Hispanic,32,639,42032.37,0.2867,10,22165.19,30001,Married,7.54,High School,0,1,2,US Citizen,None,0
+149,Male,Hispanic,42,766,26711.76,0.3494,5,51381.63,30002,Married,5.48,Master's,1,0,1,Permanent Resident,None,1
+150,Male,Black,39,665,81273.56,0.4279,15,57015.13,20001,Married,4.1,High School,0,0,2,US Citizen,Other,0
+151,Female,White,48,672,76347.14,0.4242,30,22585.28,10001,Married,7.26,Bachelor's,0,0,1,US Citizen,None,1
+152,Male,White,52,718,87348.11,0.0867,16,29323.67,10002,Married,5.28,Master's,1,0,0,Visa Holder,None,1
+153,Male,White,38,720,68951.05,0.3858,17,23904.77,10005,Single,8.32,Bachelor's,0,0,0,US Citizen,None,1
+154,Male,White,35,745,42979.74,0.272,8,39233.75,10005,Married,7.32,High School,2,0,0,Permanent Resident,None,0
+155,Female,White,30,644,44145.74,0.4149,3,83954.06,10001,Married,7.6,PhD,0,0,0,US Citizen,None,1
+156,Male,Asian,29,745,70816.71,0.3932,4,21168.52,40001,Married,6.74,Master's,0,1,0,US Citizen,None,0
+157,Female,Black,65,520,51721.7,0.6029,30,73172.46,20001,Single,4.69,Master's,0,1,0,US Citizen,Other,0
+158,Female,White,55,685,33423.46,0.4924,15,21011.59,30001,Divorced,5.93,Bachelor's,0,1,0,US Citizen,None,0
+159,Male,White,27,693,52943.41,0.4616,3,20063.57,10004,Married,7.5,High School,1,1,0,US Citizen,None,0
+160,Female,White,27,754,46873.64,0.5032,5,64409.49,10005,Divorced,6.78,PhD,2,1,0,US Citizen,None,0
+161,Male,Black,40,641,60096.95,0.415,12,69241.49,20001,Single,4.55,Bachelor's,4,0,0,US Citizen,None,0
+162,Female,Black,41,541,62097.78,0.4139,15,65906.14,20005,Married,2.98,Master's,3,0,0,Permanent Resident,None,0
+163,Female,Asian,43,650,71364.09,0.4347,14,14457.11,30004,Divorced,7.62,Bachelor's,3,0,0,US Citizen,None,0
+164,Male,White,39,730,71271.55,0.3878,13,26208.38,40002,Married,7.53,Bachelor's,0,1,0,US Citizen,None,1
+165,Male,Asian,36,705,82562.97,0.2629,8,64607.9,10003,Single,5.32,PhD,1,0,2,US Citizen,None,0
+166,Female,Hispanic,37,622,25665.45,0.4286,10,37387.04,30003,Married,6.92,Bachelor's,0,0,0,Permanent Resident,None,1
+167,Male,White,42,693,77718.73,0.2958,9,17127.06,10005,Married,6.88,High School,3,0,0,US Citizen,None,1
+168,Male,Asian,22,751,61148.08,0.1975,1,50052.24,40003,Married,6.53,High School,0,0,1,Permanent Resident,None,0
+169,Male,White,39,691,48796.57,0.4549,8,22018.43,10005,Married,8.46,Bachelor's,2,0,0,US Citizen,None,1
+170,Female,Hispanic,27,654,25000.0,0.3866,5,127537.71,30002,Single,7.11,High School,0,0,1,US Citizen,None,0
+171,Female,White,43,820,50610.87,0.5758,12,107086.16,10005,Single,6.94,Bachelor's,0,0,0,US Citizen,None,1
+172,Male,Hispanic,61,567,64562.38,0.1549,26,55429.55,30004,Married,5.67,Bachelor's,5,0,1,US Citizen,None,0
+173,Male,Hispanic,38,539,67800.79,0.2832,9,94155.66,30002,Married,6.52,Master's,3,0,2,US Citizen,None,1
+174,Male,Hispanic,32,710,42589.42,0.3539,4,38000.48,20005,Married,7.39,Bachelor's,3,0,1,US Citizen,None,0
+175,Female,Hispanic,43,615,39684.77,0.5165,5,62056.85,30003,Divorced,5.63,PhD,2,0,0,US Citizen,None,0
+176,Male,White,47,702,65575.49,0.3479,10,102171.11,10002,Married,8.07,High School,3,0,1,Permanent Resident,None,1
+177,Female,White,46,677,80979.49,0.3673,13,43124.61,10002,Single,6.4,Bachelor's,2,0,1,US Citizen,None,0
+178,Male,White,48,705,75865.65,0.1647,17,30374.81,10005,Married,5.69,High School,4,0,1,Permanent Resident,None,0
+179,Female,White,64,807,75911.23,0.1912,30,11012.26,10004,Married,8.17,Master's,1,0,0,US Citizen,None,1
+180,Male,Black,24,696,43901.42,0.4187,2,34262.49,20004,Married,3.29,PhD,2,1,1,Visa Holder,None,0
+181,Male,White,47,767,94130.91,0.1363,11,64627.56,10001,Divorced,6.39,Master's,2,0,0,US Citizen,None,1
+182,Male,Asian,28,625,46032.42,0.2362,2,70399.64,40003,Married,7.83,Bachelor's,1,0,0,US Citizen,None,1
+183,Female,Black,41,559,70902.62,0.4701,14,51691.86,20005,Married,4.28,Bachelor's,3,1,1,US Citizen,None,0
+184,Female,Hispanic,26,520,44127.44,0.2621,5,24861.87,30004,Married,5.84,Master's,5,0,0,US Citizen,None,0
+185,Male,White,37,675,63143.71,0.4926,14,9101.78,10003,Married,5.96,PhD,1,0,0,US Citizen,None,1
+186,Female,Hispanic,32,722,82563.51,0.5269,8,25676.96,30003,Single,4.13,PhD,1,0,1,US Citizen,None,1
+187,Female,Asian,47,741,49165.41,0.1414,19,29347.38,40002,Married,9.12,Bachelor's,1,1,0,US Citizen,None,1
+188,Female,White,52,707,63694.71,0.2181,30,29171.57,10002,Single,6.71,PhD,3,1,0,US Citizen,None,0
+189,Male,Black,23,638,26283.03,0.1057,1,55993.42,20005,Married,4.2,High School,2,0,2,US Citizen,None,0
+190,Male,Hispanic,35,615,68440.43,0.2561,10,145797.43,30003,Single,5.86,High School,0,0,0,US Citizen,None,1
+191,Male,White,34,731,88127.83,0.392,7,39595.49,10001,Married,6.22,High School,2,0,0,US Citizen,Physical,1
+192,Female,Black,23,693,63978.84,0.3603,0,31203.57,20002,Single,6.53,High School,0,0,0,US Citizen,None,0
+193,Female,White,39,631,76959.23,0.3853,8,30289.15,10001,Divorced,7.51,Master's,3,0,0,US Citizen,None,0
+194,Female,White,38,736,54835.69,0.1473,10,39619.21,10004,Single,7.22,Master's,1,0,0,US Citizen,None,0
+195,Male,White,68,771,88591.39,0.3958,29,20336.94,10004,Single,8.78,Master's,1,0,0,US Citizen,Physical,1
+196,Male,White,46,697,48762.45,0.2334,25,39503.28,10002,Single,8.59,Bachelor's,3,0,0,US Citizen,None,1
+197,Female,White,26,758,78738.1,0.3315,3,49789.96,10003,Single,9.86,Bachelor's,0,0,3,US Citizen,None,1
+198,Female,White,35,820,62434.67,0.3189,12,42056.96,10005,Single,6.98,Master's,0,0,0,US Citizen,None,1
+199,Female,Asian,48,703,58420.65,0.1774,14,50025.06,10001,Divorced,9.85,Bachelor's,1,0,0,US Citizen,None,1
+200,Female,Black,56,667,81290.85,0.2716,19,49198.74,20004,Divorced,5.47,Master's,0,0,0,US Citizen,None,1
+201,Female,Asian,22,665,30408.53,0.4461,0,10505.69,40003,Divorced,9.2,Bachelor's,1,1,0,US Citizen,None,1
+202,Male,White,22,729,57849.33,0.3479,0,56715.86,10002,Married,8.68,Bachelor's,5,0,0,US Citizen,None,1
+203,Male,White,62,745,85960.56,0.426,29,22703.85,10004,Married,6.73,Bachelor's,3,0,0,US Citizen,None,1
+204,Female,Black,39,653,59390.16,0.449,11,16863.6,20003,Divorced,3.25,Master's,3,0,0,Permanent Resident,None,0
+205,Female,White,32,663,52046.4,0.3472,9,16762.24,10004,Single,5.34,High School,4,0,0,US Citizen,None,1
+206,Male,White,47,731,52986.08,0.0929,17,49191.65,10005,Divorced,5.09,Bachelor's,1,0,0,US Citizen,None,0
+207,Male,Black,22,742,45121.15,0.3476,1,31076.2,20004,Married,3.58,Master's,1,1,1,US Citizen,None,1
+208,Female,White,42,744,76732.96,0.3267,22,11188.28,10002,Divorced,9.02,Bachelor's,0,0,1,US Citizen,None,0
+209,Male,Black,39,707,56843.25,0.6144,11,50747.95,20001,Married,3.75,Master's,3,0,0,US Citizen,None,0
+210,Male,Black,45,623,73600.23,0.4624,20,13256.91,20001,Married,3.49,Bachelor's,2,0,0,US Citizen,None,0
+211,Male,White,30,761,43427.06,0.4843,5,40049.64,10004,Single,8.34,Bachelor's,0,1,0,US Citizen,Other,1
+212,Female,White,42,735,60606.09,0.4017,16,42913.82,10005,Single,6.47,Master's,1,1,2,Permanent Resident,None,1
+213,Female,Hispanic,26,598,31602.34,0.2946,4,67501.42,30001,Married,8.26,Bachelor's,2,0,1,Visa Holder,None,0
+214,Male,White,44,737,83194.71,0.3141,15,126396.54,10003,Married,7.19,Bachelor's,2,0,0,US Citizen,None,0
+215,Female,White,32,665,53472.37,0.3583,1,13970.83,10004,Divorced,8.62,Bachelor's,3,0,2,US Citizen,None,0
+216,Male,Asian,33,672,72221.11,0.1873,7,35005.77,40003,Divorced,6.74,High School,1,0,0,US Citizen,None,1
+217,Male,White,31,730,76345.66,0.2539,9,29928.46,10003,Married,7.53,Bachelor's,4,0,3,US Citizen,None,0
+218,Female,Black,42,660,62224.28,0.3853,15,49198.81,20003,Single,6.19,High School,1,1,0,US Citizen,None,1
+219,Female,Asian,46,638,68296.78,0.5227,17,42233.46,40002,Married,7.3,Master's,2,0,0,US Citizen,None,0
+220,Female,White,39,777,43626.82,0.0803,4,28373.69,10005,Divorced,9.29,Master's,4,0,0,Visa Holder,None,1
+221,Female,White,42,751,60958.21,0.4747,10,26671.97,10004,Married,6.56,High School,4,0,0,Permanent Resident,None,1
+222,Female,White,26,681,40203.64,0.2176,4,16622.03,10001,Married,5.94,Bachelor's,0,0,0,US Citizen,None,0
+223,Male,White,38,635,61309.04,0.1354,12,72511.69,10001,Married,5.4,Bachelor's,0,0,0,US Citizen,None,1
+224,Male,White,41,712,63611.99,0.4416,17,50083.3,10004,Married,9.01,High School,1,0,0,US Citizen,Physical,1
+225,Male,Black,62,608,60568.62,0.4678,23,69039.75,20002,Single,5.85,High School,1,0,0,US Citizen,None,1
+226,Male,White,29,726,28829.92,0.4505,6,29223.33,10002,Married,7.18,Bachelor's,2,0,0,US Citizen,None,0
+227,Female,Black,50,614,47267.85,0.5061,18,22930.32,20005,Married,4.95,Bachelor's,4,0,2,US Citizen,Other,0
+228,Male,Asian,47,589,77650.69,0.5472,10,17071.74,40002,Married,8.39,Bachelor's,0,1,1,US Citizen,None,0
+229,Female,Hispanic,37,634,28227.34,0.447,2,46687.99,30004,Divorced,5.21,Bachelor's,1,0,3,US Citizen,None,0
+230,Female,Black,53,618,59565.23,0.3912,22,17538.34,20003,Married,1.86,Master's,0,0,1,US Citizen,None,0
+231,Female,White,46,754,92704.03,0.3712,16,132463.73,10002,Married,5.4,Master's,3,0,0,Permanent Resident,None,0
+232,Male,Black,39,591,72627.35,0.5292,9,14539.88,20002,Married,2.86,Bachelor's,4,0,1,US Citizen,None,0
+233,Female,Black,35,757,71743.12,0.3165,4,43983.16,20003,Divorced,4.65,Master's,1,1,0,US Citizen,None,0
+234,Male,White,55,614,87976.92,0.2218,25,108749.06,10003,Married,6.37,Bachelor's,0,1,0,US Citizen,None,1
+235,Male,White,54,792,98702.65,0.2629,18,55235.59,10002,Married,8.74,Master's,3,0,0,US Citizen,None,0
+236,Female,Hispanic,29,645,32150.53,0.1275,6,41067.47,30003,Married,3.59,Bachelor's,2,0,2,Permanent Resident,None,0
+237,Male,White,27,767,46684.9,0.3166,6,18436.02,10002,Married,6.67,Master's,1,0,0,US Citizen,None,0
+238,Male,White,39,724,26302.9,0.0737,3,13804.66,10003,Divorced,5.31,Bachelor's,3,1,2,Visa Holder,None,1
+239,Female,White,33,782,71592.18,0.3364,5,62257.55,10005,Married,6.97,High School,5,0,0,US Citizen,None,1
+240,Male,White,41,698,92334.86,0.4038,11,104224.56,10002,Single,7.51,Bachelor's,2,0,1,US Citizen,None,0
+241,Female,Hispanic,46,588,46272.34,0.3228,23,26710.31,30002,Single,7.12,Bachelor's,2,0,0,US Citizen,None,0
+242,Female,Black,31,739,40560.72,0.6113,2,16361.02,20005,Married,4.68,Bachelor's,1,1,0,US Citizen,None,0
+243,Female,Hispanic,34,652,35102.07,0.2047,13,6498.21,30002,Single,6.61,Bachelor's,2,0,3,US Citizen,None,0
+244,Male,White,42,732,75889.8,0.443,13,18278.2,10005,Divorced,8.71,Master's,1,0,0,Permanent Resident,None,1
+245,Male,White,51,787,95303.99,0.381,18,33538.19,30002,Married,7.97,Bachelor's,1,0,0,US Citizen,Other,1
+246,Female,White,22,663,25000.0,0.1241,1,111233.43,10002,Divorced,6.42,Bachelor's,0,1,0,US Citizen,None,1
+247,Male,White,35,752,69851.58,0.6253,7,58173.99,10001,Married,7.99,High School,1,0,0,US Citizen,None,1
+248,Female,White,44,687,58449.92,0.3224,19,44961.41,10001,Single,9.29,PhD,0,1,0,US Citizen,None,1
+249,Female,Hispanic,45,651,55590.92,0.2747,9,27444.37,30003,Divorced,5.03,Master's,2,0,1,US Citizen,None,0
+250,Female,White,36,723,63084.91,0.1611,10,24143.83,30003,Divorced,8.17,Master's,2,0,0,Visa Holder,Physical,1
+251,Male,Black,22,534,41164.46,0.3536,1,97144.35,20002,Married,5.29,Bachelor's,2,1,1,US Citizen,Other,0
+252,Male,White,48,677,74116.2,0.2847,12,41794.37,10001,Married,7.06,Bachelor's,1,1,0,Visa Holder,None,1
+253,Female,White,35,794,52191.87,0.3423,16,8334.67,30002,Married,8.62,High School,1,0,1,US Citizen,None,1
+254,Male,White,28,768,71824.74,0.2643,5,22663.76,10004,Married,7.04,Bachelor's,3,0,1,US Citizen,None,0
+255,Male,Asian,31,706,66311.4,0.376,7,19915.4,40001,Married,7.59,High School,1,0,0,US Citizen,None,0
+256,Female,Hispanic,33,675,49038.75,0.3335,10,24775.62,30004,Married,5.14,Bachelor's,5,0,0,US Citizen,None,0
+257,Female,Asian,31,692,33135.72,0.0978,3,53854.3,40003,Single,7.06,Bachelor's,1,0,0,US Citizen,None,1
+258,Female,White,22,794,39321.3,0.3121,1,33684.35,10003,Single,8.62,Bachelor's,2,0,1,US Citizen,None,0
+259,Female,White,51,708,81680.04,0.05,3,34413.16,10003,Divorced,5.16,Bachelor's,0,0,1,US Citizen,None,1
+260,Male,Black,48,656,64884.95,0.4225,12,91074.33,20005,Single,5.43,Master's,2,0,2,US Citizen,Physical,1
+261,Female,White,49,783,76492.97,0.2125,14,22303.02,10004,Single,8.35,High School,3,0,0,US Citizen,None,1
+262,Female,Hispanic,24,609,66107.68,0.3996,2,133912.2,30002,Divorced,4.64,Master's,4,0,0,US Citizen,None,0
+263,Male,White,39,805,82969.09,0.4577,12,22699.19,10005,Married,7.46,High School,5,0,0,US Citizen,None,1
+264,Male,White,41,635,70627.38,0.1862,11,38655.28,10005,Married,6.33,High School,1,0,0,Visa Holder,None,1
+265,Female,White,48,809,58135.16,0.4574,16,29826.65,10005,Divorced,6.54,High School,2,0,0,US Citizen,None,1
+266,Female,White,49,699,28296.76,0.278,11,39592.44,10001,Married,7.83,Master's,1,0,0,US Citizen,None,0
+267,Female,Black,28,623,39804.23,0.6204,2,49573.63,20001,Divorced,8.44,Bachelor's,2,0,1,US Citizen,None,0
+268,Female,White,42,616,56109.81,0.2862,16,49201.76,10002,Married,8.3,Master's,0,0,0,US Citizen,None,0
+269,Male,White,47,694,80605.49,0.1991,19,21435.8,10004,Married,6.48,Bachelor's,3,0,1,US Citizen,None,0
+270,Male,White,58,662,82561.42,0.3825,30,16546.99,10003,Married,8.43,High School,4,1,0,US Citizen,Other,1
+271,Female,White,49,686,61794.22,0.2777,12,209445.8,10004,Divorced,8.2,Master's,1,0,2,US Citizen,None,1
+272,Female,Hispanic,42,651,25159.02,0.279,16,25879.62,30002,Divorced,2.91,High School,1,0,3,US Citizen,None,0
+273,Female,Hispanic,35,722,32990.48,0.3227,8,59245.71,30004,Divorced,5.03,Master's,0,0,2,US Citizen,None,0
+274,Female,Asian,52,722,76149.77,0.3246,26,11785.8,40001,Single,6.81,High School,2,1,1,US Citizen,None,0
+275,Male,Hispanic,38,679,82238.11,0.5111,14,29859.88,30004,Married,5.68,Bachelor's,1,0,1,US Citizen,None,0
+276,Male,White,32,659,59487.12,0.0679,7,33221.76,10002,Married,7.46,Master's,4,1,0,US Citizen,None,1
+277,Female,Black,50,578,62207.17,0.4128,15,50562.76,20005,Single,4.72,PhD,2,0,0,US Citizen,None,1
+278,Female,White,49,818,80887.17,0.405,22,5400.69,10005,Married,6.38,Bachelor's,2,1,0,US Citizen,None,0
+279,Female,White,37,679,44836.59,0.3532,12,40794.33,10001,Divorced,7.11,Master's,2,0,1,US Citizen,None,1
+280,Female,Hispanic,30,767,49192.21,0.5372,4,16239.16,20002,Married,5.1,High School,0,0,3,US Citizen,None,1
+281,Female,White,45,706,52292.65,0.3211,8,45571.69,10003,Married,8.89,Master's,4,1,0,US Citizen,None,1
+282,Male,Asian,42,710,83122.37,0.2779,11,17580.92,40003,Single,6.09,Bachelor's,2,0,0,US Citizen,None,1
+283,Male,White,44,778,74261.05,0.3711,21,19953.55,10005,Single,7.21,High School,5,0,0,US Citizen,None,1
+284,Male,Black,39,729,61758.28,0.3919,15,29985.24,20001,Married,3.97,Bachelor's,2,0,3,US Citizen,None,1
+285,Female,Black,52,632,46911.02,0.3632,12,17385.11,20001,Single,6.88,High School,2,0,0,US Citizen,None,0
+286,Male,Hispanic,44,634,71796.99,0.4119,8,26033.15,30003,Married,6.5,Bachelor's,0,1,0,US Citizen,None,1
+287,Male,Black,37,636,86988.19,0.3017,14,15750.65,10005,Single,3.1,High School,2,0,1,US Citizen,Other,0
+288,Male,Black,45,663,46854.82,0.3067,9,10064.61,30004,Single,5.1,Bachelor's,3,1,0,US Citizen,None,1
+289,Male,White,30,769,54013.61,0.2366,7,74055.49,10004,Married,6.29,PhD,3,1,0,Permanent Resident,None,1
+290,Female,Black,39,640,53284.11,0.5724,9,14658.36,20004,Divorced,4.89,High School,3,0,0,US Citizen,None,0
+291,Male,White,61,754,99426.09,0.05,30,32045.86,10001,Divorced,9.14,Bachelor's,0,0,1,US Citizen,None,1
+292,Male,Black,33,754,44196.31,0.4275,5,61514.23,20005,Married,1.57,Bachelor's,5,1,0,US Citizen,None,0
+293,Female,Black,27,666,25000.0,0.4141,5,23612.68,30004,Divorced,2.99,Master's,5,0,0,US Citizen,None,0
+294,Male,Black,29,661,69849.34,0.1783,5,20381.52,20002,Married,4.73,Bachelor's,0,1,1,US Citizen,None,1
+295,Male,White,30,636,70517.59,0.3372,6,42547.09,10003,Married,7.02,Bachelor's,4,0,2,US Citizen,None,0
+296,Male,White,33,575,35725.79,0.3571,2,79423.83,10003,Married,7.76,Bachelor's,1,0,3,US Citizen,None,0
+297,Female,Black,32,667,35936.47,0.4808,1,16018.18,20005,Single,4.38,High School,2,1,0,US Citizen,None,0
+298,Male,White,26,714,78952.74,0.05,3,32692.35,40001,Single,5.48,High School,1,0,2,Permanent Resident,None,0
+299,Female,White,42,691,82716.95,0.494,14,10799.49,10003,Divorced,8.25,Bachelor's,4,0,0,Permanent Resident,None,0
+300,Male,White,51,733,92509.6,0.2115,11,27577.6,10002,Single,5.9,High School,0,0,1,US Citizen,None,0
+301,Male,Asian,28,706,54628.31,0.3824,3,37195.51,20001,Married,7.27,Bachelor's,1,1,0,US Citizen,None,1
+302,Male,Black,51,718,67910.31,0.4689,22,19965.53,30004,Married,3.82,Bachelor's,1,0,0,US Citizen,None,0
+303,Male,White,47,724,72786.11,0.1948,19,26373.26,10001,Married,10.0,Bachelor's,1,0,0,US Citizen,None,1
+304,Female,White,53,678,86723.6,0.4093,18,13551.35,10004,Single,7.35,High School,2,0,0,US Citizen,None,0
+305,Female,White,34,774,41462.36,0.2837,10,38328.73,10001,Single,7.92,PhD,0,0,1,US Citizen,None,0
+306,Female,Hispanic,42,645,39763.01,0.1314,8,76037.81,30002,Single,6.33,Master's,2,0,0,US Citizen,None,0
+307,Male,Black,25,676,61487.62,0.5201,2,16848.2,10001,Married,5.01,High School,5,0,1,Visa Holder,None,1
+308,Male,White,51,693,77764.58,0.207,28,23485.3,10005,Married,7.47,Bachelor's,3,0,0,US Citizen,None,0
+309,Female,White,43,684,82477.01,0.2275,14,51626.09,10004,Single,6.31,Bachelor's,3,1,0,US Citizen,None,1
+310,Male,White,48,724,65597.32,0.2516,17,84835.0,10005,Married,7.37,High School,1,0,3,US Citizen,None,1
+311,Male,Black,24,640,44729.82,0.4127,4,12768.89,20002,Single,1.7,Bachelor's,1,0,1,US Citizen,None,1
+312,Male,Hispanic,26,691,33279.31,0.3431,1,32268.63,30001,Married,6.23,High School,2,1,3,US Citizen,None,1
+313,Male,White,48,705,75780.44,0.3658,21,44275.71,30004,Married,10.0,Master's,0,0,0,US Citizen,None,1
+314,Female,White,31,619,30021.8,0.1693,10,33811.64,10004,Divorced,7.71,Master's,4,1,0,Visa Holder,Other,0
+315,Female,White,47,696,57685.5,0.2409,14,6414.05,10003,Divorced,7.91,Bachelor's,0,0,0,US Citizen,None,1
+316,Female,Asian,24,757,25056.19,0.3161,3,51573.49,40001,Divorced,4.98,Bachelor's,4,0,0,US Citizen,None,1
+317,Male,White,51,703,88838.85,0.5277,12,105191.25,30004,Married,6.52,PhD,0,0,0,US Citizen,None,1
+318,Male,Hispanic,23,643,55518.34,0.3363,1,39405.6,30002,Married,6.84,PhD,3,0,1,US Citizen,None,0
+319,Male,Black,41,709,32891.56,0.5102,14,17645.32,20003,Divorced,2.33,PhD,0,0,0,US Citizen,None,1
+320,Male,White,48,680,95678.29,0.3046,21,25357.02,10005,Single,6.63,High School,0,0,0,US Citizen,None,0
+321,Male,White,34,635,100251.23,0.242,11,125359.28,10001,Married,8.18,High School,2,0,0,US Citizen,None,1
+322,Female,White,48,711,66490.1,0.3004,25,68663.55,10004,Married,8.47,Bachelor's,1,0,0,US Citizen,Other,0
+323,Female,Black,38,606,39513.29,0.3898,10,56841.31,20001,Married,4.34,Bachelor's,2,0,1,US Citizen,Other,0
+324,Male,Hispanic,30,597,92608.46,0.4224,8,46606.2,20001,Married,5.68,High School,2,0,0,US Citizen,None,0
+325,Female,Black,25,627,25000.0,0.575,2,22861.37,20004,Divorced,4.68,High School,0,0,1,Visa Holder,None,0
+326,Female,Black,22,674,38551.6,0.4532,1,31558.56,20002,Married,2.65,Master's,4,0,0,US Citizen,None,0
+327,Female,White,45,719,66094.33,0.4724,16,34387.7,10002,Divorced,7.41,Master's,1,0,2,US Citizen,None,1
+328,Female,Asian,22,728,65177.21,0.2142,1,53353.88,40001,Married,7.31,Bachelor's,2,0,2,US Citizen,None,0
+329,Male,Hispanic,35,777,59549.58,0.3002,10,104426.97,30004,Single,5.37,Master's,2,0,1,US Citizen,Other,1
+330,Male,White,39,701,59910.49,0.2131,5,79446.31,10005,Married,5.19,Bachelor's,2,0,0,US Citizen,None,1
+331,Male,Asian,44,726,57722.23,0.3377,9,13445.92,40001,Married,9.0,Master's,1,0,0,US Citizen,None,1
+332,Female,Black,32,604,39922.67,0.3669,7,42480.33,20005,Married,2.86,Bachelor's,0,1,1,US Citizen,None,0
+333,Male,Black,32,580,36703.59,0.4676,3,60823.67,20002,Single,4.61,High School,2,0,3,US Citizen,None,0
+334,Male,Black,43,599,61126.88,0.2683,17,56005.33,20004,Married,4.98,Bachelor's,1,0,3,US Citizen,None,1
+335,Male,Hispanic,38,628,48036.56,0.3552,13,23377.67,30001,Married,4.82,Bachelor's,1,1,2,US Citizen,None,0
+336,Male,Black,39,665,34870.93,0.4624,12,279253.84,20003,Single,4.87,Bachelor's,2,0,0,US Citizen,None,0
+337,Female,White,47,820,83827.19,0.0822,10,14854.24,20003,Single,6.57,High School,2,0,2,US Citizen,None,0
+338,Female,White,25,680,39934.91,0.5846,4,17013.6,10005,Divorced,10.0,PhD,0,0,0,US Citizen,None,0
+339,Male,Asian,45,685,53887.95,0.266,25,42766.76,40003,Single,6.66,High School,1,0,1,US Citizen,None,1
+340,Male,White,48,716,73146.11,0.057,17,159813.4,10001,Single,8.58,High School,1,0,0,Permanent Resident,None,0
+341,Male,White,30,741,60135.57,0.319,7,20224.77,10001,Married,6.19,Bachelor's,0,0,0,Permanent Resident,None,1
+342,Male,White,39,734,41193.0,0.304,12,30149.4,10003,Married,8.37,Bachelor's,0,0,0,US Citizen,None,1
+343,Male,White,41,790,74204.72,0.2902,14,77196.2,10004,Divorced,6.64,Bachelor's,0,0,0,US Citizen,None,1
+344,Male,Black,34,520,37664.14,0.4989,8,35864.26,20001,Married,2.41,Master's,5,0,0,US Citizen,None,0
+345,Male,Asian,41,566,94895.43,0.3897,12,28732.3,40002,Married,5.62,Bachelor's,2,0,1,US Citizen,None,0
+346,Female,White,57,692,80859.41,0.3657,28,53957.02,10003,Divorced,6.48,Bachelor's,0,0,0,US Citizen,None,1
+347,Female,White,53,780,63801.5,0.384,30,43948.01,10001,Single,7.63,Master's,0,0,0,US Citizen,None,1
+348,Male,White,27,633,45172.48,0.2875,2,74705.36,10003,Single,10.0,High School,2,0,0,US Citizen,None,1
+349,Male,Hispanic,40,520,56488.98,0.5631,11,89682.26,30003,Single,9.6,Bachelor's,1,0,0,US Citizen,None,0
+350,Female,Black,49,679,65801.86,0.2325,10,45021.8,20005,Divorced,4.02,Master's,3,1,3,Permanent Resident,None,0
+351,Male,White,46,733,73447.59,0.3168,23,44543.12,10002,Married,8.65,High School,4,0,0,US Citizen,None,0
+352,Female,Hispanic,44,589,49952.62,0.3878,11,42187.43,20002,Single,3.62,Bachelor's,2,0,0,US Citizen,None,0
+353,Female,Hispanic,53,595,60205.55,0.4776,10,51143.54,30001,Single,2.34,PhD,0,0,2,US Citizen,None,0
+354,Male,Hispanic,44,596,52133.62,0.2487,17,37745.42,30002,Married,5.55,Bachelor's,3,0,2,US Citizen,None,0
+355,Male,Asian,40,716,63161.91,0.0908,18,36300.04,40001,Married,7.71,Bachelor's,4,0,0,Permanent Resident,None,1
+356,Female,White,53,685,38513.11,0.3488,24,83921.66,40003,Single,8.44,PhD,2,1,1,US Citizen,None,0
+357,Male,Hispanic,36,692,69541.39,0.3837,10,104954.41,30004,Married,7.12,High School,2,0,1,US Citizen,None,1
+358,Female,White,42,562,65481.97,0.5088,15,12641.15,10003,Single,7.1,High School,1,1,1,US Citizen,None,0
+359,Female,Hispanic,31,604,32768.16,0.2276,9,36571.14,20003,Divorced,5.61,Master's,1,0,0,US Citizen,None,0
+360,Female,Black,51,561,86451.02,0.5486,13,22424.6,20002,Single,5.73,Master's,2,1,3,US Citizen,None,0
+361,Male,Hispanic,27,643,49202.75,0.6341,4,29211.57,30004,Married,7.29,Bachelor's,4,0,0,US Citizen,None,0
+362,Female,Black,51,602,42427.85,0.3647,15,48134.83,20001,Divorced,3.14,Bachelor's,2,0,0,US Citizen,None,0
+363,Male,White,47,763,87601.06,0.1451,9,58023.7,10003,Single,7.75,Master's,3,1,0,US Citizen,Other,1
+364,Male,Black,22,520,49958.22,0.3312,1,33574.14,20001,Married,5.47,Master's,0,0,0,US Citizen,None,0
+365,Female,Asian,41,712,66118.7,0.3317,17,9515.35,40003,Divorced,7.19,High School,0,1,2,US Citizen,None,1
+366,Male,Asian,22,743,45363.67,0.3677,1,18480.44,40001,Married,6.19,High School,2,0,0,US Citizen,None,1
+367,Female,White,48,820,72557.44,0.259,20,68019.5,10004,Single,7.5,Bachelor's,0,0,0,US Citizen,None,1
+368,Female,White,51,693,64273.63,0.5166,19,5333.17,10004,Divorced,8.14,Master's,2,0,0,US Citizen,None,0
+369,Male,White,35,737,72049.12,0.1663,10,83382.94,10001,Single,6.59,Master's,1,0,0,US Citizen,None,1
+370,Male,Black,37,520,27143.33,0.1713,7,52305.72,20005,Married,2.7,PhD,3,0,3,US Citizen,None,0
+371,Male,Hispanic,52,520,60939.4,0.4828,17,91246.8,30002,Single,8.59,Master's,3,0,1,US Citizen,None,1
+372,Male,White,36,766,90462.33,0.05,10,31602.82,10005,Single,7.73,Bachelor's,1,0,0,US Citizen,None,1
+373,Male,Black,25,639,34827.49,0.3555,3,8578.52,20005,Divorced,5.91,Bachelor's,0,0,1,US Citizen,None,0
+374,Female,Hispanic,48,736,46872.43,0.7541,18,49082.3,30003,Single,5.81,Master's,2,0,1,US Citizen,None,0
+375,Male,Black,55,543,63074.08,0.3786,20,88632.79,20005,Married,6.08,Master's,5,0,1,US Citizen,None,0
+376,Male,Black,36,676,36713.41,0.2455,8,69376.62,20005,Married,4.62,Bachelor's,2,0,0,Visa Holder,None,0
+377,Female,Black,46,770,25000.0,0.4031,30,22836.51,20004,Married,5.38,High School,0,0,2,US Citizen,None,0
+378,Male,Black,49,669,61642.7,0.3739,22,38589.39,20005,Married,2.84,PhD,0,0,1,US Citizen,None,0
+379,Female,White,33,735,55837.89,0.3493,8,25009.59,10005,Divorced,5.38,Bachelor's,1,1,1,US Citizen,None,1
+380,Male,Black,31,640,50237.92,0.4595,6,20465.86,30003,Single,3.79,Bachelor's,0,0,3,Visa Holder,None,0
+381,Male,Black,48,530,62146.32,0.2553,14,70882.01,20003,Single,2.36,Bachelor's,3,0,2,US Citizen,None,0
+382,Female,Hispanic,50,748,57935.61,0.5825,17,15704.89,30003,Married,2.32,Bachelor's,3,0,1,Permanent Resident,None,1
+383,Female,Black,41,597,66512.62,0.4394,13,19425.24,20001,Single,4.95,High School,1,1,3,Visa Holder,None,0
+384,Female,Hispanic,27,692,38793.31,0.4672,1,16767.24,30003,Married,2.85,Master's,1,0,0,US Citizen,None,0
+385,Female,White,63,634,69188.76,0.2546,12,12795.22,10001,Married,8.64,High School,0,0,0,US Citizen,None,1
+386,Female,White,36,655,51983.12,0.4844,7,40234.9,10005,Divorced,9.23,High School,4,0,0,US Citizen,None,1
+387,Male,White,38,798,75160.2,0.2692,11,81883.45,10002,Married,5.77,Bachelor's,2,0,0,US Citizen,None,0
+388,Male,White,45,700,94090.4,0.3333,13,31907.18,10005,Single,7.85,Master's,2,1,1,US Citizen,None,1
+389,Female,Black,51,741,48547.84,0.298,27,12657.14,20003,Married,7.29,PhD,1,1,1,US Citizen,None,1
+390,Female,Asian,46,705,65684.01,0.2104,7,65379.31,30002,Single,6.39,Master's,2,1,1,US Citizen,None,1
+391,Female,White,46,618,69275.36,0.4126,11,118183.2,10004,Divorced,8.23,PhD,1,0,3,US Citizen,None,0
+392,Male,White,47,769,59861.33,0.2468,24,23100.98,10002,Married,10.0,High School,1,0,0,US Citizen,None,1
+393,Male,Hispanic,35,621,54459.76,0.2475,9,25978.17,30003,Married,2.98,High School,2,1,1,US Citizen,None,0
+394,Female,White,48,758,43814.89,0.2528,21,52102.2,10002,Married,6.28,Bachelor's,2,0,0,US Citizen,None,1
+395,Male,Black,22,641,25000.0,0.4639,2,113019.05,20002,Single,5.35,High School,1,0,0,US Citizen,None,0
+396,Female,Black,33,531,51231.2,0.3345,5,25238.25,10005,Divorced,7.76,Master's,0,0,0,US Citizen,None,0
+397,Female,Black,38,651,43371.88,0.3959,10,14289.57,20004,Divorced,3.43,Bachelor's,1,0,2,US Citizen,None,0
+398,Male,White,29,820,61224.21,0.3018,4,56499.84,10002,Divorced,10.0,PhD,1,0,0,US Citizen,None,1
+399,Female,White,46,747,63931.58,0.0999,5,63535.09,10001,Divorced,7.66,High School,2,1,1,US Citizen,Other,1
+400,Female,Hispanic,33,656,31084.0,0.2035,6,36471.7,30002,Divorced,2.55,Bachelor's,4,0,0,Permanent Resident,None,1
+401,Male,Black,53,715,67550.69,0.4204,25,24570.62,20001,Married,6.89,Bachelor's,0,0,0,US Citizen,None,1
+402,Female,White,59,731,56103.48,0.2416,27,72843.25,10005,Single,6.94,High School,0,0,0,US Citizen,Other,1
+403,Male,Hispanic,30,673,71108.09,0.4768,7,52555.51,30003,Married,6.17,Bachelor's,0,0,0,US Citizen,None,0
+404,Female,White,40,659,39060.44,0.446,10,21207.18,10001,Divorced,5.51,Bachelor's,2,0,2,US Citizen,Physical,1
+405,Male,Black,35,656,51216.72,0.4663,7,37585.23,20003,Married,3.37,Bachelor's,1,0,0,US Citizen,None,0
+406,Female,White,37,776,41365.93,0.5484,14,14098.23,10003,Married,5.7,Bachelor's,2,0,3,Visa Holder,None,1
+407,Male,Asian,39,659,75946.32,0.29,9,58695.79,40002,Divorced,4.92,High School,0,1,3,US Citizen,None,0
+408,Male,White,33,798,56898.53,0.3779,8,30225.36,10004,Married,7.62,Bachelor's,2,0,3,Permanent Resident,None,0
+409,Female,White,29,714,42820.0,0.2599,5,26769.07,10005,Divorced,8.18,Bachelor's,3,1,0,Visa Holder,None,1
+410,Male,White,48,671,88468.02,0.5943,24,35489.35,10003,Single,6.84,High School,4,0,2,US Citizen,None,1
+411,Male,White,48,774,76111.46,0.538,22,37354.75,10003,Married,5.78,Bachelor's,4,0,0,US Citizen,None,0
+412,Female,Hispanic,27,641,49399.67,0.3814,2,67944.81,30003,Divorced,3.59,High School,3,0,0,US Citizen,None,1
+413,Female,Asian,46,755,49480.11,0.3764,9,54927.17,40003,Divorced,7.48,Bachelor's,4,0,0,US Citizen,None,1
+414,Female,White,35,703,34327.75,0.4931,10,32549.38,10004,Married,7.63,High School,0,0,2,US Citizen,None,1
+415,Female,White,44,716,64208.12,0.3123,14,61980.04,10002,Divorced,7.97,Bachelor's,0,0,0,US Citizen,None,1
+416,Male,Black,44,674,56408.8,0.3012,12,48074.93,20004,Single,6.84,Bachelor's,0,0,1,US Citizen,None,1
+417,Male,Hispanic,34,678,62768.02,0.4549,11,26940.34,30003,Married,6.36,Bachelor's,2,0,0,US Citizen,None,0
+418,Male,Black,40,520,56864.87,0.3894,12,33279.51,20002,Married,5.11,Master's,4,0,0,US Citizen,None,0
+419,Female,White,36,658,59276.13,0.352,9,32736.44,10005,Married,10.0,Bachelor's,0,0,0,US Citizen,None,0
+420,Female,White,39,771,34249.26,0.2299,14,51724.3,10004,Married,7.17,Bachelor's,2,0,1,Permanent Resident,None,1
+421,Female,Black,33,630,74056.55,0.2039,6,28087.62,20003,Married,8.08,Master's,2,0,1,US Citizen,Physical,0
+422,Female,White,33,691,51336.37,0.3583,11,27631.55,10005,Divorced,9.21,Bachelor's,4,0,2,US Citizen,None,0
+423,Male,Black,34,544,63835.3,0.4886,6,144080.88,20004,Married,4.05,Master's,2,0,1,US Citizen,None,0
+424,Male,White,24,660,41048.62,0.2729,2,70109.59,10001,Single,8.47,Bachelor's,5,0,2,US Citizen,None,0
+425,Male,Hispanic,30,528,54863.65,0.5224,8,21323.81,30003,Married,5.18,Bachelor's,1,0,0,Permanent Resident,Physical,0
+426,Male,White,38,714,46927.33,0.2155,5,54157.88,10001,Married,5.78,Master's,1,0,0,US Citizen,None,1
+427,Male,Black,33,598,59370.52,0.2534,6,39452.2,10001,Married,4.49,High School,2,1,1,US Citizen,None,1
+428,Female,White,39,666,53260.39,0.3219,15,47766.79,10005,Divorced,5.74,Bachelor's,1,0,0,US Citizen,Physical,1
+429,Male,Black,35,635,54591.36,0.3701,12,39980.17,20005,Married,4.85,High School,0,1,2,US Citizen,None,1
+430,Male,White,47,740,85219.61,0.3924,15,83512.35,10004,Married,8.46,Bachelor's,2,0,0,US Citizen,None,1
+431,Male,Black,44,786,42703.4,0.287,10,46255.43,20002,Single,4.17,High School,3,1,2,US Citizen,None,0
+432,Female,Black,29,534,32742.62,0.5742,7,34770.96,20001,Single,4.85,Bachelor's,2,0,1,US Citizen,None,0
+433,Female,Black,23,721,45789.86,0.646,2,75322.44,10002,Married,4.82,Master's,1,1,0,US Citizen,None,0
+434,Male,Black,25,708,77806.82,0.3753,1,42757.48,20004,Married,5.77,Master's,2,0,1,US Citizen,None,0
+435,Male,Black,31,585,48954.26,0.53,3,39538.69,20004,Single,4.63,Bachelor's,1,0,0,US Citizen,None,0
+436,Female,Hispanic,31,673,53237.04,0.2532,7,45243.57,30004,Married,5.03,PhD,0,0,1,US Citizen,None,1
+437,Male,White,33,694,60265.43,0.429,9,34012.17,10005,Married,8.46,Bachelor's,2,0,0,US Citizen,Other,0
+438,Female,Hispanic,23,672,68063.68,0.5057,1,36550.82,30004,Single,5.74,Bachelor's,0,1,3,US Citizen,None,0
+439,Female,White,36,803,29991.67,0.4336,11,24084.26,10002,Divorced,4.94,Master's,0,0,0,US Citizen,None,0
+440,Male,White,43,753,72489.32,0.2981,10,21465.09,10003,Married,7.08,Master's,3,1,0,US Citizen,Other,1
+441,Male,White,48,747,51286.84,0.05,4,18051.8,10003,Married,6.88,Master's,0,0,0,US Citizen,None,1
+442,Female,White,35,696,25000.0,0.253,7,13706.31,10003,Single,7.68,High School,4,0,0,US Citizen,None,0
+443,Male,Hispanic,31,563,55487.43,0.2749,6,19617.9,30003,Married,5.56,Bachelor's,2,0,1,US Citizen,None,0
+444,Male,Black,26,625,49207.97,0.2626,3,32145.03,40001,Single,1.57,Master's,5,1,2,US Citizen,None,0
+445,Female,Hispanic,34,738,42137.45,0.3947,5,39033.76,30001,Divorced,3.26,Bachelor's,0,0,1,US Citizen,None,0
+446,Female,Black,27,533,40057.09,0.3597,1,30034.21,20005,Divorced,3.07,Bachelor's,2,0,2,US Citizen,None,0
+447,Female,White,48,661,112274.49,0.231,13,6981.42,10001,Divorced,7.58,Bachelor's,1,0,0,US Citizen,None,0
+448,Female,White,22,726,41127.37,0.2029,1,109339.22,10004,Divorced,8.79,Master's,3,0,0,US Citizen,None,1
+449,Male,White,38,665,74121.87,0.2141,15,77694.22,10002,Married,5.58,High School,1,1,0,US Citizen,None,0
+450,Male,White,45,676,63169.53,0.4346,20,49614.18,10001,Divorced,6.69,Bachelor's,1,0,1,US Citizen,None,0
+451,Female,White,44,696,67028.49,0.2507,10,138032.37,10002,Married,7.44,High School,3,0,1,US Citizen,None,1
+452,Female,White,68,644,78226.49,0.2682,17,18321.77,10003,Divorced,6.38,Bachelor's,1,0,0,US Citizen,None,1
+453,Male,Black,39,571,51123.72,0.3252,13,136126.19,20001,Married,4.63,Master's,0,1,0,US Citizen,None,0
+454,Female,Black,25,689,67573.48,0.4507,3,18478.26,20004,Divorced,5.46,High School,1,0,0,US Citizen,Other,0
+455,Male,Asian,37,631,83207.77,0.3547,11,42921.0,40003,Married,6.02,Bachelor's,2,0,2,US Citizen,Physical,1
+456,Male,Asian,22,614,53801.2,0.05,0,14888.05,40001,Single,7.43,Bachelor's,1,0,0,US Citizen,None,1
+457,Male,Black,35,595,25000.0,0.5026,6,36690.97,20002,Divorced,4.33,High School,1,0,1,US Citizen,Other,1
+458,Male,White,32,760,55534.86,0.4724,7,47587.08,10003,Single,6.12,Bachelor's,0,0,0,US Citizen,Other,0
+459,Male,Black,45,626,102518.91,0.254,17,32588.57,20003,Single,4.29,High School,2,0,0,US Citizen,None,0
+460,Male,Hispanic,30,629,46783.58,0.2333,7,59857.03,10004,Married,6.18,Bachelor's,3,1,1,US Citizen,None,1
+461,Male,White,40,722,84858.26,0.246,12,38921.81,10004,Married,9.2,Bachelor's,1,1,0,US Citizen,Other,1
+462,Female,White,35,623,77029.14,0.2393,9,25192.7,10004,Divorced,9.47,Master's,1,0,1,US Citizen,None,1
+463,Female,Hispanic,50,692,60574.46,0.4069,18,24421.78,30004,Divorced,4.65,Master's,0,0,1,US Citizen,None,0
+464,Female,White,38,741,45172.68,0.0964,13,64064.11,20004,Single,6.75,Bachelor's,0,0,0,US Citizen,None,0
+465,Female,Black,54,611,25000.0,0.2758,22,22980.02,20005,Single,4.56,High School,0,0,1,US Citizen,None,0
+466,Male,Black,44,710,71453.95,0.5647,14,68925.54,20002,Married,3.69,PhD,1,0,1,US Citizen,None,0
+467,Male,White,47,657,62528.66,0.1886,14,85468.08,10003,Married,8.96,Bachelor's,2,0,0,US Citizen,None,0
+468,Female,White,46,782,66842.26,0.4792,16,11292.57,10004,Single,7.62,High School,4,0,1,US Citizen,None,1
+469,Male,White,46,728,55082.69,0.3426,18,80261.75,10002,Married,7.57,Master's,0,0,0,Permanent Resident,None,1
+470,Female,White,22,701,41021.44,0.1129,1,153629.0,10005,Married,8.27,High School,2,1,0,US Citizen,None,0
+471,Male,White,38,718,66975.79,0.3762,12,43321.43,10004,Married,7.69,Bachelor's,2,0,2,US Citizen,None,1
+472,Female,Hispanic,42,653,55878.9,0.3659,19,55235.38,30001,Single,5.96,Bachelor's,2,0,0,US Citizen,None,1
+473,Male,White,41,787,52507.67,0.2453,13,75049.54,10001,Married,7.82,Bachelor's,3,0,1,US Citizen,None,1
+474,Female,Black,22,564,56203.66,0.4394,0,29946.34,20003,Single,4.28,Master's,0,0,2,US Citizen,None,0
+475,Male,White,41,678,60276.58,0.357,16,41257.83,10005,Single,6.42,Bachelor's,0,0,0,US Citizen,Other,0
+476,Female,Asian,55,772,46282.96,0.4149,11,14473.29,40003,Single,9.29,High School,2,0,0,US Citizen,None,1
+477,Male,White,55,687,80474.65,0.4414,13,40016.39,10002,Single,6.41,PhD,1,1,0,US Citizen,None,1
+478,Female,White,41,769,60715.63,0.379,14,51466.09,10004,Divorced,9.49,PhD,0,1,0,US Citizen,None,1
+479,Female,Hispanic,43,770,54938.84,0.2149,16,52120.53,30001,Married,6.01,Bachelor's,1,0,2,US Citizen,None,0
+480,Male,Hispanic,31,633,71457.49,0.2932,3,76557.5,30001,Married,4.6,Bachelor's,1,0,1,US Citizen,None,0
+481,Female,White,23,757,42253.27,0.6832,1,21112.88,10001,Single,8.17,High School,2,1,0,US Citizen,None,0
+482,Female,Hispanic,26,585,39175.71,0.4669,2,25013.61,30002,Single,6.68,Master's,0,0,1,US Citizen,None,0
+483,Male,White,59,761,69242.23,0.5843,19,136879.35,10004,Married,9.56,High School,1,0,3,US Citizen,None,1
+484,Female,White,38,730,70108.3,0.4975,14,32688.22,10004,Single,5.92,High School,1,0,0,US Citizen,Physical,0
+485,Female,White,39,746,61364.64,0.359,14,41773.76,10002,Divorced,7.33,Bachelor's,1,0,1,US Citizen,None,1
+486,Female,White,38,684,51499.58,0.3662,10,34651.38,10003,Married,9.15,High School,5,1,1,Permanent Resident,None,1
+487,Male,Black,55,523,41223.38,0.3756,17,20431.3,20003,Divorced,5.62,High School,0,0,0,Permanent Resident,None,0
+488,Male,White,59,747,107456.18,0.0915,12,113150.09,10003,Married,8.08,Bachelor's,4,0,0,US Citizen,None,1
+489,Female,White,66,606,61784.8,0.3322,30,25099.65,10004,Divorced,9.27,High School,2,0,1,Permanent Resident,None,0
+490,Female,Black,34,617,37540.83,0.5553,10,16496.44,20003,Married,4.23,High School,3,0,0,US Citizen,Other,0
+491,Male,Hispanic,37,721,61092.67,0.278,7,26488.92,30004,Married,1.9,High School,1,1,1,US Citizen,None,1
+492,Female,White,25,730,29451.63,0.3794,3,8944.6,10005,Married,7.06,High School,1,0,1,US Citizen,None,0
+493,Male,Black,50,776,43480.85,0.4822,17,23019.54,20004,Divorced,7.52,Master's,3,0,1,US Citizen,None,0
+494,Male,White,29,776,26330.79,0.1908,4,18440.6,10005,Married,7.86,Master's,3,1,0,US Citizen,None,1
+495,Male,Hispanic,36,617,65750.45,0.2958,10,55949.24,30001,Married,4.24,Bachelor's,0,0,0,US Citizen,None,1
+496,Male,Black,25,641,38155.71,0.2579,2,22665.74,20002,Single,6.5,Bachelor's,0,0,0,US Citizen,None,0
+497,Female,Asian,32,707,96909.05,0.2313,6,67606.73,40002,Divorced,8.1,High School,1,0,0,US Citizen,None,1
+498,Male,White,32,632,46034.67,0.1455,7,96658.44,10005,Married,7.68,High School,4,0,0,US Citizen,None,0
+499,Female,White,35,668,41578.23,0.2219,7,62744.28,10005,Divorced,8.2,High School,1,0,0,US Citizen,None,0
+500,Female,White,36,689,47719.11,0.5003,11,31232.93,20004,Divorced,6.28,Bachelor's,2,0,0,US Citizen,None,1
+501,Female,White,35,608,59047.02,0.2201,14,40085.91,10003,Single,7.07,Master's,2,0,0,US Citizen,None,1
+502,Male,White,51,722,71376.95,0.3152,13,12487.84,10003,Married,7.42,Bachelor's,3,1,0,US Citizen,None,1
+503,Male,Asian,26,695,64614.98,0.2397,1,33069.09,40003,Divorced,8.43,Bachelor's,2,0,0,US Citizen,None,1
+504,Female,White,44,627,47921.17,0.4715,4,19884.45,10005,Divorced,6.84,High School,1,0,0,US Citizen,None,0
+505,Female,White,55,742,50676.12,0.4873,19,59043.42,10003,Single,7.47,Master's,4,0,0,US Citizen,None,1
+506,Male,Hispanic,30,706,25000.0,0.4537,4,219899.67,30004,Single,7.66,Bachelor's,2,1,2,US Citizen,None,0
+507,Female,White,34,732,25000.0,0.3667,8,51527.72,10005,Single,10.0,Master's,2,0,0,US Citizen,None,0
+508,Female,Hispanic,32,638,37278.96,0.3523,7,9011.01,30002,Single,4.19,Bachelor's,1,1,1,Permanent Resident,None,1
+509,Female,White,54,752,66085.3,0.187,9,28201.74,10001,Married,7.67,Master's,2,0,2,US Citizen,None,0
+510,Female,White,44,757,53128.44,0.5632,5,39566.72,10003,Married,5.69,Master's,1,1,0,US Citizen,None,1
+511,Female,White,36,736,74851.09,0.2388,10,38605.51,10004,Divorced,7.48,PhD,0,0,1,US Citizen,None,1
+512,Male,White,47,674,93170.45,0.3796,16,21773.11,10005,Married,7.15,Bachelor's,2,0,0,US Citizen,None,1
+513,Female,Asian,26,726,43177.96,0.4571,3,43118.36,40001,Married,8.63,Bachelor's,2,0,0,US Citizen,Other,1
+514,Female,White,49,785,39691.18,0.2634,7,15218.23,10002,Single,6.09,High School,2,1,0,US Citizen,None,1
+515,Male,Black,40,598,49562.92,0.5046,13,18742.78,20002,Married,2.54,PhD,1,0,0,US Citizen,None,0
+516,Male,White,38,820,57472.68,0.3917,15,57071.4,10002,Divorced,9.33,Bachelor's,2,0,0,US Citizen,None,1
+517,Male,White,32,691,51092.98,0.5074,7,17837.1,10002,Single,6.74,High School,1,0,0,Permanent Resident,None,0
+518,Female,Hispanic,27,662,31184.22,0.3237,3,52931.19,30001,Single,5.8,Bachelor's,2,1,1,US Citizen,None,0
+519,Female,White,47,683,55198.06,0.1757,16,13924.09,10003,Divorced,7.85,High School,1,1,2,US Citizen,None,1
+520,Male,Black,48,655,58521.38,0.3193,9,124913.67,20005,Married,3.32,Bachelor's,2,0,0,US Citizen,None,0
+521,Female,Asian,31,605,42666.88,0.3551,8,21120.75,40001,Divorced,5.98,Bachelor's,3,0,0,US Citizen,None,1
+522,Male,Black,40,601,61188.34,0.387,12,31052.46,20005,Divorced,6.19,Bachelor's,1,0,0,US Citizen,Physical,0
+523,Female,Asian,22,644,50405.53,0.2828,0,45772.07,20004,Single,7.88,High School,1,1,0,US Citizen,None,0
+524,Female,White,35,727,41740.32,0.1009,8,24446.81,10005,Divorced,7.48,PhD,2,1,1,US Citizen,None,1
+525,Female,White,41,774,79265.98,0.3865,14,40150.26,10004,Single,7.34,Master's,2,0,0,US Citizen,Physical,1
+526,Male,White,31,755,45329.07,0.5367,5,54325.54,10002,Married,7.88,Master's,2,0,0,US Citizen,None,0
+527,Male,Black,26,520,25000.0,0.4357,3,71141.72,20005,Married,5.07,Bachelor's,2,1,1,US Citizen,None,0
+528,Male,Asian,31,820,65741.67,0.3731,3,63199.28,40002,Divorced,8.64,Master's,1,1,1,US Citizen,None,1
+529,Male,White,45,736,60648.88,0.3687,17,32200.35,10002,Married,7.47,Bachelor's,1,0,0,US Citizen,None,1
+530,Female,Black,34,585,51229.37,0.4576,6,32772.92,20003,Divorced,5.16,High School,1,0,1,US Citizen,None,0
+531,Female,White,22,728,25000.0,0.4418,0,188033.61,10004,Divorced,8.36,High School,0,0,0,US Citizen,None,1
+532,Female,Black,22,652,59136.84,0.4574,1,70609.67,20005,Single,5.6,Bachelor's,2,0,0,US Citizen,None,0
+533,Female,White,35,683,65484.4,0.2925,11,19048.12,30004,Single,9.24,High School,0,0,0,US Citizen,None,0
+534,Female,Asian,42,721,38492.85,0.2345,11,38948.35,20002,Divorced,6.98,PhD,4,0,0,US Citizen,None,0
+535,Female,Black,22,597,25000.0,0.3801,1,28721.46,20004,Single,3.65,High School,3,0,2,US Citizen,None,0
+536,Female,White,36,697,81283.99,0.3677,10,33033.12,10005,Married,7.07,Bachelor's,3,0,0,US Citizen,None,0
+537,Female,White,36,682,45139.3,0.2921,10,15357.41,10004,Divorced,8.27,Bachelor's,4,0,0,US Citizen,None,0
+538,Male,White,57,641,71437.23,0.3377,21,27218.54,10005,Single,7.37,Bachelor's,1,0,0,Visa Holder,None,0
+539,Male,White,37,728,31559.22,0.3527,9,129067.27,10002,Married,10.0,Bachelor's,3,1,0,US Citizen,None,1
+540,Male,White,46,752,68568.33,0.4,14,54467.17,10002,Married,7.52,High School,0,0,0,US Citizen,None,1
+541,Female,Hispanic,36,693,44354.21,0.5339,8,6349.85,30001,Married,4.07,Master's,0,0,0,US Citizen,None,1
+542,Female,Black,22,697,48982.4,0.4194,1,85110.56,20004,Single,4.98,Bachelor's,3,0,0,US Citizen,None,0
+543,Male,Black,43,662,39423.32,0.2231,9,77865.69,20002,Divorced,6.81,Bachelor's,0,1,1,US Citizen,None,0
+544,Female,White,44,690,39795.7,0.2886,9,28240.16,10002,Divorced,6.52,Master's,5,1,0,Permanent Resident,None,0
+545,Female,Hispanic,39,714,56574.44,0.3853,7,59999.08,30002,Single,4.23,Master's,2,0,0,Permanent Resident,Other,1
+546,Male,Black,68,544,95060.45,0.1597,30,19898.92,20002,Married,4.22,Master's,3,1,0,US Citizen,None,0
+547,Male,White,22,670,28182.71,0.4666,1,26129.52,10001,Single,6.72,Bachelor's,0,0,0,US Citizen,None,0
+548,Female,Black,53,572,75552.71,0.4271,21,103671.49,20004,Single,2.47,Bachelor's,2,1,0,US Citizen,None,0
+549,Male,Black,33,715,53152.63,0.4258,5,30025.1,20001,Married,2.19,Bachelor's,0,0,0,US Citizen,None,1
+550,Female,White,45,771,79777.08,0.4939,18,9810.3,10003,Single,7.78,Master's,3,0,1,US Citizen,None,1
+551,Male,White,41,746,68176.69,0.2244,12,34741.41,10001,Married,8.36,Master's,0,0,1,US Citizen,None,1
+552,Female,White,37,778,25000.0,0.3989,10,34371.68,10004,Married,6.66,High School,2,0,0,US Citizen,None,1
+553,Female,White,35,671,53120.49,0.3168,6,84024.02,10004,Married,7.42,Bachelor's,0,0,1,US Citizen,None,0
+554,Female,Asian,41,730,76102.16,0.3079,13,36681.78,40001,Married,7.24,Master's,0,1,0,US Citizen,None,1
+555,Female,Hispanic,22,651,25000.0,0.2873,1,27035.13,30002,Single,3.84,Bachelor's,1,1,2,Visa Holder,None,0
+556,Male,Black,43,699,54590.03,0.5799,10,75473.68,20002,Married,5.79,Bachelor's,0,0,0,US Citizen,None,0
+557,Male,White,37,713,62908.0,0.2549,12,39519.64,10001,Married,7.75,Bachelor's,2,0,0,Permanent Resident,None,0
+558,Male,White,29,698,25000.0,0.3839,2,21482.29,10002,Married,8.13,Bachelor's,0,0,0,US Citizen,None,1
+559,Female,Black,31,677,69440.21,0.185,7,81511.41,20005,Divorced,5.52,PhD,1,0,0,US Citizen,Other,0
+560,Female,Black,48,701,42409.36,0.5516,20,41587.85,20002,Married,8.14,Bachelor's,2,0,3,US Citizen,None,0
+561,Female,White,36,683,63786.03,0.4563,6,36389.96,10004,Single,6.27,High School,1,0,0,US Citizen,None,1
+562,Male,Black,39,635,55980.98,0.3917,8,41131.76,20002,Divorced,3.16,High School,1,0,0,US Citizen,None,1
+563,Male,Hispanic,28,591,67543.79,0.3228,4,17163.36,30002,Married,8.02,High School,3,0,0,US Citizen,None,0
+564,Male,White,50,582,83600.84,0.348,19,25100.48,10005,Single,8.28,Bachelor's,0,0,0,US Citizen,None,1
+565,Male,White,49,731,73066.14,0.5747,16,36406.69,10001,Married,7.58,Bachelor's,0,0,0,US Citizen,None,1
+566,Female,Hispanic,51,699,44567.27,0.1684,21,31689.33,10001,Married,4.78,High School,1,0,0,US Citizen,None,0
+567,Male,White,40,734,80277.76,0.3938,19,88494.87,10004,Married,7.22,Bachelor's,1,0,0,Permanent Resident,None,0
+568,Male,White,49,612,48488.38,0.1906,14,42284.85,10005,Married,7.25,Master's,2,1,1,US Citizen,Physical,0
+569,Female,White,43,700,71488.36,0.3276,5,66067.53,10003,Married,5.71,High School,1,0,0,US Citizen,None,1
+570,Male,White,56,597,66544.33,0.2703,27,36555.13,10001,Married,8.67,Bachelor's,3,0,0,Permanent Resident,None,1
+571,Male,Hispanic,28,749,67463.75,0.2986,7,76069.44,30002,Single,2.48,PhD,0,0,1,US Citizen,None,1
+572,Female,Black,43,563,54949.49,0.4087,15,47967.04,20001,Married,3.23,Bachelor's,1,0,3,US Citizen,None,0
+573,Male,White,39,789,77051.86,0.1639,7,36658.27,10004,Married,6.98,Master's,1,0,0,US Citizen,None,0
+574,Female,Hispanic,34,721,47639.83,0.5035,8,35979.4,30001,Single,8.72,Bachelor's,2,0,0,US Citizen,None,0
+575,Female,Hispanic,35,601,25000.0,0.1647,5,18618.16,30003,Divorced,5.35,Master's,4,0,3,Permanent Resident,None,0
+576,Female,Hispanic,37,586,35539.06,0.4448,12,51784.23,30001,Divorced,5.97,Master's,2,1,0,US Citizen,None,0
+577,Male,White,40,739,78395.84,0.2608,6,35307.71,10003,Single,6.45,Bachelor's,5,0,0,US Citizen,None,1
+578,Female,White,44,673,65099.84,0.1895,12,25555.44,10005,Single,8.54,Master's,1,0,0,Permanent Resident,None,1
+579,Male,Asian,53,716,97984.85,0.3243,13,78788.57,40003,Married,10.0,PhD,0,0,2,US Citizen,None,1
+580,Male,Hispanic,43,628,66458.62,0.1632,14,15136.26,30001,Married,6.24,Bachelor's,0,1,3,Permanent Resident,None,0
+581,Male,White,51,622,63929.47,0.3048,16,27017.85,10004,Single,7.1,High School,1,0,1,US Citizen,Physical,1
+582,Female,White,36,597,44259.04,0.1593,10,74563.26,10002,Divorced,5.06,Bachelor's,1,0,0,US Citizen,None,1
+583,Male,White,32,732,62493.76,0.3554,7,45291.11,10003,Divorced,8.33,Master's,0,0,0,US Citizen,None,1
+584,Male,Asian,47,676,40039.34,0.1891,10,35119.04,20002,Married,5.72,Bachelor's,1,0,0,Permanent Resident,None,1
+585,Female,Black,44,601,78311.63,0.3559,17,43291.11,20004,Divorced,3.37,High School,1,1,2,US Citizen,None,0
+586,Male,White,58,758,91496.2,0.3353,22,41175.14,10004,Married,8.62,High School,0,0,2,Permanent Resident,None,1
+587,Male,White,35,784,82115.52,0.2073,6,12560.8,10001,Married,6.93,Bachelor's,1,0,0,US Citizen,None,1
+588,Male,Black,33,620,28880.44,0.373,13,28439.0,20005,Married,4.36,High School,3,1,1,US Citizen,None,0
+589,Male,Hispanic,22,637,62655.98,0.1683,1,112596.42,30001,Married,6.62,Bachelor's,1,0,0,US Citizen,None,0
+590,Male,White,37,747,99022.48,0.3757,9,22890.4,30001,Divorced,6.65,Master's,2,0,0,US Citizen,Other,1
+591,Male,Hispanic,43,571,40596.32,0.5618,20,29062.07,40001,Married,3.57,Bachelor's,2,0,1,US Citizen,None,1
+592,Female,Asian,33,723,65371.03,0.6651,12,24856.27,40002,Divorced,7.6,High School,1,0,0,Permanent Resident,None,0
+593,Male,White,49,750,76606.65,0.3109,16,34169.52,10003,Married,8.41,High School,0,1,0,US Citizen,None,1
+594,Male,Black,34,687,30204.99,0.4746,9,24144.55,20001,Married,3.63,High School,1,0,0,US Citizen,None,0
+595,Female,White,45,613,70793.26,0.1163,10,51058.08,10004,Married,6.75,High School,2,0,1,Visa Holder,None,0
+596,Male,Hispanic,24,610,58055.55,0.5303,2,41694.29,30003,Married,3.85,Bachelor's,1,1,2,US Citizen,None,0
+597,Female,Black,36,578,38753.1,0.5031,8,62410.16,20003,Single,5.57,Bachelor's,0,0,3,Permanent Resident,None,0
+598,Male,Black,22,646,61476.25,0.3219,1,17402.01,20002,Married,7.38,High School,0,0,1,US Citizen,None,1
+599,Male,Hispanic,33,691,27588.05,0.4985,8,28617.16,10005,Married,6.9,High School,3,0,0,US Citizen,None,0
+600,Male,White,24,802,31168.66,0.2695,2,31007.8,10001,Divorced,7.39,High School,1,1,0,US Citizen,None,1
+601,Male,Asian,50,680,79558.96,0.245,19,49958.74,40002,Single,7.93,PhD,2,1,3,US Citizen,None,1
+602,Male,Black,43,605,60790.28,0.437,8,20842.41,30001,Single,3.25,Bachelor's,1,0,1,US Citizen,None,1
+603,Male,White,47,783,64001.4,0.1724,11,68937.64,10004,Married,7.94,Master's,3,0,0,Visa Holder,None,1
+604,Male,Black,51,660,78809.42,0.5026,15,83323.92,20005,Married,2.87,Master's,2,1,1,US Citizen,None,1
+605,Male,Hispanic,26,742,55078.91,0.2233,3,18174.76,30004,Married,5.32,Bachelor's,1,0,2,US Citizen,None,1
+606,Male,White,61,735,100502.09,0.174,30,25755.13,10005,Single,8.79,Master's,4,1,0,Visa Holder,None,1
+607,Male,Hispanic,43,584,58562.45,0.2408,8,25025.43,30002,Married,6.72,High School,2,0,0,US Citizen,None,0
+608,Male,Asian,35,630,72748.7,0.3911,7,229273.37,20005,Married,7.74,Bachelor's,0,0,0,Permanent Resident,None,1
+609,Male,White,54,634,74505.25,0.226,26,26878.18,10004,Married,8.0,High School,0,0,1,US Citizen,None,1
+610,Female,Asian,26,749,79007.28,0.1682,3,117516.94,40001,Single,6.04,Master's,3,0,1,US Citizen,Other,0
+611,Male,White,32,785,48761.81,0.2273,8,14963.33,10001,Single,7.67,High School,3,0,0,US Citizen,None,1
+612,Female,White,35,820,86979.46,0.3262,8,18164.86,10005,Married,8.44,Master's,2,1,0,US Citizen,None,1
+613,Female,White,36,766,56723.32,0.1883,10,22457.43,10002,Single,7.21,High School,2,0,1,US Citizen,None,1
+614,Male,Hispanic,25,735,25700.84,0.2118,2,20090.8,30001,Single,5.19,Master's,2,1,1,US Citizen,None,0
+615,Female,Black,48,599,76451.19,0.6634,20,30105.73,30002,Single,3.79,Bachelor's,1,0,1,US Citizen,None,0
+616,Female,White,39,656,60488.52,0.2267,5,22111.55,10003,Single,7.16,Bachelor's,2,1,0,US Citizen,None,1
+617,Male,White,45,766,85676.86,0.2612,13,20464.79,10004,Married,6.57,Bachelor's,0,1,2,Visa Holder,None,1
+618,Male,Black,30,669,68601.34,0.3359,6,81709.9,20001,Single,4.54,Bachelor's,4,0,1,US Citizen,None,0
+619,Female,White,22,725,50069.33,0.2794,1,85532.83,10003,Divorced,7.12,Bachelor's,3,0,1,US Citizen,None,0
+620,Female,Hispanic,37,685,39566.39,0.4546,15,70580.38,30002,Divorced,3.29,PhD,2,0,0,US Citizen,Physical,1
+621,Male,Hispanic,22,681,58623.2,0.4638,1,52407.2,30003,Single,9.4,High School,1,0,0,US Citizen,None,0
+622,Male,Black,35,729,54164.83,0.3433,13,38751.32,20005,Married,2.94,Master's,0,0,2,US Citizen,None,1
+623,Male,Asian,24,787,63877.87,0.1516,1,25644.35,40001,Married,6.82,Bachelor's,1,1,0,US Citizen,None,1
+624,Male,White,63,749,57164.04,0.4529,30,18634.87,10002,Married,7.57,Master's,2,1,0,US Citizen,None,1
+625,Female,Asian,47,760,71704.73,0.3186,20,46821.46,40001,Divorced,6.3,Bachelor's,2,0,0,US Citizen,None,1
+626,Male,Black,37,675,46138.71,0.5876,7,15969.86,20003,Married,4.37,Bachelor's,1,0,1,US Citizen,None,0
+627,Male,Black,48,607,89119.14,0.1105,18,18110.65,20003,Single,3.27,Master's,2,0,0,Permanent Resident,None,0
+628,Female,White,32,761,62346.31,0.3534,7,81392.57,10004,Divorced,8.37,Bachelor's,3,0,0,US Citizen,None,1
+629,Male,Hispanic,39,569,60879.37,0.5802,13,137372.89,30002,Divorced,5.47,Bachelor's,0,0,2,US Citizen,None,1
+630,Male,White,44,777,79284.65,0.2576,13,47825.13,10001,Married,8.36,High School,1,1,0,US Citizen,None,1
+631,Female,White,44,654,47623.39,0.3029,12,78788.32,10004,Single,9.26,High School,3,0,0,US Citizen,None,1
+632,Female,White,55,735,95748.85,0.3655,30,30574.03,10005,Single,7.16,Bachelor's,2,0,0,US Citizen,None,1
+633,Male,Black,43,580,90280.06,0.3129,13,14237.41,20001,Married,5.66,Master's,2,1,3,US Citizen,None,1
+634,Male,Black,38,678,62393.2,0.3426,13,55743.73,20002,Single,6.8,Bachelor's,2,0,0,US Citizen,None,0
+635,Male,Black,22,637,67843.55,0.3395,1,54095.3,20004,Married,4.31,High School,5,1,1,US Citizen,None,1
+636,Male,Hispanic,26,556,38578.28,0.2747,5,38183.85,30002,Divorced,6.54,Bachelor's,0,0,0,US Citizen,None,0
+637,Male,White,40,743,56353.3,0.4475,9,30648.44,10003,Divorced,6.94,Bachelor's,1,0,1,US Citizen,None,1
+638,Male,Black,36,599,55549.37,0.4353,7,71221.31,20002,Married,6.3,Bachelor's,0,1,1,US Citizen,None,1
+639,Male,White,29,768,64714.12,0.3301,8,18214.75,10004,Married,6.9,Master's,0,0,0,US Citizen,None,1
+640,Male,Hispanic,56,660,64665.7,0.447,18,21127.98,30003,Married,6.55,Master's,1,1,0,US Citizen,None,1
+641,Male,Hispanic,48,685,72386.02,0.3183,25,17931.7,30001,Married,6.99,High School,0,1,2,US Citizen,None,1
+642,Male,Black,42,572,64223.34,0.2871,17,38541.12,20002,Married,2.73,Master's,4,0,0,US Citizen,None,0
+643,Male,Black,36,598,39960.9,0.3077,9,16957.66,20003,Married,3.5,Bachelor's,4,0,2,US Citizen,Other,1
+644,Male,White,39,694,75171.9,0.3002,4,22494.6,10001,Married,6.65,Master's,1,0,0,US Citizen,None,1
+645,Male,White,31,767,72982.92,0.1729,6,22158.38,10002,Single,8.8,High School,2,1,0,US Citizen,None,1
+646,Female,Hispanic,35,769,49662.04,0.32,9,30259.76,30004,Single,3.74,Bachelor's,2,0,0,US Citizen,None,1
+647,Female,White,44,675,79889.72,0.2681,20,12820.98,10004,Married,7.89,High School,3,0,1,US Citizen,None,1
+648,Female,White,28,779,31538.94,0.5849,7,38601.39,10001,Single,8.37,Bachelor's,2,0,0,US Citizen,None,1
+649,Female,White,45,600,70419.26,0.05,11,86952.09,10002,Divorced,7.7,High School,0,0,0,US Citizen,None,0
+650,Male,Hispanic,33,582,35035.29,0.3284,9,39928.43,30003,Single,7.41,High School,3,1,0,US Citizen,None,0
+651,Male,White,22,667,35038.78,0.5071,1,106822.6,10004,Married,5.19,High School,2,1,0,US Citizen,None,0
+652,Male,White,32,645,51486.04,0.3146,9,92392.28,10002,Single,8.23,High School,2,1,0,US Citizen,None,1
+653,Female,Black,31,529,30239.1,0.5004,7,62593.36,10002,Divorced,4.23,High School,4,0,0,US Citizen,None,0
+654,Female,Hispanic,51,686,49750.06,0.392,6,38264.59,30004,Divorced,3.24,Bachelor's,4,1,2,US Citizen,None,0
+655,Male,White,48,708,72457.75,0.2199,15,36892.01,40001,Married,6.2,High School,2,0,0,US Citizen,None,1
+656,Male,White,27,740,68907.32,0.05,2,61985.75,10002,Single,9.38,Bachelor's,2,0,1,US Citizen,None,1
+657,Male,White,47,757,69932.61,0.3247,15,27607.16,10001,Married,8.26,High School,5,0,0,US Citizen,None,1
+658,Male,White,24,734,29805.61,0.2069,3,9722.86,10003,Divorced,8.46,PhD,1,1,0,Visa Holder,None,1
+659,Female,White,53,756,86901.02,0.234,21,51246.51,10001,Single,8.65,PhD,1,1,0,Permanent Resident,None,1
+660,Female,Black,31,635,31813.65,0.3501,9,16452.82,20001,Divorced,2.46,High School,0,1,3,US Citizen,None,0
+661,Male,Black,35,556,53272.69,0.5894,10,18518.05,20005,Divorced,4.87,Bachelor's,3,1,2,US Citizen,None,0
+662,Female,Black,49,714,63308.05,0.6986,9,36321.2,20002,Married,6.15,High School,2,1,0,US Citizen,None,0
+663,Female,White,27,687,51994.16,0.3561,0,33976.1,10003,Divorced,7.02,PhD,0,0,1,US Citizen,None,0
+664,Male,Hispanic,22,599,60400.19,0.2942,1,13514.89,30001,Married,7.54,Bachelor's,5,1,0,US Citizen,None,0
+665,Male,White,35,710,70895.05,0.1587,8,40775.8,10005,Married,6.76,High School,2,0,0,US Citizen,None,1
+666,Male,Asian,48,655,62750.36,0.3562,11,71417.47,40001,Married,7.16,Bachelor's,3,0,0,US Citizen,None,0
+667,Male,Black,22,610,76665.93,0.5939,0,16484.25,20001,Divorced,5.1,High School,0,0,0,Permanent Resident,None,0
+668,Male,White,22,738,54665.0,0.2703,0,88498.27,20003,Married,8.41,Bachelor's,2,0,0,US Citizen,None,1
+669,Male,Black,31,664,48815.4,0.0945,6,12184.02,20003,Married,4.07,Bachelor's,2,0,1,US Citizen,None,1
+670,Male,White,48,670,90128.88,0.3804,20,159871.7,10005,Single,8.71,Bachelor's,2,0,0,Permanent Resident,None,1
+671,Male,Black,48,605,68061.26,0.4982,17,27231.17,20004,Divorced,5.14,Bachelor's,2,0,1,US Citizen,None,0
+672,Female,White,36,779,62188.42,0.1397,14,40212.45,10004,Divorced,5.53,High School,3,1,0,US Citizen,None,1
+673,Male,White,37,747,102932.76,0.3212,6,9658.33,10002,Married,9.7,High School,1,1,0,US Citizen,None,1
+674,Male,Hispanic,45,794,57846.68,0.4041,19,34769.81,30002,Married,4.06,High School,3,0,1,US Citizen,None,0
+675,Male,White,22,784,46983.59,0.2912,1,42613.97,10002,Married,9.8,Master's,0,0,1,US Citizen,None,0
+676,Female,Hispanic,31,734,46118.68,0.2851,8,34189.93,30002,Divorced,5.26,High School,1,0,2,US Citizen,None,1
+677,Male,White,44,643,88062.74,0.4219,12,24485.67,20004,Married,7.09,Bachelor's,0,0,0,US Citizen,None,1
+678,Male,Black,40,693,35465.49,0.3316,16,18721.07,20003,Married,5.1,Bachelor's,1,0,1,US Citizen,None,0
+679,Female,Black,30,636,25000.0,0.2318,6,80127.04,20005,Divorced,3.45,High School,1,1,1,US Citizen,None,0
+680,Female,Black,36,601,38963.27,0.1641,7,37107.15,20002,Single,1.67,Bachelor's,3,0,0,US Citizen,None,0
+681,Female,White,22,729,25000.0,0.4813,1,106780.08,10002,Single,7.37,Bachelor's,2,0,0,Permanent Resident,None,0
+682,Male,White,34,771,56417.53,0.374,7,25121.07,10004,Married,7.95,Bachelor's,1,0,0,US Citizen,None,1
+683,Male,White,46,747,81367.5,0.3106,18,26786.24,10004,Married,9.35,Bachelor's,2,0,0,US Citizen,Other,1
+684,Female,White,31,671,38838.77,0.2772,4,64274.35,10005,Single,6.07,Bachelor's,0,0,0,US Citizen,None,0
+685,Female,Black,36,691,26367.6,0.3465,9,11659.98,20001,Single,5.37,Bachelor's,0,0,3,US Citizen,None,0
+686,Female,Asian,42,671,62040.06,0.2009,14,15530.73,40001,Divorced,6.86,Bachelor's,2,1,0,US Citizen,None,1
+687,Female,Hispanic,31,674,57308.15,0.3282,6,78295.04,30003,Single,5.55,Bachelor's,2,0,1,US Citizen,None,1
+688,Male,Hispanic,36,640,29510.9,0.0956,13,15988.84,30003,Married,6.96,High School,3,0,1,Permanent Resident,None,1
+689,Female,Hispanic,26,645,53273.49,0.2917,4,10164.58,30002,Divorced,4.73,Bachelor's,1,0,0,Visa Holder,None,0
+690,Male,Black,33,693,64849.09,0.3427,7,134318.49,20003,Single,4.75,High School,2,0,0,Visa Holder,None,0
+691,Male,White,48,662,89981.28,0.3732,18,13688.72,10003,Single,8.81,High School,2,0,0,US Citizen,None,0
+692,Male,Asian,39,820,85667.2,0.2952,12,41310.98,40002,Divorced,8.34,Bachelor's,4,0,1,Permanent Resident,None,1
+693,Male,Black,30,520,83273.71,0.4754,6,38114.86,20004,Single,2.67,Master's,0,0,3,US Citizen,None,0
+694,Male,Black,38,598,51158.12,0.5419,4,5077.43,20001,Married,3.58,Master's,2,0,0,Permanent Resident,None,1
+695,Male,White,49,740,78233.57,0.427,15,30117.99,10003,Single,7.33,High School,2,0,1,Permanent Resident,None,0
+696,Female,White,22,752,38753.42,0.3865,0,49706.41,10002,Single,8.48,Bachelor's,5,0,0,Permanent Resident,None,1
+697,Male,White,54,714,81219.65,0.3014,29,46537.63,20005,Married,7.2,Bachelor's,0,0,0,US Citizen,None,1
+698,Female,Hispanic,31,656,67363.1,0.2623,6,68354.62,30001,Single,5.62,High School,2,0,1,US Citizen,None,0
+699,Male,Black,40,668,37888.28,0.4688,11,27688.05,20003,Married,6.38,Master's,1,0,0,US Citizen,None,1
+700,Male,White,55,707,69194.25,0.5016,27,59799.53,10004,Married,7.09,Master's,2,0,0,US Citizen,None,1
+701,Male,Asian,24,793,74247.71,0.3411,2,22414.64,10003,Married,8.92,Master's,0,0,0,US Citizen,None,1
+702,Male,White,34,766,78090.55,0.5301,5,13530.11,10002,Married,5.57,High School,0,0,0,US Citizen,None,1
+703,Male,White,38,768,61023.03,0.1169,10,14641.13,40003,Single,7.03,High School,2,0,1,US Citizen,None,1
+704,Male,White,33,666,74686.03,0.1615,6,13049.73,10005,Divorced,5.86,Master's,1,0,0,US Citizen,None,0
+705,Male,Black,53,634,73347.74,0.4826,8,73622.81,20005,Married,4.68,Bachelor's,0,0,1,US Citizen,None,0
+706,Female,Asian,29,691,73104.12,0.3617,4,12579.18,40003,Divorced,7.98,Master's,1,1,0,Permanent Resident,None,1
+707,Male,White,35,664,64827.64,0.4577,8,43994.82,10005,Married,7.31,High School,0,0,1,US Citizen,None,0
+708,Female,Hispanic,36,683,63154.48,0.3781,9,30147.37,30002,Divorced,4.79,Bachelor's,4,1,1,US Citizen,None,1
+709,Male,White,28,690,96900.18,0.1958,2,33797.63,10004,Married,5.87,Bachelor's,2,1,1,US Citizen,None,0
+710,Female,Asian,34,749,63571.49,0.3044,11,94327.22,40001,Married,9.19,High School,3,1,0,US Citizen,None,0
+711,Female,Hispanic,37,590,49189.92,0.1961,9,26718.22,30003,Married,5.47,Bachelor's,1,1,0,US Citizen,None,0
+712,Female,Hispanic,32,771,55886.7,0.2446,7,55721.49,30004,Single,4.82,Bachelor's,4,0,1,US Citizen,None,1
+713,Male,White,40,670,62830.79,0.4167,13,37283.06,10003,Married,9.38,High School,1,0,0,Permanent Resident,None,0
+714,Male,Asian,32,723,96769.52,0.4047,5,32649.56,10004,Married,6.54,High School,2,0,0,US Citizen,None,1
+715,Male,Black,22,695,46688.57,0.4236,1,181675.68,20005,Married,3.13,Bachelor's,1,0,0,US Citizen,None,0
+716,Female,White,45,688,59306.0,0.1235,13,13240.83,10003,Married,6.65,Bachelor's,2,1,0,US Citizen,None,0
+717,Female,Hispanic,50,715,44754.66,0.337,12,89535.66,30001,Single,4.21,Master's,2,0,1,US Citizen,None,1
+718,Female,White,42,652,77458.3,0.183,15,57496.8,30002,Divorced,6.22,Bachelor's,1,0,0,US Citizen,None,0
+719,Male,Hispanic,37,754,68725.31,0.4912,15,25960.53,30002,Married,4.46,High School,0,0,0,US Citizen,None,0
+720,Female,White,49,720,59139.68,0.26,21,113609.56,10001,Married,10.0,PhD,2,0,0,US Citizen,None,1
+721,Female,Black,23,598,47576.77,0.2797,2,9959.91,20002,Divorced,2.78,Master's,1,0,2,US Citizen,None,0
+722,Male,Black,53,619,45601.16,0.3836,16,25204.13,20004,Single,2.26,High School,0,0,1,US Citizen,None,1
+723,Male,White,44,764,74764.56,0.2232,6,15584.97,10001,Married,7.83,Master's,1,0,0,US Citizen,None,1
+724,Female,White,59,687,81391.35,0.508,30,48458.28,10005,Divorced,7.41,High School,2,0,0,Visa Holder,None,1
+725,Female,White,33,678,79409.95,0.2418,13,16661.49,10005,Single,8.29,High School,3,1,0,US Citizen,None,0
+726,Female,White,61,707,64637.72,0.1621,30,49175.2,10004,Married,6.84,High School,0,1,0,Permanent Resident,None,1
+727,Male,White,50,655,58334.71,0.05,15,31872.36,10001,Married,6.46,High School,1,0,0,US Citizen,None,1
+728,Female,Black,41,767,37738.58,0.4063,7,25963.64,20001,Divorced,7.01,Master's,3,1,0,US Citizen,None,0
+729,Male,White,44,688,51941.47,0.2326,9,47669.79,10004,Married,5.57,Master's,2,0,0,US Citizen,None,1
+730,Male,White,39,765,87439.86,0.1285,5,30090.5,10005,Single,7.93,PhD,1,0,1,US Citizen,None,1
+731,Male,Black,48,654,87549.09,0.5227,16,16948.86,20001,Married,5.54,Master's,3,0,1,US Citizen,None,0
+732,Female,White,43,665,66603.25,0.4101,21,258063.53,30002,Divorced,8.49,Bachelor's,1,0,0,US Citizen,Physical,0
+733,Female,Asian,22,709,63319.42,0.3266,1,25822.02,40001,Single,6.61,Bachelor's,1,0,1,US Citizen,None,0
+734,Male,Hispanic,24,710,47560.88,0.5137,2,7689.98,30002,Married,3.63,PhD,5,0,3,US Citizen,None,0
+735,Male,Black,34,626,51944.83,0.4595,12,20141.36,20003,Married,6.75,Master's,4,0,0,Permanent Resident,None,0
+736,Female,Black,39,723,44814.44,0.3113,9,14956.58,20005,Divorced,3.83,Master's,1,0,2,Visa Holder,None,1
+737,Male,Hispanic,34,726,48715.64,0.2253,14,64750.84,30004,Married,7.79,PhD,0,0,1,US Citizen,None,0
+738,Female,White,55,770,48182.98,0.4282,30,45485.86,30001,Divorced,7.94,High School,1,0,0,US Citizen,None,0
+739,Male,White,22,694,55713.82,0.3476,1,48006.85,10004,Single,6.92,Master's,0,0,0,US Citizen,None,1
+740,Male,White,43,660,70464.99,0.3204,11,28028.7,10004,Married,7.97,Master's,0,1,0,US Citizen,None,1
+741,Male,Hispanic,22,620,55167.91,0.2484,1,29865.37,30004,Divorced,7.23,PhD,1,0,1,US Citizen,None,1
+742,Male,White,50,730,78912.85,0.373,15,28010.88,10005,Single,7.6,High School,4,0,0,US Citizen,None,1
+743,Female,Black,35,678,44649.44,0.3193,5,34309.06,20003,Single,3.39,Bachelor's,3,0,1,Visa Holder,None,1
+744,Male,Asian,42,579,57082.1,0.2878,18,65168.62,40003,Married,4.68,Bachelor's,2,0,1,US Citizen,None,1
+745,Male,Hispanic,27,659,48979.8,0.5236,5,45947.41,30001,Married,4.86,High School,2,0,0,US Citizen,Other,0
+746,Female,Black,48,651,67003.56,0.3307,17,51538.22,20005,Married,5.71,Bachelor's,0,0,2,US Citizen,None,0
+747,Male,White,53,704,63119.92,0.1112,11,51518.24,10003,Married,6.29,High School,0,0,1,US Citizen,None,1
+748,Male,Hispanic,40,743,59375.61,0.2237,7,67447.83,30003,Married,6.52,Bachelor's,0,1,0,US Citizen,None,1
+749,Female,Black,34,669,49905.64,0.5293,8,44431.55,10003,Divorced,4.54,Bachelor's,3,0,3,US Citizen,None,0
+750,Female,White,48,792,55029.03,0.3606,14,46685.72,10005,Married,8.39,Bachelor's,0,0,0,US Citizen,None,1
+751,Male,White,34,708,53972.16,0.2845,7,83463.47,10005,Single,4.69,Bachelor's,3,1,0,Permanent Resident,None,0
+752,Female,Asian,46,766,67659.16,0.2689,20,22798.91,40001,Single,5.15,Bachelor's,2,1,0,US Citizen,Other,1
+753,Female,Black,52,754,41648.68,0.4682,23,19949.92,20005,Single,3.81,High School,0,0,1,US Citizen,None,0
+754,Male,Hispanic,44,745,66440.36,0.2481,21,15833.05,30004,Single,8.3,High School,0,0,1,Permanent Resident,None,0
+755,Male,Hispanic,28,589,35249.18,0.3867,3,41276.15,30002,Married,4.37,High School,2,1,0,US Citizen,None,0
+756,Female,Black,39,622,65752.81,0.3222,10,9920.79,30003,Single,4.31,High School,4,0,0,US Citizen,Other,1
+757,Female,Black,23,615,73997.42,0.3023,2,50186.83,20001,Single,7.73,Bachelor's,2,0,0,US Citizen,None,0
+758,Male,White,48,746,62758.65,0.2235,19,33643.15,30001,Married,8.01,Master's,1,0,1,Visa Holder,None,1
+759,Female,White,46,757,72213.12,0.285,23,80358.07,10005,Single,8.53,High School,2,0,1,US Citizen,None,0
+760,Female,White,22,673,34098.87,0.3241,1,22689.51,10004,Single,6.73,High School,1,1,0,US Citizen,None,0
+761,Male,Hispanic,24,664,61165.81,0.3783,3,31497.93,30004,Single,7.27,Master's,5,0,1,US Citizen,None,1
+762,Male,Black,33,520,33610.62,0.05,9,79661.55,20005,Married,6.5,Bachelor's,2,0,1,US Citizen,None,0
+763,Male,Hispanic,32,753,59016.3,0.2531,9,95625.51,30001,Married,6.25,PhD,2,1,0,US Citizen,None,1
+764,Female,White,28,691,36705.17,0.283,4,22559.09,10001,Single,7.4,Master's,1,1,0,US Citizen,None,0
+765,Male,Black,39,643,54176.73,0.5606,11,41243.42,10004,Married,5.34,Bachelor's,2,0,1,Permanent Resident,None,1
+766,Female,Black,38,618,33664.62,0.2804,14,44626.95,20002,Single,2.06,High School,1,0,1,US Citizen,None,0
+767,Female,Black,34,720,58745.26,0.4295,12,47172.08,20004,Single,6.13,Bachelor's,0,0,0,Permanent Resident,None,0
+768,Female,Black,28,520,29775.29,0.5894,5,30218.12,20001,Single,3.23,High School,1,0,3,US Citizen,None,0
+769,Male,White,53,719,88549.46,0.1424,19,89051.34,10003,Single,7.17,High School,4,1,1,US Citizen,None,1
+770,Female,Black,52,632,53488.53,0.4573,28,9674.1,20002,Married,6.48,High School,2,0,0,Permanent Resident,None,0
+771,Male,White,36,695,62912.91,0.2037,2,27043.69,10001,Divorced,8.82,Master's,0,0,0,US Citizen,None,1
+772,Female,White,35,814,57616.34,0.2694,4,49689.63,10005,Single,5.55,Bachelor's,3,0,2,US Citizen,None,1
+773,Male,White,47,671,63322.63,0.2036,19,50013.96,10005,Married,6.36,High School,1,0,0,US Citizen,None,0
+774,Male,Black,32,694,54963.01,0.2922,7,93613.63,20003,Single,5.46,Bachelor's,0,0,1,US Citizen,None,0
+775,Female,Asian,36,731,79155.02,0.6566,11,84015.6,40001,Divorced,4.74,Bachelor's,1,0,0,US Citizen,Other,1
+776,Male,Black,43,728,48738.08,0.4813,14,29736.21,20004,Married,6.63,Bachelor's,2,1,0,US Citizen,Other,1
+777,Male,Black,22,593,61564.65,0.5122,1,90211.29,10001,Single,4.68,High School,2,0,2,US Citizen,None,0
+778,Female,Black,49,588,79081.46,0.469,12,22030.23,20004,Divorced,6.62,Bachelor's,1,1,0,US Citizen,None,0
+779,Female,Black,36,716,35527.68,0.2172,11,69676.69,20001,Divorced,3.38,PhD,2,0,0,US Citizen,None,0
+780,Female,White,37,743,35174.18,0.3774,13,128973.95,10003,Married,6.71,High School,1,0,0,US Citizen,None,0
+781,Female,White,41,635,64729.41,0.4588,17,85004.62,10005,Divorced,8.74,High School,3,0,0,US Citizen,None,0
+782,Male,White,41,690,61018.89,0.1976,21,39106.32,10005,Single,7.14,High School,0,0,0,US Citizen,None,1
+783,Male,White,22,741,79779.05,0.4158,1,28789.18,10001,Single,6.01,High School,3,0,1,US Citizen,None,1
+784,Male,White,58,766,85392.11,0.3845,24,12456.35,10005,Single,8.17,Bachelor's,2,0,0,Permanent Resident,None,1
+785,Male,White,42,682,58117.01,0.5222,6,45133.4,10003,Divorced,5.59,Master's,2,1,0,US Citizen,None,0
+786,Female,White,46,559,46992.61,0.2799,12,16636.39,10004,Single,9.23,Master's,1,1,0,US Citizen,None,0
+787,Female,Asian,47,741,81348.57,0.1983,15,20843.67,40001,Married,7.24,High School,2,0,0,US Citizen,None,0
+788,Male,White,30,652,50542.24,0.2566,8,15779.67,10003,Married,6.43,Bachelor's,0,0,0,US Citizen,None,1
+789,Male,White,47,609,75407.43,0.4723,12,26310.55,10001,Married,8.87,Bachelor's,3,1,0,US Citizen,None,0
+790,Female,White,39,564,72937.04,0.1106,14,35611.41,10003,Single,8.9,Bachelor's,0,0,0,US Citizen,None,1
+791,Male,Black,44,696,53927.62,0.1318,14,43981.76,20003,Married,4.51,Bachelor's,0,1,0,US Citizen,None,0
+792,Female,White,22,727,44311.07,0.3407,1,23852.52,10005,Single,10.0,High School,2,1,0,US Citizen,None,0
+793,Male,White,40,707,68061.47,0.2469,12,76764.58,10002,Single,10.0,Bachelor's,2,0,2,US Citizen,None,1
+794,Female,Black,29,737,53259.87,0.4109,4,31390.37,20005,Divorced,4.99,Bachelor's,0,0,0,US Citizen,None,1
+795,Male,White,46,755,82691.17,0.4134,13,20922.79,10003,Married,8.78,Master's,4,0,0,US Citizen,Other,1
+796,Female,White,47,808,61698.29,0.2637,6,42548.7,10005,Divorced,9.07,Master's,5,0,0,US Citizen,None,1
+797,Female,White,34,643,55554.74,0.1052,7,143556.93,10002,Married,6.14,High School,2,0,0,Visa Holder,None,0
+798,Female,White,34,718,49023.31,0.5753,7,45918.0,10001,Divorced,7.84,High School,1,1,0,US Citizen,None,0
+799,Female,White,40,631,37235.81,0.2103,9,28169.67,10002,Divorced,6.68,Master's,2,0,0,US Citizen,None,1
+800,Female,White,32,707,56864.01,0.2029,8,12466.21,10003,Single,6.51,Bachelor's,1,0,0,US Citizen,None,1
+801,Female,Hispanic,42,643,80232.88,0.5124,16,31145.07,30003,Single,5.68,Master's,1,0,0,US Citizen,None,0
+802,Male,Black,32,683,38551.71,0.3339,7,42806.69,20004,Married,4.8,High School,4,0,0,US Citizen,None,0
+803,Female,Black,22,643,26654.55,0.4024,1,27686.31,20003,Divorced,2.08,Bachelor's,4,0,0,US Citizen,None,0
+804,Female,White,37,754,43939.08,0.3879,12,11318.92,10005,Divorced,7.91,Bachelor's,4,0,0,US Citizen,None,1
+805,Male,Asian,27,752,67218.88,0.43,3,20022.35,40003,Married,6.67,Master's,1,0,0,US Citizen,None,1
+806,Female,White,24,820,53327.28,0.29,2,100526.53,10002,Single,9.18,High School,0,0,1,US Citizen,None,1
+807,Female,White,28,702,47421.93,0.5124,5,99091.67,10004,Married,8.9,High School,1,0,2,Visa Holder,None,0
+808,Female,Black,37,574,34679.71,0.1537,12,19523.08,20002,Single,3.22,Bachelor's,1,0,0,US Citizen,None,1
+809,Male,White,56,733,84415.65,0.3912,30,58158.64,10005,Divorced,9.08,Master's,1,0,0,US Citizen,None,1
+810,Male,White,45,675,49440.67,0.1993,20,15914.71,10005,Married,8.14,PhD,1,0,0,US Citizen,None,1
+811,Female,Black,29,743,45161.4,0.5747,4,97053.86,20003,Divorced,4.17,PhD,2,1,0,US Citizen,None,0
+812,Female,Hispanic,39,641,62882.87,0.397,11,43116.68,30001,Divorced,4.73,PhD,3,1,0,US Citizen,None,0
+813,Male,White,36,688,45862.01,0.2193,11,70597.43,10004,Divorced,6.12,High School,2,0,0,US Citizen,None,1
+814,Female,Black,29,607,25000.0,0.4895,7,10931.84,20001,Married,2.67,High School,3,0,1,Permanent Resident,None,0
+815,Female,Asian,26,753,71891.57,0.4372,4,58357.66,40002,Married,4.62,High School,0,0,0,US Citizen,None,1
+816,Male,White,22,711,42573.61,0.377,1,36120.94,10003,Married,7.53,Bachelor's,0,1,0,US Citizen,None,1
+817,Female,White,37,684,74039.22,0.2064,5,65930.1,10004,Divorced,5.03,Master's,3,1,1,US Citizen,None,1
+818,Male,White,43,811,68760.04,0.2419,9,68899.72,10004,Married,6.46,Master's,2,0,0,US Citizen,None,1
+819,Male,White,40,672,65880.68,0.2995,13,38026.91,10003,Married,8.29,High School,2,0,0,Permanent Resident,None,1
+820,Male,White,37,721,72126.19,0.295,11,23847.13,10005,Single,9.29,Bachelor's,0,0,0,US Citizen,None,1
+821,Female,Asian,28,749,36540.02,0.42,3,62679.35,40002,Single,5.51,Master's,1,0,0,Visa Holder,None,1
+822,Male,Black,42,525,61614.96,0.1382,13,34818.07,20005,Married,5.41,Bachelor's,2,0,0,US Citizen,None,0
+823,Male,Black,22,673,38265.16,0.4201,1,19713.33,20005,Married,4.04,High School,3,0,0,US Citizen,None,0
+824,Male,White,50,661,57702.6,0.2652,11,19070.41,10004,Married,6.88,Bachelor's,4,0,0,Visa Holder,None,1
+825,Male,Hispanic,25,713,51395.73,0.2494,4,12912.94,30004,Married,5.73,Bachelor's,2,0,0,US Citizen,None,0
+826,Female,Asian,30,652,47450.38,0.2409,5,25407.41,40001,Single,6.15,Bachelor's,2,0,1,US Citizen,None,0
+827,Male,Hispanic,22,705,41632.13,0.3243,1,78580.94,30004,Single,5.37,Bachelor's,3,0,1,US Citizen,None,0
+828,Male,White,36,780,46477.59,0.05,7,41129.5,10001,Single,7.59,High School,2,0,0,US Citizen,None,1
+829,Female,Black,45,700,77761.01,0.3258,9,25063.37,30002,Single,6.24,PhD,2,0,0,US Citizen,None,0
+830,Male,White,47,733,87900.71,0.1949,13,63793.03,10004,Single,9.15,Bachelor's,4,0,0,US Citizen,Other,0
+831,Male,White,52,707,93812.34,0.3639,18,20277.48,10005,Married,6.78,Bachelor's,3,0,0,US Citizen,None,1
+832,Male,White,47,688,70168.33,0.2033,14,38822.11,10004,Married,7.18,PhD,4,0,0,US Citizen,None,1
+833,Male,Black,24,742,25000.0,0.3542,2,32024.57,20001,Single,5.71,High School,0,0,2,Permanent Resident,None,0
+834,Male,Black,32,591,81101.26,0.5651,8,62654.54,20001,Single,4.23,High School,2,0,1,US Citizen,None,0
+835,Male,White,33,662,60953.54,0.4193,7,12039.4,30004,Married,8.36,Master's,3,0,1,US Citizen,None,1
+836,Male,White,56,756,71798.0,0.4083,21,20027.5,10005,Married,8.58,High School,0,0,1,US Citizen,None,1
+837,Female,White,28,676,56052.02,0.27,2,11536.0,10003,Divorced,8.72,Master's,3,0,2,US Citizen,None,0
+838,Male,White,51,667,95936.81,0.3652,21,30281.2,10005,Married,7.61,High School,0,0,0,US Citizen,None,1
+839,Female,White,51,640,67854.24,0.3019,18,84795.63,10004,Divorced,6.1,High School,3,0,2,US Citizen,None,0
+840,Female,White,62,693,96178.63,0.3065,30,25493.71,10005,Married,7.3,Bachelor's,2,0,0,US Citizen,Physical,1
+841,Male,Hispanic,31,654,67270.5,0.3992,4,25400.43,30001,Single,4.74,High School,0,0,0,US Citizen,None,1
+842,Female,White,49,733,50454.28,0.2584,6,66850.03,10001,Single,8.43,Master's,1,0,0,US Citizen,None,0
+843,Male,White,67,772,83043.15,0.4792,30,76725.14,10004,Married,9.33,Bachelor's,2,1,3,US Citizen,None,1
+844,Female,White,35,748,69763.06,0.3108,10,34132.33,10003,Divorced,9.36,PhD,2,0,0,US Citizen,None,1
+845,Male,Asian,22,698,25000.0,0.3742,0,58647.51,40003,Married,8.15,Master's,1,0,0,US Citizen,None,0
+846,Male,Black,22,626,41745.66,0.5547,0,17088.0,20003,Single,3.1,High School,3,0,1,US Citizen,None,0
+847,Male,Black,43,675,38947.03,0.5038,20,95280.65,20004,Married,6.6,Master's,2,1,1,US Citizen,None,1
+848,Female,White,22,789,37851.69,0.1609,1,163422.54,10003,Divorced,8.01,Bachelor's,2,0,0,US Citizen,Physical,1
+849,Male,Black,32,648,47325.2,0.4334,1,52305.2,20005,Married,3.26,Bachelor's,0,0,1,US Citizen,None,1
+850,Female,White,46,694,58826.33,0.4321,13,8441.94,10003,Married,8.53,Master's,4,0,2,Visa Holder,None,0
+851,Male,Black,37,570,47433.58,0.487,15,24568.95,20002,Married,4.17,Bachelor's,0,0,2,US Citizen,None,0
+852,Female,Asian,42,623,44542.85,0.1964,11,55769.24,40001,Divorced,4.47,Bachelor's,2,1,0,US Citizen,None,1
+853,Male,Black,38,686,90878.17,0.3012,9,27037.01,20002,Single,3.03,Bachelor's,3,0,0,US Citizen,None,0
+854,Female,Hispanic,46,697,82581.93,0.4993,14,88480.63,30004,Single,5.4,High School,0,1,0,US Citizen,None,0
+855,Male,Black,26,680,29684.51,0.2886,2,54814.5,20001,Divorced,4.34,High School,2,0,0,US Citizen,None,0
+856,Male,White,34,712,86521.75,0.264,3,22147.22,10004,Single,6.22,Bachelor's,0,0,0,Permanent Resident,None,1
+857,Male,Asian,30,794,53118.02,0.4891,8,37145.03,40002,Divorced,7.98,High School,3,0,1,US Citizen,None,1
+858,Male,White,51,693,80367.81,0.2943,7,19425.01,10003,Married,8.12,High School,2,0,0,US Citizen,None,0
+859,Female,Black,45,706,52940.89,0.3228,16,31958.41,20002,Married,2.35,High School,3,0,2,US Citizen,None,0
+860,Male,White,46,717,63933.77,0.1947,20,24631.58,10003,Married,10.0,Bachelor's,3,0,2,US Citizen,None,1
+861,Female,White,55,686,86157.79,0.3699,10,82646.95,10001,Married,6.04,Bachelor's,2,0,0,US Citizen,None,1
+862,Male,White,29,752,60078.3,0.14,3,159724.93,10005,Married,6.95,Master's,2,1,3,US Citizen,None,1
+863,Male,White,60,742,79561.73,0.2703,30,13335.28,10003,Married,7.95,Bachelor's,2,0,1,Permanent Resident,None,1
+864,Male,White,58,739,65301.16,0.34,26,9449.8,10001,Married,6.95,Bachelor's,1,0,0,US Citizen,None,1
+865,Male,Black,43,645,47005.57,0.5359,10,30588.5,20004,Single,6.68,Bachelor's,2,0,0,US Citizen,None,1
+866,Female,White,61,717,51579.3,0.4101,30,12545.4,10001,Divorced,7.29,Bachelor's,4,0,0,Permanent Resident,None,1
+867,Male,White,23,820,52853.35,0.2143,2,37509.45,10005,Single,6.39,Bachelor's,1,0,0,US Citizen,Physical,0
+868,Male,Black,30,722,32293.52,0.5214,6,61344.16,20005,Married,5.42,PhD,1,0,1,US Citizen,None,0
+869,Female,White,33,759,49816.59,0.2941,5,103352.35,40001,Single,4.02,PhD,1,1,0,US Citizen,None,0
+870,Female,Black,43,647,73081.53,0.2617,11,41813.57,20001,Single,5.3,Master's,1,0,1,Visa Holder,None,0
+871,Male,Black,25,710,64322.99,0.3594,3,31722.81,20003,Married,6.43,PhD,0,0,0,US Citizen,None,0
+872,Male,Hispanic,41,693,58361.35,0.5226,11,9091.82,30002,Married,2.04,Bachelor's,1,0,0,US Citizen,None,1
+873,Female,Black,49,641,55303.73,0.4298,22,36987.29,20001,Single,3.89,Bachelor's,1,1,1,US Citizen,None,0
+874,Male,White,49,703,104788.12,0.3015,8,38173.66,10001,Married,5.52,Master's,2,0,0,US Citizen,None,0
+875,Male,Black,38,634,64310.84,0.5765,5,56798.76,20003,Single,4.52,Bachelor's,1,0,0,US Citizen,Other,1
+876,Male,White,31,545,55112.9,0.1282,6,22116.04,40001,Single,10.0,Master's,2,1,0,Permanent Resident,None,1
+877,Female,White,32,731,31609.73,0.1757,6,26781.41,10005,Married,7.78,Master's,3,1,1,US Citizen,None,1
+878,Female,Hispanic,46,628,60478.1,0.1861,12,12905.37,30003,Single,5.17,PhD,4,0,1,US Citizen,None,0
+879,Male,White,50,807,89949.86,0.3447,7,7303.4,10004,Single,4.11,Bachelor's,2,1,0,US Citizen,None,1
+880,Male,Hispanic,34,661,43896.73,0.37,8,16714.84,30002,Married,3.84,Master's,0,0,0,Visa Holder,None,1
+881,Male,Hispanic,31,582,55393.54,0.5351,6,12097.72,30004,Married,5.3,Bachelor's,4,0,0,US Citizen,None,0
+882,Female,Hispanic,22,656,32796.4,0.4092,1,45967.9,30002,Single,5.64,Bachelor's,2,0,0,Visa Holder,Physical,0
+883,Male,Asian,27,647,53589.51,0.2515,4,25268.31,40001,Married,7.45,Bachelor's,1,1,0,Permanent Resident,None,0
+884,Male,White,63,746,52152.67,0.3002,24,24915.22,20001,Married,8.42,Master's,0,0,1,Permanent Resident,None,1
+885,Female,White,27,736,45673.28,0.3441,5,18231.59,10001,Divorced,6.41,Master's,0,0,1,Permanent Resident,None,0
+886,Male,Black,37,707,70258.04,0.1794,5,5000.0,20001,Married,4.56,High School,0,1,0,Permanent Resident,Other,1
+887,Female,White,53,676,60328.96,0.6552,23,104382.52,10001,Single,6.9,Bachelor's,0,0,1,US Citizen,Other,1
+888,Male,Black,23,642,45557.4,0.4424,0,18030.33,20001,Married,3.09,Bachelor's,4,0,0,US Citizen,None,0
+889,Male,Black,37,544,44378.24,0.4052,7,27209.08,20002,Single,3.19,PhD,2,0,3,US Citizen,None,0
+890,Male,Black,45,689,67380.13,0.4538,8,13115.83,30004,Married,5.31,Bachelor's,2,0,0,US Citizen,None,1
+891,Female,White,42,748,57752.15,0.4151,16,71707.54,10001,Single,4.42,High School,3,0,0,US Citizen,None,1
+892,Female,White,68,747,67711.38,0.3131,28,40150.9,10002,Single,5.27,Bachelor's,3,1,0,US Citizen,None,1
+893,Female,White,23,720,65788.27,0.2543,1,20364.42,10002,Single,10.0,Bachelor's,3,0,0,US Citizen,None,1
+894,Male,White,53,742,94203.98,0.3719,12,27596.36,10005,Married,6.7,High School,4,0,1,Permanent Resident,None,1
+895,Female,Hispanic,33,764,36656.4,0.4263,7,117562.57,20001,Single,7.7,Bachelor's,1,0,1,US Citizen,None,0
+896,Male,White,50,704,84976.82,0.2028,13,34507.14,10001,Single,7.42,PhD,4,0,0,US Citizen,None,1
+897,Male,White,46,727,81891.18,0.4703,17,31977.46,10001,Divorced,6.83,Master's,2,0,0,US Citizen,None,0
+898,Female,White,33,660,63434.52,0.3652,5,18789.11,10005,Single,8.29,High School,0,0,0,US Citizen,None,0
+899,Male,Black,38,579,31085.66,0.4676,15,9641.13,40002,Married,4.62,PhD,2,0,0,US Citizen,Physical,0
+900,Male,Black,22,646,59086.6,0.547,0,32466.79,20002,Married,4.23,Bachelor's,2,1,3,Permanent Resident,None,0
+901,Male,White,48,780,67124.52,0.3026,12,45608.05,10001,Single,7.45,High School,4,0,1,US Citizen,None,1
+902,Male,White,45,705,67542.58,0.338,23,78410.19,10003,Married,7.97,High School,1,0,0,US Citizen,None,1
+903,Male,White,49,707,116158.23,0.3972,14,7525.5,10003,Single,6.67,High School,2,1,0,US Citizen,None,1
+904,Female,White,53,697,74328.1,0.243,11,16521.74,10004,Divorced,6.92,Master's,0,1,0,US Citizen,None,0
+905,Male,Black,39,602,51486.66,0.3865,12,24184.84,20005,Single,3.03,High School,1,0,1,US Citizen,Physical,0
+906,Female,Black,37,660,25000.0,0.4251,8,36227.12,10001,Divorced,2.69,High School,0,1,2,US Citizen,None,0
+907,Female,White,32,637,73846.46,0.2153,5,32809.6,10005,Divorced,9.72,Master's,2,0,0,Visa Holder,None,0
+908,Male,White,34,790,42611.85,0.5781,5,33350.16,10001,Married,6.41,Bachelor's,3,0,1,US Citizen,None,1
+909,Male,Asian,49,670,61538.42,0.1311,30,48323.21,20005,Married,8.3,Master's,0,0,0,US Citizen,None,1
+910,Male,White,57,759,78979.72,0.1442,20,19296.81,10004,Married,7.07,Master's,2,0,0,Permanent Resident,None,1
+911,Female,Black,33,551,66976.18,0.5677,2,69835.59,20004,Single,5.31,High School,0,1,2,Permanent Resident,None,0
+912,Male,White,42,756,81748.6,0.3856,19,49188.58,10002,Married,7.5,Master's,0,0,0,US Citizen,None,1
+913,Female,White,32,756,50632.44,0.2069,8,29030.94,10003,Married,5.35,High School,2,0,0,US Citizen,None,1
+914,Male,White,54,741,85814.38,0.3729,15,111372.49,10005,Single,7.53,Bachelor's,0,0,0,US Citizen,None,1
+915,Female,Black,42,570,42844.21,0.5861,9,107957.32,20001,Single,5.41,Bachelor's,2,0,0,US Citizen,None,0
+916,Male,Asian,57,724,86044.81,0.2964,27,69774.7,40002,Married,5.76,High School,0,0,0,US Citizen,None,1
+917,Male,White,32,654,62050.05,0.6119,6,5000.0,10004,Married,10.0,PhD,0,0,2,US Citizen,None,1
+918,Female,White,37,706,71531.55,0.1231,3,109673.34,10005,Single,8.47,Bachelor's,2,0,0,US Citizen,None,1
+919,Female,White,44,776,77107.67,0.4133,22,63343.71,10003,Married,8.49,High School,2,1,1,US Citizen,None,0
+920,Male,White,49,763,83999.66,0.44,14,147928.75,10003,Single,8.61,PhD,0,0,0,US Citizen,None,1
+921,Female,White,39,720,53164.79,0.437,17,86355.28,10001,Single,4.7,Bachelor's,2,0,0,Permanent Resident,None,1
+922,Male,White,32,666,72077.33,0.2755,10,109627.1,10002,Married,8.35,Bachelor's,3,0,2,US Citizen,None,0
+923,Female,Hispanic,42,701,50470.47,0.3451,8,67175.13,30002,Married,8.91,Bachelor's,2,0,0,US Citizen,None,0
+924,Female,White,49,721,50371.28,0.3833,23,93347.58,10003,Divorced,8.41,Master's,0,1,0,US Citizen,Physical,1
+925,Male,White,31,592,53980.68,0.3979,5,146662.11,10001,Married,7.18,High School,2,1,0,US Citizen,None,1
+926,Male,Asian,51,756,79697.9,0.3723,7,42259.66,40002,Divorced,5.55,High School,2,0,0,US Citizen,None,1
+927,Male,White,54,718,94843.24,0.4248,17,12081.6,10003,Married,6.05,Bachelor's,0,0,0,US Citizen,None,1
+928,Male,Asian,39,782,64637.08,0.1777,12,29283.44,40001,Married,5.27,High School,3,0,1,US Citizen,None,0
+929,Female,White,42,659,42862.02,0.3027,11,47713.13,10004,Divorced,7.02,Master's,4,0,3,US Citizen,None,1
+930,Male,Hispanic,39,520,58132.63,0.2372,10,38269.99,30001,Married,3.9,Bachelor's,3,0,1,US Citizen,None,0
+931,Male,Black,27,659,49599.34,0.3337,5,15175.03,20004,Single,4.27,High School,3,1,1,US Citizen,None,1
+932,Female,Hispanic,35,678,49877.56,0.5018,9,11594.11,30001,Single,5.81,High School,2,1,2,US Citizen,None,1
+933,Female,Asian,22,608,58798.07,0.343,0,21615.94,40001,Divorced,4.76,Master's,2,0,1,US Citizen,None,0
+934,Male,White,51,666,93713.85,0.6128,22,63921.92,20001,Married,6.58,Master's,2,1,0,US Citizen,None,0
+935,Male,Asian,22,820,42836.84,0.3232,1,109780.46,40001,Single,6.25,Bachelor's,3,1,0,US Citizen,None,0
+936,Male,White,58,703,75627.85,0.3072,3,68981.76,10002,Married,6.77,Bachelor's,2,1,0,US Citizen,None,1
+937,Male,White,38,760,50867.02,0.3127,12,76130.11,10003,Married,7.52,High School,1,1,0,US Citizen,None,1
+938,Female,White,39,684,69082.24,0.2535,12,34318.13,10002,Divorced,7.65,Bachelor's,1,0,0,US Citizen,None,1
+939,Male,Black,29,520,71193.8,0.3731,5,10727.25,20004,Single,3.86,High School,3,0,0,US Citizen,None,0
+940,Female,White,38,710,53073.77,0.4653,14,26405.98,10004,Married,6.69,Bachelor's,0,1,0,US Citizen,None,0
+941,Male,Black,50,621,62262.04,0.3937,13,30298.85,20002,Married,4.47,Bachelor's,2,1,0,US Citizen,None,0
+942,Female,Black,22,612,60251.74,0.3148,1,25643.96,20002,Single,6.66,Master's,4,1,1,Visa Holder,None,0
+943,Female,Hispanic,46,652,62153.37,0.269,7,37732.85,30001,Divorced,3.32,Bachelor's,2,0,0,US Citizen,None,0
+944,Female,Hispanic,38,677,55673.54,0.326,12,49463.67,30004,Single,7.2,Master's,5,0,1,US Citizen,None,1
+945,Male,White,28,711,39406.25,0.3089,7,65980.24,20005,Married,5.54,Bachelor's,2,0,0,Permanent Resident,Physical,0
+946,Male,White,30,650,69290.92,0.4432,4,29891.1,10001,Married,7.93,PhD,0,0,1,US Citizen,None,0
+947,Male,White,60,746,72772.95,0.1391,17,9579.38,10004,Married,8.76,Bachelor's,3,0,2,US Citizen,Other,1
+948,Female,White,31,612,35189.7,0.2916,5,25899.67,10004,Married,5.91,Bachelor's,1,0,1,US Citizen,None,0
+949,Female,White,29,607,45398.43,0.3473,5,37443.83,10002,Divorced,7.92,Master's,1,0,1,US Citizen,None,0
+950,Female,White,54,760,61813.11,0.11,13,85473.83,10005,Married,6.24,High School,1,0,2,US Citizen,None,1
+951,Female,White,45,747,60076.0,0.23,17,24404.79,10003,Divorced,8.9,High School,1,0,0,US Citizen,None,1
+952,Female,Asian,28,706,28185.28,0.2484,6,51988.64,40002,Single,4.92,High School,1,0,3,US Citizen,None,0
+953,Male,Black,38,542,70881.74,0.2845,12,44491.86,20002,Married,3.16,Master's,1,0,1,US Citizen,None,0
+954,Female,White,30,681,68315.29,0.353,2,37448.82,10002,Married,7.66,High School,2,0,1,US Citizen,None,0
+955,Male,Black,47,621,34327.36,0.3607,21,69659.43,20003,Married,5.57,Master's,3,1,0,US Citizen,None,0
+956,Male,White,53,632,94946.87,0.2334,25,22866.11,10003,Single,7.61,Bachelor's,1,0,0,US Citizen,None,1
+957,Male,White,47,679,62592.07,0.3514,20,24279.06,10002,Married,8.09,High School,0,0,0,US Citizen,None,0
+958,Male,Black,39,685,70136.13,0.5868,12,36014.23,20004,Married,3.68,Bachelor's,2,1,1,US Citizen,None,1
+959,Male,White,61,798,86603.3,0.4967,26,23199.77,10001,Single,6.19,High School,2,0,1,US Citizen,None,1
+960,Female,White,41,696,60631.63,0.0993,16,51824.0,10001,Divorced,9.26,Bachelor's,4,0,0,US Citizen,None,0
+961,Male,Asian,26,755,52653.54,0.3692,5,22043.33,40001,Married,7.65,Bachelor's,0,0,0,US Citizen,None,1
+962,Female,Hispanic,39,535,67991.94,0.3586,7,42549.06,30001,Divorced,4.77,Bachelor's,3,1,0,Permanent Resident,None,0
+963,Male,Black,56,686,51981.68,0.3986,29,33856.26,20005,Married,2.02,High School,2,0,0,US Citizen,None,1
+964,Male,Black,25,583,55451.11,0.3322,2,42211.51,20005,Married,6.33,Bachelor's,2,1,0,US Citizen,Physical,1
+965,Male,Black,32,661,68327.45,0.3941,6,26322.54,20001,Married,6.4,Master's,0,1,0,US Citizen,None,1
+966,Male,White,46,706,84575.1,0.3182,7,28642.25,10004,Married,7.24,Master's,1,0,0,US Citizen,None,1
+967,Female,White,41,792,95070.48,0.2605,11,38840.02,10001,Divorced,6.71,Master's,0,0,0,US Citizen,None,1
+968,Male,White,31,671,52095.8,0.1924,4,41833.48,10003,Married,7.19,High School,1,0,0,US Citizen,None,0
+969,Female,White,54,754,84959.57,0.2762,17,36208.84,10004,Single,7.25,Master's,2,0,2,Permanent Resident,None,1
+970,Male,Black,59,620,71330.14,0.4081,14,119820.93,20005,Single,5.65,Bachelor's,3,0,1,US Citizen,None,0
+971,Female,White,44,711,81101.09,0.4019,12,18151.06,10003,Married,6.13,High School,2,1,1,Permanent Resident,None,1
+972,Female,Asian,28,698,49684.67,0.4324,4,34719.52,40001,Married,6.24,Master's,2,0,0,US Citizen,None,0
+973,Female,Asian,22,659,39181.86,0.2707,1,12069.78,40003,Divorced,6.76,PhD,2,0,0,US Citizen,None,1
+974,Male,Black,38,639,76090.58,0.4141,4,47120.2,20001,Married,4.89,Bachelor's,1,1,1,US Citizen,None,0
+975,Male,Black,47,635,56164.07,0.4955,8,16636.05,20002,Married,5.8,High School,5,0,3,Permanent Resident,None,0
+976,Male,Hispanic,39,675,36090.61,0.4899,12,29887.12,30004,Married,5.97,High School,2,0,1,US Citizen,None,1
+977,Female,White,41,724,52447.3,0.3229,9,27988.67,30002,Single,9.6,Bachelor's,1,0,0,US Citizen,None,0
+978,Male,Hispanic,29,711,58746.99,0.3235,7,44206.35,30002,Single,4.01,Master's,0,0,2,Permanent Resident,None,0
+979,Male,White,29,770,79070.58,0.3229,5,24662.68,40003,Married,9.25,High School,2,0,0,US Citizen,None,1
+980,Female,Hispanic,42,591,53516.94,0.242,15,23939.52,30002,Single,4.07,Master's,2,1,0,US Citizen,None,0
+981,Male,White,52,767,99122.96,0.2768,28,99220.46,20001,Married,7.03,High School,0,0,0,US Citizen,None,1
+982,Female,Hispanic,22,582,25000.0,0.4694,1,44320.24,30004,Divorced,6.08,Master's,3,0,0,US Citizen,None,1
+983,Male,Asian,53,745,73621.05,0.377,16,24520.49,40001,Married,8.53,PhD,2,0,0,Permanent Resident,None,1
+984,Male,White,48,754,71341.37,0.2676,21,30467.52,10001,Married,7.03,Bachelor's,2,0,1,US Citizen,Other,1
+985,Female,White,57,614,71281.61,0.3561,25,114892.07,10001,Divorced,7.97,Bachelor's,0,0,0,US Citizen,None,1
+986,Male,Asian,24,715,54851.42,0.201,2,30803.53,40003,Divorced,6.59,Master's,1,0,0,US Citizen,None,1
+987,Female,White,26,694,58563.66,0.4144,5,22415.46,10005,Married,4.75,Bachelor's,4,1,2,US Citizen,None,0
+988,Male,Hispanic,33,610,45917.4,0.3407,7,22482.73,30002,Married,5.44,Bachelor's,3,0,0,US Citizen,None,1
+989,Male,Black,41,734,60930.93,0.3469,12,24726.02,20001,Married,2.64,Bachelor's,1,1,0,US Citizen,None,1
+990,Female,White,61,684,75523.16,0.2866,24,23953.07,10003,Married,9.03,High School,0,0,0,US Citizen,None,0
+991,Female,White,49,675,52711.65,0.3225,11,14827.61,10002,Divorced,9.03,Master's,1,1,0,US Citizen,None,0
+992,Female,White,39,724,56895.0,0.2763,11,16532.11,10002,Married,6.5,High School,1,0,0,US Citizen,None,1
+993,Male,Hispanic,25,704,44178.61,0.429,4,20322.33,10003,Married,4.02,PhD,2,0,0,US Citizen,None,1
+994,Female,White,55,712,68923.79,0.2826,24,54945.65,10002,Single,6.75,High School,4,0,0,US Citizen,None,0
+995,Male,Black,26,721,47591.89,0.5712,3,27809.53,20003,Divorced,5.3,Master's,1,1,0,US Citizen,None,0
+996,Male,White,59,749,86925.1,0.4758,22,31413.31,10001,Married,8.14,High School,0,1,1,US Citizen,None,1
+997,Female,Black,33,520,39245.57,0.303,8,88350.01,20005,Single,9.61,Bachelor's,3,0,2,Visa Holder,None,0
+998,Male,Hispanic,49,625,84192.22,0.3584,21,89904.66,30004,Divorced,5.04,Bachelor's,0,0,1,US Citizen,None,1
+999,Female,Asian,44,676,45057.79,0.2519,17,29807.42,40001,Single,7.12,Master's,4,0,0,US Citizen,None,1
+1000,Male,White,40,746,57495.45,0.2608,10,23351.01,10005,Married,9.82,Bachelor's,2,1,0,US Citizen,None,1
+1001,Male,Hispanic,30,520,91942.95,0.5903,6,19828.96,30004,Married,5.93,Master's,4,1,1,US Citizen,None,1
+1002,Male,Hispanic,31,820,35455.63,0.3131,7,58979.37,10003,Married,3.87,Bachelor's,0,1,0,US Citizen,None,1
+1003,Female,Black,40,677,30183.68,0.4532,7,31467.32,20005,Single,5.01,Bachelor's,0,1,0,US Citizen,None,0
+1004,Female,Asian,38,718,68817.15,0.395,11,27707.37,40003,Single,7.92,Master's,1,1,1,US Citizen,None,1
+1005,Female,White,35,784,25000.0,0.2099,2,20546.27,10002,Single,7.09,High School,1,0,0,US Citizen,None,1
+1006,Female,White,40,820,55870.89,0.2274,13,21188.92,10004,Married,8.45,Bachelor's,1,1,0,US Citizen,Physical,1
+1007,Female,Hispanic,35,716,79277.37,0.2353,10,45435.12,30002,Single,6.56,Bachelor's,4,0,2,US Citizen,None,0
+1008,Female,White,22,772,25000.0,0.2237,1,14460.75,10003,Single,6.95,Bachelor's,3,1,2,US Citizen,None,1
+1009,Male,Hispanic,39,668,27552.03,0.05,9,72868.23,30002,Married,7.83,Bachelor's,2,0,0,US Citizen,None,1
+1010,Male,Hispanic,26,650,25000.0,0.4153,3,24991.94,30004,Married,4.32,Bachelor's,0,0,0,US Citizen,None,1
+1011,Male,White,29,693,71665.39,0.5465,7,32704.07,10003,Divorced,8.02,High School,2,0,0,US Citizen,None,0
+1012,Female,Hispanic,22,606,55121.65,0.3977,1,14244.35,30001,Single,4.6,Master's,2,0,1,US Citizen,None,0
+1013,Female,White,22,682,37311.17,0.16,1,36002.51,10002,Married,5.47,PhD,1,0,0,US Citizen,None,1
+1014,Male,Black,22,545,54235.69,0.3029,1,28858.95,20003,Single,5.04,Bachelor's,4,0,1,US Citizen,None,0
+1015,Female,Black,28,634,63183.83,0.3549,6,35064.47,20002,Married,7.39,Bachelor's,0,0,3,US Citizen,None,0
+1016,Female,Asian,57,608,99810.2,0.2079,11,101742.08,40001,Divorced,6.93,High School,1,0,0,US Citizen,None,0
+1017,Male,White,36,730,60934.97,0.4032,8,41125.71,10001,Single,5.71,Master's,0,0,2,Permanent Resident,None,0
+1018,Female,White,43,718,27277.92,0.4272,19,20821.44,10005,Divorced,7.77,High School,3,0,2,US Citizen,None,1
+1019,Female,Black,40,650,38176.82,0.2713,15,22072.24,20001,Divorced,3.27,Bachelor's,2,1,0,US Citizen,None,0
+1020,Male,Black,37,603,49315.44,0.467,11,55082.75,20002,Married,6.08,PhD,1,1,1,Visa Holder,None,1
+1021,Female,Black,35,820,43205.92,0.5932,4,90136.94,20005,Divorced,4.16,Bachelor's,0,0,0,US Citizen,None,1
+1022,Male,White,28,794,54452.11,0.5283,4,44238.14,20004,Married,5.37,Master's,0,1,1,US Citizen,None,0
+1023,Female,White,57,651,89783.42,0.6738,17,58811.87,10005,Single,8.11,Bachelor's,0,0,1,US Citizen,None,0
+1024,Female,White,61,732,95316.43,0.2218,27,55648.83,10002,Divorced,7.75,High School,1,0,0,Permanent Resident,None,1
+1025,Female,Hispanic,22,620,35674.9,0.7189,0,98061.01,30001,Single,5.05,Master's,0,0,1,US Citizen,None,0
+1026,Male,White,30,664,75587.27,0.2575,3,9276.94,10004,Divorced,6.25,High School,1,0,1,US Citizen,None,1
+1027,Female,White,38,646,63164.92,0.2589,3,57933.63,10001,Married,9.65,Master's,3,0,0,US Citizen,None,1
+1028,Female,Asian,28,735,50767.59,0.3692,6,72302.59,40001,Single,6.41,High School,2,1,0,US Citizen,None,0
+1029,Male,White,47,682,88348.16,0.2302,14,14226.95,10002,Married,8.58,Master's,2,0,0,US Citizen,None,1
+1030,Female,Asian,30,768,52483.78,0.3779,6,19536.35,40002,Divorced,6.4,High School,0,0,0,US Citizen,None,0
+1031,Male,Black,57,709,102224.67,0.2216,22,20019.3,20004,Married,5.52,Bachelor's,1,1,3,US Citizen,None,1
+1032,Female,Hispanic,45,749,32313.83,0.3513,9,21803.96,30002,Married,5.58,Bachelor's,1,0,1,US Citizen,None,0
+1033,Male,White,44,673,64262.44,0.4543,8,25920.72,10005,Married,7.53,Bachelor's,0,0,0,US Citizen,None,1
+1034,Male,White,53,746,78372.22,0.2932,13,43037.28,10005,Single,6.51,Bachelor's,0,0,0,US Citizen,None,1
+1035,Male,Black,47,684,70129.29,0.397,12,66567.53,20003,Married,5.29,Bachelor's,3,0,0,US Citizen,None,0
+1036,Female,Hispanic,29,629,62029.41,0.437,6,77413.92,30004,Divorced,7.61,Bachelor's,4,0,0,US Citizen,None,0
+1037,Male,Black,27,585,47531.52,0.5205,3,20201.74,40003,Married,2.95,Bachelor's,0,0,0,Permanent Resident,None,0
+1038,Female,White,42,808,39666.56,0.1314,20,20104.68,10002,Married,6.5,Bachelor's,1,0,0,US Citizen,None,1
+1039,Male,Hispanic,42,674,72265.21,0.4201,17,91224.18,30001,Married,9.92,Bachelor's,4,0,0,US Citizen,None,0
+1040,Male,Hispanic,36,701,66259.88,0.3178,12,57109.21,30001,Divorced,4.0,High School,0,0,3,US Citizen,None,0
+1041,Male,Black,22,582,25000.0,0.4,1,38484.29,20004,Married,3.67,PhD,2,0,1,US Citizen,Physical,0
+1042,Female,Hispanic,27,580,41592.94,0.5072,6,50581.22,30003,Married,7.58,Bachelor's,5,0,1,US Citizen,None,0
+1043,Male,Hispanic,34,622,29519.37,0.2067,7,35565.71,30001,Single,7.62,High School,5,1,0,US Citizen,None,0
+1044,Female,Black,35,631,37120.23,0.2885,8,52428.69,20004,Single,1.0,Bachelor's,1,0,3,US Citizen,None,0
+1045,Female,White,63,661,64257.87,0.0977,27,28702.9,10003,Divorced,8.42,Master's,0,0,1,US Citizen,Other,0
+1046,Female,White,26,719,60338.97,0.2641,4,43833.93,10005,Married,7.27,High School,0,0,1,US Citizen,None,1
+1047,Male,White,47,627,76502.45,0.4597,19,12614.7,10004,Married,7.32,Bachelor's,3,0,0,US Citizen,Other,0
+1048,Male,White,58,658,65586.13,0.2855,19,22438.89,10001,Married,8.9,Bachelor's,4,0,0,US Citizen,None,1
+1049,Female,White,66,756,93400.99,0.1692,22,22608.75,10005,Single,7.08,High School,2,0,0,Visa Holder,None,1
+1050,Male,White,37,753,44042.91,0.2417,12,27943.14,10002,Single,6.89,Master's,3,1,0,US Citizen,None,1
+1051,Female,White,47,698,69951.71,0.1515,20,18985.69,20004,Divorced,7.11,Bachelor's,2,0,0,US Citizen,None,1
+1052,Male,White,48,664,63459.84,0.165,14,24997.21,10005,Married,7.08,High School,2,0,2,US Citizen,None,1
+1053,Female,Hispanic,36,593,42284.84,0.4267,4,12580.59,30003,Divorced,6.02,Master's,3,0,0,US Citizen,None,0
+1054,Female,Asian,37,687,64564.06,0.1891,9,53321.26,40001,Single,8.72,Bachelor's,2,1,0,US Citizen,None,0
+1055,Female,White,46,755,72021.74,0.4635,18,34277.37,10003,Married,8.01,Master's,2,0,1,US Citizen,None,1
+1056,Male,Asian,22,765,71804.54,0.2915,1,11007.75,40001,Married,6.98,Bachelor's,0,0,0,US Citizen,None,1
+1057,Female,Black,42,605,50616.19,0.4203,7,20244.11,20001,Divorced,5.32,Master's,2,0,1,US Citizen,Physical,0
+1058,Male,White,43,656,75666.76,0.2666,11,45964.33,10005,Married,8.44,Master's,1,0,0,US Citizen,None,1
+1059,Male,White,39,734,60823.94,0.3927,9,24831.91,10004,Married,8.19,High School,1,0,0,US Citizen,None,0
+1060,Female,Black,56,582,64099.85,0.504,30,22295.52,20001,Single,3.5,Master's,3,1,2,US Citizen,None,0
+1061,Female,Hispanic,28,626,48922.29,0.4202,4,34467.95,30003,Divorced,6.14,Bachelor's,2,0,0,US Citizen,None,0
+1062,Female,Black,31,732,42895.35,0.4778,4,46189.98,20001,Divorced,1.32,High School,4,0,2,US Citizen,None,0
+1063,Female,White,63,765,50743.74,0.3045,30,13287.16,10002,Single,9.34,Bachelor's,0,1,1,US Citizen,None,1
+1064,Male,White,32,728,65922.06,0.3651,6,53374.58,10001,Married,9.34,High School,2,0,1,US Citizen,Other,1
+1065,Male,White,35,650,69178.42,0.2595,5,20739.49,10001,Married,8.57,Master's,0,0,0,US Citizen,None,0
+1066,Female,White,40,731,49197.4,0.3303,8,35862.61,10002,Divorced,9.0,Bachelor's,4,0,0,US Citizen,None,1
+1067,Male,White,51,778,59164.19,0.267,29,35426.16,30001,Married,7.41,PhD,0,0,0,US Citizen,None,1
+1068,Male,White,44,699,94128.19,0.2451,16,25110.81,10002,Married,6.6,High School,2,0,0,US Citizen,None,1
+1069,Male,Hispanic,23,747,52141.18,0.2673,1,17737.53,30004,Divorced,3.62,Bachelor's,3,0,2,Permanent Resident,Other,1
+1070,Male,Asian,32,787,57513.78,0.3561,6,29733.2,40001,Married,8.31,High School,1,1,0,US Citizen,None,1
+1071,Male,White,35,811,46654.51,0.4573,9,113292.84,10001,Married,6.6,Bachelor's,4,1,1,US Citizen,None,1
+1072,Male,Asian,37,728,53222.78,0.4405,11,14000.21,40001,Married,6.51,Master's,3,0,0,US Citizen,None,1
+1073,Male,White,46,752,93368.86,0.1492,17,118731.4,10003,Married,7.77,Master's,1,0,0,US Citizen,None,1
+1074,Male,White,46,797,75894.93,0.4547,16,30278.56,10001,Divorced,7.46,Master's,0,0,1,US Citizen,None,1
+1075,Female,White,22,744,36741.19,0.2918,1,37225.9,10005,Divorced,7.82,Master's,1,0,0,US Citizen,None,0
+1076,Male,Black,46,604,70400.84,0.4521,15,16971.7,20004,Married,1.79,High School,1,0,1,Visa Holder,None,0
+1077,Male,Asian,40,683,56094.03,0.1913,8,21165.15,40002,Married,6.7,Bachelor's,3,1,0,Permanent Resident,Physical,1
+1078,Female,Black,49,656,79122.65,0.427,13,25539.03,20004,Divorced,5.74,Bachelor's,4,0,3,Visa Holder,None,1
+1079,Male,White,46,649,94122.01,0.3376,5,17466.04,10003,Married,6.98,Bachelor's,0,1,0,US Citizen,None,1
+1080,Female,Black,47,629,48251.39,0.2318,27,31374.71,20001,Married,3.21,High School,1,0,1,Permanent Resident,None,0
+1081,Female,White,47,780,55569.95,0.403,20,27312.2,10003,Divorced,8.65,Bachelor's,2,0,0,US Citizen,None,0
+1082,Male,Hispanic,47,520,25000.0,0.5115,11,132660.27,30003,Married,4.86,Bachelor's,0,0,0,US Citizen,None,0
+1083,Male,Black,41,747,36621.79,0.359,11,16055.68,20002,Married,4.78,Bachelor's,1,0,2,US Citizen,None,1
+1084,Female,White,40,781,39307.95,0.4932,9,39022.1,10003,Single,7.25,Master's,1,1,1,US Citizen,None,1
+1085,Female,Black,58,607,64757.86,0.3872,30,43195.53,20004,Divorced,4.5,Bachelor's,2,1,0,US Citizen,None,0
+1086,Male,Black,44,678,56297.99,0.482,7,17167.54,20003,Married,6.79,High School,2,0,0,US Citizen,None,0
+1087,Female,White,48,720,45619.97,0.0638,17,58734.3,10003,Divorced,8.19,High School,2,0,0,US Citizen,None,1
+1088,Male,Black,23,726,40552.04,0.6703,1,27478.83,20001,Married,2.67,Master's,0,0,0,US Citizen,Other,1
+1089,Female,White,27,774,56580.06,0.5095,5,6344.4,10001,Divorced,7.05,PhD,3,0,1,US Citizen,None,1
+1090,Male,Black,38,541,64417.09,0.3458,10,57635.54,20005,Married,3.88,Bachelor's,2,0,0,US Citizen,None,0
+1091,Female,Hispanic,36,698,25000.0,0.1433,3,16616.33,30003,Single,5.82,Bachelor's,3,0,0,Permanent Resident,None,1
+1092,Female,Hispanic,29,646,41086.05,0.4146,4,17440.63,30004,Single,6.86,PhD,1,0,1,US Citizen,None,0
+1093,Female,Black,37,645,27699.89,0.2367,6,58778.5,20005,Single,4.55,Bachelor's,3,0,0,US Citizen,None,0
+1094,Male,Black,51,589,80191.43,0.4334,19,28480.84,20003,Single,4.5,Master's,3,1,1,US Citizen,None,0
+1095,Male,White,49,816,88352.2,0.3494,25,69039.94,10001,Married,4.82,Master's,1,0,2,Permanent Resident,None,1
+1096,Male,Hispanic,24,727,32081.09,0.237,1,84720.79,30002,Married,7.49,Bachelor's,1,0,0,US Citizen,None,1
+1097,Male,White,40,679,56819.32,0.4345,8,23122.24,10004,Single,7.3,Bachelor's,4,0,1,US Citizen,None,1
+1098,Male,White,33,646,54950.99,0.3967,6,63277.41,10005,Married,7.81,High School,2,0,0,US Citizen,None,1
+1099,Female,White,37,698,25000.0,0.4471,8,21400.67,10005,Married,7.81,High School,4,0,0,Permanent Resident,None,0
+1100,Male,White,37,743,70589.52,0.3011,12,173369.62,10003,Married,6.58,Master's,3,0,0,US Citizen,None,1
+1101,Male,Black,31,656,46932.83,0.2101,6,22357.79,20005,Married,4.13,Master's,2,1,0,US Citizen,None,0
+1102,Female,White,28,788,64352.63,0.4473,5,74478.16,10001,Divorced,6.57,Master's,0,1,0,US Citizen,None,0
+1103,Female,Black,34,695,29933.86,0.3776,6,65555.54,20005,Married,6.57,Bachelor's,1,1,0,Visa Holder,None,0
+1104,Female,White,35,773,46113.16,0.1632,9,45309.02,30002,Married,4.83,High School,4,0,1,US Citizen,None,0
+1105,Female,White,22,737,25000.0,0.4922,1,22711.34,10002,Married,6.36,High School,1,0,1,US Citizen,None,0
+1106,Male,Black,56,542,55511.14,0.6319,16,32663.77,20005,Married,4.02,Bachelor's,0,0,3,US Citizen,None,0
+1107,Male,White,53,709,62540.27,0.2951,24,8042.44,10002,Married,9.3,Bachelor's,2,0,0,US Citizen,None,0
+1108,Female,White,37,778,71939.61,0.5891,10,42492.97,10001,Married,8.35,Bachelor's,2,0,0,US Citizen,None,1
+1109,Female,Black,36,636,37296.07,0.421,12,46384.97,20004,Single,2.04,High School,1,0,0,US Citizen,None,0
+1110,Male,White,29,747,60052.64,0.2543,5,39872.8,10002,Single,7.36,PhD,1,0,0,Visa Holder,None,1
+1111,Female,Hispanic,50,639,51578.55,0.3043,20,5000.0,30002,Single,6.58,Bachelor's,1,0,0,US Citizen,None,0
+1112,Male,White,62,663,69508.02,0.4964,24,14973.76,10001,Married,10.0,Master's,0,1,0,Permanent Resident,None,1
+1113,Male,White,43,713,68545.49,0.2064,13,21511.36,40003,Married,7.09,Bachelor's,3,0,0,US Citizen,None,0
+1114,Male,Black,46,661,71742.05,0.4682,16,44540.82,40003,Divorced,2.72,High School,1,1,0,Permanent Resident,None,1
+1115,Female,White,43,683,43683.61,0.2629,16,44468.54,10002,Single,7.89,Master's,3,0,0,US Citizen,None,0
+1116,Female,White,27,707,61136.69,0.2748,2,32236.14,10002,Divorced,7.45,Master's,3,0,0,US Citizen,None,0
+1117,Male,White,37,668,52804.19,0.4236,15,56651.39,10001,Divorced,8.06,Bachelor's,2,0,0,US Citizen,None,1
+1118,Female,White,43,781,54555.24,0.2844,5,17705.5,10005,Divorced,8.33,Bachelor's,1,0,0,US Citizen,None,0
+1119,Male,Hispanic,30,640,58203.75,0.3014,4,55668.21,40002,Married,5.98,High School,2,0,1,US Citizen,None,0
+1120,Male,White,39,799,57438.46,0.4359,11,50631.01,10003,Married,8.13,Bachelor's,1,0,0,US Citizen,None,0
+1121,Female,Hispanic,34,759,46973.62,0.5717,9,47301.08,30003,Married,7.95,Master's,1,0,1,US Citizen,Other,1
+1122,Female,Hispanic,34,654,41689.64,0.4574,12,31970.59,30001,Divorced,5.06,High School,3,0,0,US Citizen,None,1
+1123,Female,White,42,664,62940.52,0.2514,5,130812.55,10005,Divorced,6.03,High School,1,0,0,US Citizen,None,1
+1124,Female,Asian,27,584,25000.0,0.2687,3,51289.28,40003,Divorced,7.41,Master's,3,0,1,US Citizen,None,0
+1125,Female,White,34,639,27154.77,0.3396,2,18437.92,10003,Divorced,5.96,High School,0,0,0,US Citizen,None,0
+1126,Female,Asian,25,627,56639.51,0.3685,3,43209.42,40002,Single,5.54,Bachelor's,0,1,0,US Citizen,None,0
+1127,Male,White,52,795,94907.72,0.1815,20,61496.67,10001,Married,6.51,Bachelor's,5,0,1,US Citizen,None,1
+1128,Male,Black,22,648,30330.2,0.4668,1,24060.43,20004,Married,2.62,Bachelor's,2,0,0,US Citizen,None,0
+1129,Male,White,54,741,77529.57,0.3103,21,77846.22,10001,Married,8.9,Bachelor's,2,1,0,US Citizen,None,1
+1130,Male,White,57,597,88370.79,0.0941,29,47449.61,10005,Married,7.56,High School,2,1,1,US Citizen,None,1
+1131,Female,Black,32,556,55448.26,0.2985,8,7046.35,20002,Divorced,5.56,High School,0,0,1,US Citizen,None,0
+1132,Male,Black,22,702,25000.0,0.3195,1,44791.35,20001,Married,5.27,Master's,2,0,0,US Citizen,None,0
+1133,Male,White,38,735,53179.4,0.2913,5,27331.07,10001,Single,7.25,Master's,0,0,0,US Citizen,None,1
+1134,Male,White,41,711,64241.31,0.5267,13,52892.98,10001,Single,8.65,Bachelor's,2,0,1,US Citizen,None,1
+1135,Female,Black,25,679,50837.1,0.4386,1,70329.77,20004,Single,3.78,Bachelor's,2,0,0,US Citizen,None,0
+1136,Male,Black,30,754,87719.96,0.2791,8,41631.54,20003,Married,4.25,High School,4,0,0,US Citizen,None,0
+1137,Female,Asian,53,696,66379.91,0.3565,18,116503.5,40001,Divorced,6.08,High School,2,1,0,US Citizen,None,1
+1138,Male,Hispanic,40,664,36958.84,0.3077,16,32045.28,30002,Married,7.6,Master's,0,0,2,US Citizen,None,0
+1139,Male,Asian,28,721,63304.02,0.339,4,56239.38,20001,Married,6.86,Bachelor's,2,1,0,US Citizen,None,0
+1140,Female,Black,22,807,58064.94,0.4797,1,63796.9,20003,Single,5.4,Bachelor's,0,1,1,US Citizen,None,0
+1141,Female,White,38,604,59420.21,0.4751,11,33923.32,10003,Divorced,6.8,High School,0,0,0,US Citizen,None,1
+1142,Male,White,39,757,53790.27,0.2971,11,62638.92,10005,Married,8.52,High School,0,0,0,US Citizen,None,0
+1143,Female,Hispanic,39,652,64179.91,0.5767,9,23950.13,30001,Divorced,6.66,Bachelor's,2,0,1,US Citizen,None,0
+1144,Female,Black,30,679,53643.18,0.519,6,27016.47,20005,Divorced,2.06,Master's,0,1,3,US Citizen,None,0
+1145,Male,White,47,683,59358.79,0.2151,11,14490.64,10002,Married,7.5,Master's,1,0,0,US Citizen,Physical,1
+1146,Female,White,63,717,83521.38,0.5952,15,43001.33,10001,Single,7.64,Master's,4,0,0,US Citizen,None,0
+1147,Female,Asian,46,752,79158.98,0.3692,22,45600.6,40002,Divorced,6.61,PhD,2,0,2,Permanent Resident,None,0
+1148,Female,Black,35,820,64818.35,0.3098,11,82907.78,30002,Single,6.58,Master's,0,1,1,US Citizen,None,0
+1149,Female,White,39,764,57603.27,0.5283,11,63183.47,10004,Married,6.04,Bachelor's,0,1,0,US Citizen,None,1
+1150,Female,White,38,673,52428.81,0.5793,16,29751.75,10003,Divorced,6.96,High School,2,0,0,US Citizen,None,0
+1151,Female,White,54,696,89009.11,0.326,18,15919.09,10004,Single,6.48,Master's,3,0,1,US Citizen,None,1
+1152,Female,White,35,695,37247.59,0.2696,12,49167.85,10005,Divorced,8.74,High School,0,0,1,US Citizen,None,1
+1153,Female,White,42,621,67578.69,0.3093,13,79025.61,10005,Single,6.27,High School,3,0,2,US Citizen,None,1
+1154,Female,White,42,701,40449.6,0.4158,8,61613.08,10002,Married,5.3,High School,2,1,0,Visa Holder,None,1
+1155,Female,Hispanic,30,707,59670.64,0.5333,9,77585.38,30003,Divorced,6.15,Bachelor's,2,0,0,US Citizen,None,1
+1156,Female,White,26,649,44329.32,0.3985,4,31309.52,10003,Divorced,7.33,Bachelor's,4,1,0,US Citizen,None,1
+1157,Male,Hispanic,37,728,74746.25,0.3622,9,26196.12,30002,Married,7.06,High School,2,0,0,US Citizen,Other,1
+1158,Female,Hispanic,34,691,53781.19,0.5598,10,21680.51,30001,Divorced,6.72,Bachelor's,3,0,1,Permanent Resident,None,1
+1159,Female,White,47,679,46651.7,0.2925,14,34922.01,10004,Divorced,7.45,Master's,1,0,0,US Citizen,None,1
+1160,Male,Black,30,630,71612.92,0.5037,7,34371.62,20001,Married,2.34,Bachelor's,2,0,0,US Citizen,None,0
+1161,Female,White,55,807,94668.68,0.2954,4,41968.49,10002,Divorced,6.06,Master's,2,0,0,Permanent Resident,None,0
+1162,Male,Hispanic,27,707,61131.8,0.4017,2,33173.01,30004,Married,2.84,High School,1,0,1,US Citizen,None,1
+1163,Male,White,60,720,75286.18,0.2864,30,33072.61,10001,Married,7.33,High School,2,0,1,US Citizen,None,0
+1164,Female,Black,22,623,33659.79,0.4033,1,21084.94,20001,Married,3.51,Bachelor's,0,0,0,US Citizen,None,0
+1165,Male,Black,40,645,60244.91,0.3347,12,70202.09,20004,Married,4.23,Bachelor's,0,0,0,US Citizen,None,0
+1166,Female,White,47,691,54444.34,0.4914,8,38313.69,10001,Single,7.71,Bachelor's,1,0,0,Permanent Resident,None,0
+1167,Female,White,33,604,79185.2,0.242,12,32141.05,10002,Divorced,9.78,Master's,2,0,1,Permanent Resident,None,1
+1168,Male,Black,40,782,60228.4,0.2912,16,21521.32,20004,Single,5.37,Master's,4,0,0,Visa Holder,None,1
+1169,Male,Black,48,650,25000.0,0.6345,15,14294.94,20004,Married,4.61,PhD,1,0,1,US Citizen,Physical,0
+1170,Male,White,22,741,56840.34,0.4173,1,90723.79,10003,Single,5.62,Bachelor's,2,0,0,US Citizen,None,1
+1171,Female,Black,41,635,45947.64,0.1238,16,53543.36,20004,Single,4.54,High School,0,0,0,US Citizen,Physical,1
+1172,Female,White,22,679,43876.1,0.2622,1,11652.28,10003,Divorced,8.56,Bachelor's,4,1,1,US Citizen,None,0
+1173,Female,Black,26,626,35440.71,0.1926,4,61957.23,20004,Married,5.09,High School,2,1,0,US Citizen,None,1
+1174,Male,White,59,632,97895.7,0.1859,30,69267.9,10001,Single,6.24,High School,3,0,0,US Citizen,Physical,1
+1175,Female,Hispanic,29,808,59805.32,0.05,3,39618.97,30003,Divorced,4.94,High School,3,0,0,US Citizen,None,0
+1176,Male,White,29,652,62435.8,0.2836,3,111154.64,10004,Single,7.59,Bachelor's,1,0,0,Visa Holder,None,0
+1177,Female,White,39,663,53510.33,0.193,6,42264.54,20003,Divorced,7.01,High School,2,0,0,US Citizen,None,0
+1178,Male,White,64,695,89769.94,0.3072,30,13470.04,40001,Married,6.76,High School,4,0,0,US Citizen,None,1
+1179,Female,White,22,790,45293.99,0.135,1,46892.75,10002,Divorced,4.92,Bachelor's,0,0,1,US Citizen,None,1
+1180,Male,Black,25,641,34297.05,0.3899,2,43106.46,20005,Married,3.35,Bachelor's,2,0,1,US Citizen,None,0
+1181,Female,White,58,652,82483.93,0.2802,28,23805.98,10003,Married,7.8,Master's,4,0,1,US Citizen,None,0
+1182,Male,Hispanic,51,741,73566.13,0.5302,26,54257.21,30001,Single,6.81,Bachelor's,1,1,0,Permanent Resident,None,1
+1183,Female,White,40,760,82506.62,0.4994,5,11300.86,10004,Divorced,7.59,High School,3,0,0,US Citizen,None,1
+1184,Female,White,28,749,68630.25,0.4242,3,72649.14,10003,Single,8.77,High School,4,1,0,US Citizen,None,1
+1185,Male,White,65,759,81024.88,0.2608,30,19639.83,10001,Married,7.41,High School,2,0,0,US Citizen,None,1
+1186,Female,White,59,820,86904.48,0.5682,19,18224.78,10005,Married,6.45,Master's,0,0,0,US Citizen,None,1
+1187,Female,White,49,820,52335.7,0.1436,12,33534.25,10002,Single,6.93,Master's,1,0,2,US Citizen,None,1
+1188,Male,White,33,682,72308.98,0.1316,10,49172.07,30004,Married,8.1,High School,0,0,0,US Citizen,None,0
+1189,Male,White,41,809,61480.79,0.2899,7,40731.09,10003,Married,7.18,Bachelor's,3,0,2,US Citizen,None,1
+1190,Female,White,40,741,44051.2,0.6005,10,21593.3,20001,Single,6.73,PhD,3,0,0,US Citizen,None,1
+1191,Male,Black,39,674,61482.18,0.3557,12,25482.25,20004,Divorced,2.16,Bachelor's,2,0,0,US Citizen,None,1
+1192,Female,Black,50,521,25000.0,0.388,14,16430.1,20005,Divorced,3.16,Master's,1,0,0,US Citizen,None,0
+1193,Male,White,51,710,52165.37,0.127,23,31030.44,10005,Married,7.02,High School,0,0,0,US Citizen,None,1
+1194,Female,White,30,675,48737.62,0.4435,4,77073.5,10002,Divorced,6.8,High School,3,0,0,US Citizen,None,0
+1195,Male,Asian,51,759,79666.63,0.4144,27,36207.3,40003,Married,5.73,Master's,2,1,1,US Citizen,None,0
+1196,Female,Black,39,714,44270.22,0.5047,10,66276.45,20003,Single,6.84,Bachelor's,4,0,2,US Citizen,None,0
+1197,Female,Black,42,520,28158.46,0.3345,16,100587.26,20005,Single,5.4,Bachelor's,2,1,1,US Citizen,None,0
+1198,Female,White,58,718,61531.62,0.2452,28,24061.95,10001,Single,10.0,Bachelor's,3,0,0,US Citizen,None,1
+1199,Female,Hispanic,24,732,45478.14,0.2248,1,31869.31,30001,Married,3.09,Bachelor's,2,1,2,US Citizen,None,0
+1200,Male,Hispanic,34,647,62098.23,0.3601,2,166015.26,30003,Married,5.97,Master's,2,0,2,US Citizen,None,0
+1201,Female,Black,30,691,43446.65,0.2804,6,99811.67,20002,Single,3.85,High School,1,0,0,US Citizen,Physical,0
+1202,Male,Asian,22,731,69102.51,0.1587,1,11263.43,40001,Married,7.03,Bachelor's,4,0,1,US Citizen,None,1
+1203,Male,White,45,738,78870.96,0.2492,17,47619.8,10003,Single,9.72,Master's,2,1,0,US Citizen,Physical,1
+1204,Male,White,68,705,82858.17,0.2413,26,36329.74,10002,Married,5.41,Bachelor's,1,0,0,US Citizen,None,1
+1205,Male,Hispanic,22,580,39779.97,0.2854,1,64764.78,30003,Single,4.64,Bachelor's,0,0,0,US Citizen,None,0
+1206,Female,Hispanic,34,587,25367.01,0.436,14,21558.27,30003,Single,4.38,Master's,1,1,0,US Citizen,None,1
+1207,Female,White,49,759,64977.92,0.3395,8,20176.51,10001,Divorced,6.82,PhD,2,0,0,US Citizen,None,0
+1208,Male,White,43,721,87751.51,0.2654,17,22623.64,10001,Married,4.97,Bachelor's,1,0,0,US Citizen,None,1
+1209,Male,White,40,712,78589.35,0.322,9,24334.49,10001,Single,9.04,Bachelor's,0,0,0,US Citizen,Other,1
+1210,Female,White,27,696,70030.14,0.211,3,64262.2,10001,Divorced,9.09,Master's,2,0,2,Visa Holder,Other,0
+1211,Male,Hispanic,37,640,51174.22,0.3626,9,15885.45,30004,Married,6.37,Master's,0,0,3,US Citizen,None,0
+1212,Male,Black,28,713,68871.0,0.3981,3,23486.25,20003,Single,2.49,Master's,3,0,1,US Citizen,None,1
+1213,Male,White,22,701,48850.44,0.1196,1,10380.57,10003,Married,7.83,Bachelor's,1,1,0,US Citizen,None,1
+1214,Female,White,55,646,93473.78,0.4495,30,73495.72,10005,Divorced,8.54,Bachelor's,2,0,0,US Citizen,None,1
+1215,Female,White,52,760,68672.15,0.2242,22,88408.29,10004,Married,7.97,Bachelor's,0,0,0,US Citizen,None,1
+1216,Male,White,42,708,80758.47,0.3108,13,28884.16,10005,Married,7.44,Master's,1,0,0,US Citizen,None,1
+1217,Male,Black,38,642,78626.19,0.5197,7,29479.06,20001,Married,6.62,Master's,1,1,0,Permanent Resident,None,1
+1218,Female,Asian,48,806,62898.59,0.4411,19,49874.01,40001,Single,6.08,High School,3,0,0,US Citizen,None,1
+1219,Female,Hispanic,37,658,51725.83,0.3841,17,101939.77,30001,Divorced,5.25,Bachelor's,3,1,0,US Citizen,None,0
+1220,Male,White,51,735,97762.95,0.2565,16,48340.62,10004,Single,8.25,Bachelor's,0,0,0,US Citizen,None,1
+1221,Female,Hispanic,32,583,43054.95,0.4937,6,22286.15,30004,Single,5.98,PhD,2,0,2,US Citizen,None,0
+1222,Male,Hispanic,46,645,42942.12,0.431,12,11693.92,30003,Divorced,6.34,Bachelor's,0,0,0,US Citizen,None,1
+1223,Male,Hispanic,37,699,87862.61,0.2758,8,16637.45,30004,Married,6.3,Bachelor's,5,0,0,US Citizen,Other,1
+1224,Female,White,44,634,55553.53,0.2346,1,38225.33,10001,Married,8.13,High School,4,0,0,US Citizen,None,0
+1225,Male,White,28,731,59651.34,0.0513,5,22954.53,10002,Married,7.06,Bachelor's,2,0,0,US Citizen,Physical,1
+1226,Female,White,45,725,80740.1,0.3485,10,41625.88,10005,Divorced,6.66,High School,2,0,0,US Citizen,None,0
+1227,Male,White,32,722,51822.59,0.2901,3,24660.38,10004,Married,7.66,Master's,3,1,1,US Citizen,None,1
+1228,Male,White,34,777,47671.98,0.4363,10,17314.46,10005,Married,9.31,Master's,2,1,0,US Citizen,None,1
+1229,Female,White,33,738,57606.06,0.3731,4,15931.89,10004,Married,7.47,Bachelor's,2,1,1,US Citizen,None,1
+1230,Male,White,30,801,32213.85,0.4601,5,108407.02,10003,Married,8.22,Bachelor's,4,1,0,US Citizen,None,1
+1231,Female,Black,57,570,57731.41,0.3263,30,67662.77,20005,Divorced,4.67,Master's,2,0,0,US Citizen,None,0
+1232,Male,White,56,727,86705.58,0.4366,11,121949.53,10004,Married,9.94,High School,2,0,0,US Citizen,None,1
+1233,Male,White,63,724,85420.72,0.2365,12,52995.68,10004,Married,7.33,High School,3,1,0,US Citizen,None,1
+1234,Male,Asian,25,645,31358.24,0.3933,3,26876.46,40003,Married,7.78,PhD,2,0,0,US Citizen,None,1
+1235,Female,Asian,38,767,81712.67,0.1549,14,91705.59,10005,Single,6.07,Master's,2,0,2,US Citizen,Physical,0
+1236,Male,Hispanic,23,811,46322.57,0.3782,0,35484.54,30001,Married,3.82,Master's,0,0,0,Permanent Resident,None,1
+1237,Female,Asian,31,708,73667.28,0.0918,7,42386.67,10003,Single,6.99,High School,1,0,0,US Citizen,None,0
+1238,Male,Black,26,675,43214.96,0.3479,4,35243.03,20003,Married,6.27,High School,0,0,2,US Citizen,Physical,1
+1239,Female,Asian,50,715,54199.82,0.3828,5,5000.0,40003,Married,7.82,High School,2,0,0,US Citizen,Physical,1
+1240,Male,White,37,680,69587.71,0.2375,12,111671.24,10002,Married,5.0,High School,1,0,0,US Citizen,None,1
+1241,Female,White,53,619,66563.19,0.2039,25,51210.65,10005,Single,8.38,Master's,5,1,0,US Citizen,None,1
+1242,Female,White,48,681,48133.58,0.4315,15,45746.76,10001,Single,5.66,High School,2,1,0,US Citizen,None,1
+1243,Female,White,67,643,103046.76,0.3176,30,34778.57,10002,Single,8.51,Master's,3,1,0,US Citizen,None,1
+1244,Female,White,25,813,38065.95,0.2713,4,40716.94,10003,Single,8.15,High School,1,0,0,US Citizen,None,0
+1245,Female,Black,48,631,28326.0,0.415,17,23906.48,20005,Single,4.28,Bachelor's,3,1,0,US Citizen,None,0
+1246,Female,Hispanic,45,637,73812.49,0.6964,12,55915.98,30003,Divorced,6.59,PhD,2,1,1,US Citizen,None,0
+1247,Male,Black,26,702,39551.03,0.5184,2,14545.42,20005,Married,4.1,High School,2,0,0,US Citizen,None,1
+1248,Male,White,53,658,71152.64,0.4395,19,41367.38,10001,Married,7.68,Bachelor's,1,1,0,US Citizen,None,1
+1249,Female,Hispanic,38,610,25000.0,0.4323,12,53803.91,20003,Single,3.34,Bachelor's,2,0,1,US Citizen,None,0
+1250,Female,Black,33,644,71844.12,0.43,6,31600.61,20005,Single,4.12,High School,2,1,3,US Citizen,None,0
+1251,Female,White,32,776,33657.79,0.05,1,47080.18,10004,Divorced,8.61,Bachelor's,2,0,0,US Citizen,None,1
+1252,Male,Black,28,675,49556.24,0.2985,6,18143.47,20001,Married,2.5,Bachelor's,4,0,1,Permanent Resident,None,0
+1253,Male,White,64,733,104079.3,0.2423,28,18470.34,10005,Married,8.48,Bachelor's,3,0,0,US Citizen,None,0
+1254,Male,White,42,724,76475.75,0.075,11,42860.33,10001,Single,5.08,Master's,5,0,0,US Citizen,None,1
+1255,Female,Asian,45,734,62505.19,0.1911,19,58394.95,40001,Divorced,5.45,Bachelor's,2,0,0,US Citizen,None,1
+1256,Male,White,33,731,36345.01,0.0623,11,9775.1,10003,Divorced,7.12,High School,5,1,1,US Citizen,None,1
+1257,Male,White,33,663,49724.13,0.2954,0,52334.68,10005,Married,7.68,Bachelor's,3,1,0,US Citizen,None,1
+1258,Male,Hispanic,44,662,64008.51,0.4483,16,24828.79,30004,Single,4.64,High School,1,1,2,US Citizen,None,1
+1259,Male,Black,22,564,32179.89,0.5128,0,31730.57,20002,Married,3.6,Bachelor's,1,0,3,US Citizen,None,1
+1260,Female,White,37,724,60050.39,0.3798,11,14219.04,10004,Single,8.83,Bachelor's,0,1,0,US Citizen,None,0
+1261,Male,White,42,693,80376.15,0.1844,13,20007.61,10005,Married,8.93,High School,0,0,0,Permanent Resident,None,1
+1262,Female,White,43,820,76237.54,0.0982,16,71416.75,10003,Married,6.99,Master's,0,1,0,US Citizen,None,1
+1263,Male,Black,34,637,34978.81,0.1692,7,37160.6,20005,Married,3.91,Master's,0,0,0,US Citizen,None,0
+1264,Male,White,46,642,106779.69,0.1477,5,27779.54,10001,Single,7.16,Master's,2,0,0,US Citizen,None,1
+1265,Male,White,49,712,88102.19,0.1933,14,33471.79,10003,Married,10.0,Bachelor's,1,1,1,US Citizen,None,1
+1266,Male,Asian,45,741,72884.29,0.2808,17,51146.45,40001,Single,7.02,Bachelor's,1,1,0,US Citizen,None,1
+1267,Male,Black,26,757,63458.55,0.2583,4,49431.65,20004,Married,6.86,Master's,3,0,0,US Citizen,None,1
+1268,Male,White,38,687,101951.12,0.3407,6,34457.47,10002,Married,8.38,Bachelor's,3,1,0,US Citizen,None,0
+1269,Female,Black,47,529,33669.2,0.3821,21,78047.38,20005,Single,4.34,Master's,5,0,2,US Citizen,None,0
+1270,Male,Black,44,697,57812.56,0.3813,11,71633.91,40003,Married,3.53,High School,2,0,1,US Citizen,None,0
+1271,Female,White,26,644,25000.0,0.4668,4,48502.01,10003,Single,8.44,High School,1,0,2,US Citizen,None,0
+1272,Female,White,45,696,66289.77,0.1884,12,37730.66,10001,Divorced,6.56,Master's,1,0,2,US Citizen,None,1
+1273,Female,Hispanic,22,643,43730.91,0.4302,1,57533.62,30003,Married,4.92,Master's,0,0,0,US Citizen,None,0
+1274,Male,White,42,716,69562.57,0.2983,17,45251.32,10005,Married,8.29,Master's,0,0,0,Permanent Resident,None,0
+1275,Male,Black,54,688,59193.5,0.34,12,76310.06,20005,Single,4.14,PhD,1,0,0,US Citizen,None,1
+1276,Male,White,31,682,29287.28,0.4062,5,68165.44,10001,Married,7.03,High School,5,0,0,US Citizen,None,0
+1277,Male,White,32,704,66553.01,0.4055,7,17804.78,10003,Married,7.13,High School,0,0,1,US Citizen,None,1
+1278,Female,White,50,719,89231.52,0.2164,30,16980.58,10004,Married,6.68,Master's,0,0,0,US Citizen,None,0
+1279,Male,White,25,728,45644.72,0.2781,2,22228.38,10003,Married,8.04,High School,0,0,0,Visa Holder,None,0
+1280,Male,White,35,725,70310.9,0.3337,15,71919.09,10005,Single,7.54,Bachelor's,2,0,0,US Citizen,None,0
+1281,Female,White,48,743,42277.84,0.2972,28,12047.15,10005,Divorced,5.87,Bachelor's,1,0,0,US Citizen,None,1
+1282,Female,Hispanic,29,714,49868.2,0.4502,5,47874.11,30003,Divorced,4.77,High School,1,0,1,US Citizen,None,0
+1283,Female,Asian,35,733,49499.27,0.3637,8,46806.63,40002,Married,6.52,High School,0,0,0,US Citizen,None,1
+1284,Male,Hispanic,41,689,47409.23,0.5699,9,81949.1,30004,Single,4.94,Bachelor's,1,0,1,US Citizen,None,1
+1285,Male,Hispanic,38,557,45094.05,0.1664,10,41201.79,30002,Married,6.4,Master's,0,1,0,US Citizen,None,0
+1286,Male,White,44,722,66085.83,0.2853,7,14182.35,10003,Married,6.66,Master's,2,0,0,US Citizen,None,1
+1287,Male,Asian,34,738,68526.5,0.191,8,18554.2,40003,Married,10.0,Bachelor's,0,0,1,US Citizen,None,1
+1288,Male,White,46,760,54147.55,0.3725,23,15876.62,10003,Single,9.16,Bachelor's,3,0,2,US Citizen,None,0
+1289,Male,Asian,36,668,58673.27,0.1059,7,24920.33,40003,Married,8.79,High School,2,0,0,US Citizen,Other,1
+1290,Male,Asian,42,670,69527.92,0.3416,12,31951.32,40002,Married,5.66,High School,2,1,0,US Citizen,None,1
+1291,Male,Black,31,599,34539.91,0.3044,2,16061.67,20003,Single,1.45,Bachelor's,1,0,0,US Citizen,Other,1
+1292,Male,Asian,36,742,91579.98,0.2119,10,101667.54,40001,Married,6.56,High School,1,0,0,US Citizen,None,1
+1293,Female,Black,26,712,28167.57,0.2364,3,14361.45,20001,Single,4.94,High School,0,0,2,US Citizen,None,0
+1294,Female,White,41,697,50158.45,0.2742,12,93178.51,10004,Divorced,7.31,Bachelor's,2,0,0,Permanent Resident,None,0
+1295,Female,White,33,769,39125.38,0.4601,7,83250.89,10003,Divorced,6.86,Bachelor's,2,0,1,US Citizen,None,1
+1296,Male,Black,24,648,72528.7,0.377,2,68105.4,20001,Single,1.89,High School,1,1,1,US Citizen,None,0
+1297,Male,White,44,713,80283.58,0.3753,16,22345.12,10002,Married,6.69,Bachelor's,2,1,0,US Citizen,None,1
+1298,Male,Black,38,625,42450.62,0.5798,10,46152.92,20003,Single,4.14,Bachelor's,3,0,0,US Citizen,None,0
+1299,Female,Asian,45,754,79993.47,0.3617,16,14851.26,40002,Single,6.36,High School,3,1,0,US Citizen,None,0
+1300,Female,White,37,737,60010.48,0.2629,10,68708.96,10005,Divorced,6.9,PhD,0,0,0,US Citizen,None,1
+1301,Male,Hispanic,38,807,60358.3,0.4061,14,34482.62,30001,Married,4.3,High School,2,1,0,US Citizen,None,0
+1302,Female,Asian,43,658,56632.84,0.2647,16,27268.18,40002,Divorced,9.15,Master's,0,1,0,US Citizen,None,0
+1303,Male,Asian,42,741,58908.76,0.2395,14,15419.35,40001,Married,7.92,High School,2,0,1,US Citizen,None,0
+1304,Male,Asian,29,678,63256.49,0.1176,8,6410.84,40003,Single,8.24,Master's,1,0,0,US Citizen,None,0
+1305,Female,Black,37,579,40273.69,0.5212,11,17553.72,20003,Single,4.91,High School,0,0,1,US Citizen,None,0
+1306,Female,Asian,41,709,87451.33,0.2837,18,79138.81,40001,Married,5.26,Master's,3,0,0,US Citizen,None,0
+1307,Female,Hispanic,35,668,28050.63,0.4019,10,27392.28,30001,Married,6.61,Bachelor's,2,0,1,US Citizen,None,0
+1308,Female,White,22,820,68042.35,0.2057,0,32256.34,10003,Divorced,9.12,Master's,1,1,2,US Citizen,None,0
+1309,Male,White,43,709,69400.22,0.3523,19,57462.51,10003,Married,9.29,Bachelor's,0,1,0,US Citizen,None,1
+1310,Female,Black,58,560,67216.29,0.3186,23,128536.5,20002,Married,5.44,High School,2,1,2,US Citizen,None,0
+1311,Male,White,38,735,78967.37,0.283,10,91812.46,10004,Divorced,7.5,Master's,4,1,0,US Citizen,Other,1
+1312,Female,Black,28,520,32876.26,0.5153,5,18386.38,20003,Divorced,4.5,High School,2,1,2,US Citizen,None,0
+1313,Male,Black,39,633,70245.23,0.4749,10,9322.64,20002,Married,5.28,PhD,5,0,1,US Citizen,None,0
+1314,Female,White,45,720,25000.0,0.3274,16,189421.5,10001,Single,5.53,High School,0,0,0,US Citizen,None,0
+1315,Male,Black,47,695,52737.66,0.1678,13,177778.58,20004,Married,5.46,Bachelor's,2,0,0,US Citizen,None,1
+1316,Female,Hispanic,23,723,25069.06,0.7391,2,41436.5,30001,Divorced,4.77,Master's,3,0,0,US Citizen,None,0
+1317,Male,White,50,692,58707.41,0.5095,17,14922.99,10005,Single,10.0,Bachelor's,2,0,0,US Citizen,None,1
+1318,Female,White,48,711,62575.68,0.4167,14,71271.98,10004,Divorced,7.14,High School,0,0,3,Permanent Resident,None,0
+1319,Male,White,40,677,74096.25,0.2096,8,33671.65,10002,Married,7.73,Master's,2,1,1,US Citizen,None,1
+1320,Male,White,45,657,83449.9,0.2864,16,33554.06,10002,Married,7.67,Master's,2,1,0,Permanent Resident,None,1
+1321,Male,Asian,48,728,79283.15,0.2348,17,67922.4,40002,Married,6.1,PhD,2,0,1,US Citizen,None,1
+1322,Male,White,51,649,68444.6,0.4517,21,45892.75,10003,Married,8.05,Bachelor's,3,1,1,US Citizen,None,1
+1323,Female,Black,24,610,45145.25,0.4415,1,15834.23,20003,Divorced,5.01,Bachelor's,3,0,0,US Citizen,None,1
+1324,Male,White,51,665,80294.29,0.2059,8,28931.34,10004,Married,8.73,Bachelor's,2,1,0,US Citizen,None,0
+1325,Female,White,41,750,74240.84,0.2735,15,57688.15,10002,Single,8.36,High School,0,0,0,US Citizen,None,1
+1326,Male,Hispanic,35,777,65807.55,0.4845,13,51905.32,30004,Single,5.78,Master's,1,0,2,Permanent Resident,None,0
+1327,Male,Black,36,548,55392.65,0.572,6,43626.13,20002,Married,3.27,Bachelor's,3,1,2,US Citizen,None,0
+1328,Female,White,40,618,45941.2,0.5134,18,69800.47,40003,Married,6.55,Bachelor's,4,0,0,US Citizen,None,0
+1329,Female,White,55,713,61605.75,0.4208,22,28192.13,10001,Divorced,9.49,Bachelor's,0,0,0,US Citizen,Physical,1
+1330,Male,White,41,720,60983.16,0.2697,12,41153.69,10005,Single,7.6,Master's,2,0,1,US Citizen,None,1
+1331,Female,White,29,732,45871.0,0.05,4,5000.0,10001,Divorced,9.99,Master's,1,0,2,Permanent Resident,None,1
+1332,Female,Black,32,608,49070.76,0.4457,3,26509.14,20004,Single,3.27,Bachelor's,0,1,1,US Citizen,Physical,0
+1333,Male,White,43,708,81797.62,0.2998,18,61990.23,10003,Married,10.0,Bachelor's,2,0,0,US Citizen,Other,1
+1334,Female,White,55,740,70633.22,0.3468,15,27631.84,10005,Married,6.37,Master's,2,1,0,US Citizen,None,1
+1335,Female,White,48,777,66041.87,0.3365,12,26203.3,30002,Divorced,6.97,Bachelor's,0,0,0,US Citizen,None,0
+1336,Female,Asian,29,592,52749.59,0.1708,7,17517.98,20005,Married,7.57,High School,3,0,0,US Citizen,None,1
+1337,Male,Asian,62,687,80811.42,0.3669,9,73302.95,40001,Single,8.3,High School,3,0,1,US Citizen,None,1
+1338,Female,White,44,731,48719.12,0.4059,7,53312.4,20004,Single,8.31,High School,4,1,0,US Citizen,None,1
+1339,Male,Hispanic,46,600,36423.93,0.4319,15,64717.71,30003,Married,2.63,Bachelor's,0,0,2,US Citizen,None,0
+1340,Male,White,40,815,57882.76,0.4136,13,10847.07,10005,Single,6.81,Master's,2,0,0,US Citizen,None,1
+1341,Male,White,47,685,81847.18,0.3725,18,32457.44,10001,Single,6.13,Bachelor's,1,0,1,US Citizen,None,0
+1342,Male,Hispanic,42,657,49083.83,0.3008,11,29849.47,30001,Married,3.43,Bachelor's,1,0,0,US Citizen,None,1
+1343,Female,Asian,50,743,63832.89,0.3215,30,29839.84,40003,Divorced,6.98,Master's,2,1,0,US Citizen,None,1
+1344,Female,Asian,48,674,72796.47,0.3409,15,23594.78,40001,Divorced,4.25,Master's,3,0,0,US Citizen,None,1
+1345,Female,Black,44,520,61020.34,0.4229,13,28501.93,30004,Divorced,6.0,Bachelor's,0,0,0,US Citizen,None,1
+1346,Male,White,38,696,50277.01,0.4198,7,65824.76,20001,Single,8.39,High School,4,0,2,US Citizen,None,0
+1347,Male,Hispanic,29,726,64417.39,0.4272,5,9518.61,30001,Single,7.93,High School,3,0,1,US Citizen,None,0
+1348,Male,White,45,701,89820.25,0.5493,18,126008.71,10004,Single,6.22,High School,3,0,0,US Citizen,None,1
+1349,Female,Black,45,580,36942.25,0.6748,21,50954.52,20004,Married,3.05,High School,3,0,2,US Citizen,None,0
+1350,Male,White,39,770,55032.45,0.3096,5,35255.18,10002,Married,8.76,High School,1,0,1,US Citizen,None,0
+1351,Female,Black,46,616,72436.36,0.05,14,68513.35,20004,Married,6.19,Bachelor's,3,0,1,US Citizen,None,0
+1352,Female,White,57,691,70797.2,0.4784,25,13143.93,10002,Married,9.12,High School,1,0,2,US Citizen,None,0
+1353,Male,White,31,728,26733.33,0.2352,7,22804.41,10004,Married,8.88,High School,3,1,0,US Citizen,None,1
+1354,Female,Asian,29,756,29604.78,0.2338,5,33364.48,40003,Married,7.28,High School,0,1,0,US Citizen,None,1
+1355,Male,White,40,820,64569.46,0.2522,14,94456.27,10003,Single,6.95,Bachelor's,1,0,0,US Citizen,None,1
+1356,Female,Black,39,697,32364.36,0.3564,8,35152.55,20001,Divorced,5.6,Bachelor's,2,0,0,US Citizen,None,0
+1357,Female,White,36,783,49998.64,0.4035,14,49763.56,10004,Married,6.97,Bachelor's,1,0,0,US Citizen,None,1
+1358,Male,White,56,692,83515.94,0.1129,28,24035.68,10003,Married,7.63,High School,1,1,0,US Citizen,None,1
+1359,Male,White,46,663,95763.82,0.1707,8,51061.67,10004,Single,7.04,Bachelor's,1,0,0,US Citizen,None,1
+1360,Female,White,42,723,56643.19,0.3712,8,117485.21,10003,Divorced,7.82,High School,3,1,1,US Citizen,None,0
+1361,Female,Hispanic,22,666,54338.13,0.4548,0,72901.81,30004,Divorced,7.36,High School,2,0,1,Permanent Resident,None,1
+1362,Male,White,27,660,77781.4,0.377,5,34302.75,10005,Divorced,7.08,Master's,1,0,3,US Citizen,None,0
+1363,Female,Asian,40,699,80914.65,0.2356,6,58270.05,40003,Divorced,6.35,PhD,0,0,1,US Citizen,None,1
+1364,Female,Black,22,667,42521.32,0.2926,1,54407.75,20005,Single,4.34,Bachelor's,1,0,0,US Citizen,None,0
+1365,Female,White,53,739,40350.66,0.2692,22,51772.34,10004,Single,6.09,Master's,2,0,0,US Citizen,None,1
+1366,Male,Black,34,675,60283.87,0.4088,8,79092.03,20004,Single,5.5,Bachelor's,2,1,0,US Citizen,None,0
+1367,Female,Black,68,660,85256.0,0.5883,30,78679.22,20003,Single,4.67,High School,0,1,2,US Citizen,None,0
+1368,Female,Hispanic,55,627,59473.99,0.1343,13,33222.71,30001,Divorced,5.45,PhD,0,1,0,US Citizen,None,1
+1369,Male,White,40,691,94478.76,0.2735,14,56915.06,10005,Married,7.89,High School,1,0,0,Permanent Resident,None,1
+1370,Male,White,40,654,81207.5,0.1401,9,27773.39,10005,Single,5.73,Bachelor's,1,0,2,US Citizen,None,1
+1371,Female,Hispanic,43,776,61054.1,0.1817,12,19031.47,30003,Single,7.6,High School,1,0,1,US Citizen,Other,0
+1372,Male,Asian,55,710,98405.71,0.416,22,30072.14,40002,Married,6.32,Bachelor's,3,0,0,US Citizen,None,1
+1373,Female,Hispanic,22,645,43250.55,0.4454,1,34427.31,30004,Single,4.94,Bachelor's,1,1,0,US Citizen,None,0
+1374,Male,White,22,668,25000.0,0.3539,1,11349.1,10001,Divorced,8.54,Bachelor's,2,0,1,Permanent Resident,None,1
+1375,Male,Hispanic,29,820,41974.42,0.4605,4,66319.07,30001,Married,6.42,High School,2,0,2,US Citizen,None,1
+1376,Female,White,48,660,83757.52,0.2724,15,5233.69,10001,Divorced,9.9,Bachelor's,0,1,0,US Citizen,None,1
+1377,Male,White,47,696,62636.13,0.2481,16,242891.92,10001,Single,6.34,Bachelor's,2,1,0,US Citizen,None,0
+1378,Male,White,53,742,76917.91,0.5623,10,103913.63,10004,Single,6.37,PhD,2,0,1,US Citizen,None,0
+1379,Male,Black,24,682,29878.96,0.3504,2,30251.28,20005,Single,2.71,Master's,1,0,1,US Citizen,None,0
+1380,Female,White,22,772,71758.84,0.4182,1,36555.92,10005,Divorced,7.66,Bachelor's,3,1,1,US Citizen,None,1
+1381,Male,White,51,819,103652.39,0.3008,10,44894.94,10001,Married,7.18,High School,0,0,0,US Citizen,None,1
+1382,Male,Hispanic,27,692,34639.47,0.1282,5,24042.72,30002,Married,4.46,Master's,3,1,2,US Citizen,None,0
+1383,Female,White,22,661,47209.47,0.0846,1,41557.5,10001,Divorced,7.42,High School,2,0,0,US Citizen,None,1
+1384,Male,White,43,705,60862.59,0.2305,8,32833.35,40002,Single,6.26,High School,2,0,0,US Citizen,None,0
+1385,Female,White,50,736,76624.17,0.4567,26,33996.37,10002,Married,9.36,Bachelor's,3,0,1,US Citizen,None,0
+1386,Male,Asian,36,820,72275.25,0.3946,9,41234.18,40002,Married,6.09,Master's,3,1,0,US Citizen,None,0
+1387,Female,Black,31,542,56545.58,0.5197,7,14480.1,20003,Single,3.64,High School,2,1,2,US Citizen,None,0
+1388,Male,White,40,786,73288.78,0.1816,10,37335.46,10002,Married,4.64,High School,3,1,0,US Citizen,None,1
+1389,Female,Hispanic,31,671,88401.09,0.5739,8,40717.51,30002,Single,3.03,Bachelor's,1,0,2,US Citizen,None,1
+1390,Male,Hispanic,22,714,28568.64,0.2342,1,39743.23,30004,Married,4.62,High School,2,1,0,Permanent Resident,None,0
+1391,Male,White,34,714,37130.95,0.3255,6,31223.26,10002,Married,7.13,Bachelor's,0,0,0,US Citizen,None,1
+1392,Male,Black,41,581,52949.15,0.3788,7,80539.29,20001,Married,5.58,Bachelor's,0,0,0,US Citizen,None,0
+1393,Male,Hispanic,37,708,32197.68,0.3291,5,28351.73,30001,Married,3.26,Bachelor's,3,0,1,US Citizen,None,1
+1394,Male,Black,37,685,33330.57,0.5406,10,42579.5,20003,Married,5.18,High School,0,1,1,US Citizen,None,0
+1395,Male,White,31,773,45010.28,0.2154,7,90048.91,10005,Married,8.25,High School,0,1,0,US Citizen,None,1
+1396,Female,Hispanic,33,659,31897.17,0.218,9,34352.73,30001,Single,6.52,Master's,3,0,0,US Citizen,None,1
+1397,Male,Black,22,598,29668.23,0.3824,1,42197.84,20003,Married,6.05,Master's,0,0,1,US Citizen,None,0
+1398,Male,White,43,634,78843.28,0.252,8,33946.15,10003,Married,6.11,High School,1,1,1,US Citizen,None,1
+1399,Female,White,57,765,65407.16,0.7353,17,86349.55,10003,Married,8.15,High School,2,0,0,US Citizen,None,1
+1400,Female,White,25,743,44707.28,0.4112,4,30320.91,10001,Married,9.62,High School,2,1,0,US Citizen,None,0
+1401,Male,White,35,666,77123.49,0.2509,7,89174.3,10004,Single,9.18,Bachelor's,3,0,0,Permanent Resident,Other,1
+1402,Male,Hispanic,37,624,44222.66,0.2233,10,33775.42,30003,Married,8.34,Master's,2,0,2,US Citizen,None,1
+1403,Male,White,55,694,78141.81,0.0744,13,19898.07,10005,Married,7.79,Bachelor's,2,0,0,US Citizen,None,1
+1404,Female,White,37,638,62486.4,0.207,11,58428.63,10001,Married,6.79,Bachelor's,2,0,0,US Citizen,None,1
+1405,Female,Black,29,582,25000.0,0.4238,4,29340.75,20004,Single,1.0,Master's,1,0,1,US Citizen,None,1
+1406,Male,White,22,657,25000.0,0.4713,1,56069.69,10001,Single,6.01,PhD,2,0,0,US Citizen,None,0
+1407,Female,Asian,39,685,63791.76,0.4646,14,5374.48,20001,Single,6.32,High School,3,0,0,US Citizen,None,0
+1408,Female,White,64,679,85980.21,0.3575,22,36448.07,10003,Married,7.09,High School,1,0,3,US Citizen,None,1
+1409,Female,White,45,630,94363.3,0.2912,14,26325.05,10003,Single,6.55,High School,1,1,0,US Citizen,None,1
+1410,Female,White,41,820,62571.42,0.3623,10,17252.61,10005,Single,7.91,Master's,0,0,0,US Citizen,None,1
+1411,Male,White,45,788,85206.1,0.2378,7,24654.91,10005,Married,7.73,Master's,2,0,0,Permanent Resident,None,0
+1412,Male,White,41,677,66297.91,0.5062,8,24304.28,10002,Married,7.55,Bachelor's,0,1,1,Permanent Resident,None,1
+1413,Male,Black,27,659,52355.91,0.3573,4,35115.92,20005,Married,5.68,High School,2,0,0,US Citizen,None,1
+1414,Male,Asian,46,735,98838.85,0.2896,17,13944.93,40003,Married,6.39,High School,3,0,0,US Citizen,None,1
+1415,Male,White,44,785,40130.11,0.05,15,45314.92,10002,Single,8.82,High School,2,0,0,US Citizen,None,1
+1416,Female,Black,36,582,53974.24,0.3865,8,94499.55,20003,Divorced,2.69,Bachelor's,1,1,1,US Citizen,None,0
+1417,Male,Black,26,716,79149.3,0.4804,4,44207.51,10001,Married,4.04,High School,3,1,1,US Citizen,None,0
+1418,Male,Hispanic,46,624,66986.01,0.2219,15,63977.84,30003,Married,5.98,High School,1,0,1,US Citizen,None,1
+1419,Male,White,49,646,101348.59,0.2099,21,78135.03,10001,Married,5.2,Master's,2,1,0,Permanent Resident,Physical,1
+1420,Female,White,35,759,45961.82,0.4251,3,86296.36,10004,Single,6.9,High School,2,0,0,US Citizen,None,0
+1421,Male,White,53,790,79789.29,0.1228,0,134470.09,30003,Single,8.35,Bachelor's,0,0,1,US Citizen,None,0
+1422,Male,Black,31,820,51528.37,0.5069,7,25605.4,20005,Married,3.86,High School,4,1,0,US Citizen,None,1
+1423,Male,Hispanic,27,582,25000.0,0.2861,2,21961.83,30002,Married,2.77,Master's,0,0,1,US Citizen,None,0
+1424,Male,White,33,758,44347.33,0.2534,7,62844.96,10002,Married,6.44,Bachelor's,5,1,0,US Citizen,None,1
+1425,Female,White,22,697,28546.87,0.1951,1,59622.38,10005,Divorced,5.89,Master's,0,0,1,US Citizen,None,1
+1426,Female,Asian,42,757,73330.99,0.3754,20,62503.18,40001,Single,7.65,Bachelor's,1,0,0,US Citizen,None,0
+1427,Male,Hispanic,22,564,57069.8,0.6452,1,136284.2,10005,Single,5.68,PhD,0,1,1,US Citizen,None,0
+1428,Female,Asian,25,634,52260.55,0.4238,3,36605.69,40002,Divorced,4.97,Master's,0,0,2,US Citizen,None,0
+1429,Female,Hispanic,22,609,50611.54,0.2763,1,48938.01,30001,Married,3.04,Bachelor's,2,1,3,US Citizen,None,0
+1430,Female,White,41,724,57737.76,0.4663,14,18283.02,10002,Divorced,6.63,PhD,2,1,0,US Citizen,None,1
+1431,Male,Black,34,595,71400.48,0.342,7,161898.49,20004,Married,4.55,Bachelor's,3,1,0,US Citizen,None,0
+1432,Male,Black,32,686,51939.33,0.5449,9,28693.29,20005,Single,3.49,Bachelor's,1,0,0,Visa Holder,None,0
+1433,Male,White,30,776,59977.96,0.3968,3,29267.96,10002,Single,7.92,High School,1,0,1,Permanent Resident,Physical,1
+1434,Female,Black,24,681,35626.11,0.0568,2,28489.05,20002,Single,4.97,Bachelor's,2,1,1,US Citizen,None,1
+1435,Male,Black,40,753,68330.26,0.2595,5,23122.76,20005,Married,5.3,Master's,1,1,0,US Citizen,None,0
+1436,Male,White,35,742,57392.02,0.4133,9,21794.09,10002,Single,5.8,Master's,2,0,0,US Citizen,None,1
+1437,Male,Hispanic,37,580,70363.97,0.3682,10,25169.97,30003,Married,5.09,High School,2,1,2,US Citizen,None,1
+1438,Female,Black,27,735,25000.0,0.2871,6,13959.88,20005,Single,6.11,Bachelor's,0,0,1,US Citizen,None,0
+1439,Male,Asian,39,673,50906.26,0.224,5,20958.04,40002,Married,6.13,High School,3,1,0,US Citizen,None,1
+1440,Female,White,56,770,82511.4,0.1013,17,142098.28,10004,Divorced,6.52,Bachelor's,2,0,0,US Citizen,None,1
+1441,Female,White,48,806,64471.84,0.3194,21,60776.51,10002,Divorced,6.91,High School,2,0,0,US Citizen,Other,1
+1442,Male,Black,31,671,44217.13,0.6453,7,69434.07,20003,Married,3.73,Master's,0,0,1,US Citizen,None,0
+1443,Female,White,44,637,75950.87,0.4266,15,82788.64,10005,Divorced,7.65,High School,1,0,2,US Citizen,None,0
+1444,Male,Black,33,575,43480.58,0.6429,5,131123.41,20002,Married,3.63,High School,1,1,2,US Citizen,None,0
+1445,Female,Hispanic,35,745,44086.98,0.4859,7,10509.18,30003,Divorced,2.47,Master's,1,0,0,US Citizen,None,0
+1446,Male,White,38,710,87458.42,0.4233,15,15353.24,10001,Married,8.92,Bachelor's,0,1,1,US Citizen,None,1
+1447,Female,Black,34,645,69497.14,0.6469,8,20689.74,20004,Married,5.26,High School,3,0,0,Permanent Resident,None,0
+1448,Female,Black,38,693,72715.97,0.4553,12,26139.14,20002,Married,4.72,Bachelor's,2,0,0,US Citizen,None,0
+1449,Female,White,31,758,47968.11,0.3075,6,29425.04,10003,Married,7.39,High School,2,0,3,US Citizen,None,0
+1450,Female,Asian,27,726,67460.54,0.4539,2,26558.78,40001,Married,6.58,PhD,0,0,0,US Citizen,None,1
+1451,Male,Hispanic,22,646,29753.21,0.5245,1,42341.21,30001,Single,4.3,Bachelor's,4,0,0,Visa Holder,None,1
+1452,Female,Black,22,618,25000.0,0.3524,1,37223.92,20005,Married,1.68,High School,0,0,3,Permanent Resident,None,0
+1453,Female,Black,23,700,25000.0,0.3234,3,21895.05,20002,Divorced,6.94,Bachelor's,3,0,0,US Citizen,None,0
+1454,Female,White,43,750,86893.02,0.3467,9,7919.76,10005,Divorced,7.53,High School,4,0,1,Visa Holder,None,1
+1455,Male,Asian,29,694,45230.3,0.3998,6,18123.99,40002,Single,4.91,Master's,2,0,2,US Citizen,None,0
+1456,Female,Black,41,715,49272.01,0.5058,7,24724.08,20001,Married,2.96,PhD,5,1,1,US Citizen,None,1
+1457,Female,Black,36,630,34115.13,0.2391,10,30547.69,20004,Divorced,4.96,Master's,2,0,0,US Citizen,None,1
+1458,Female,Hispanic,22,604,48677.48,0.6094,1,16468.96,30004,Divorced,5.93,Bachelor's,0,0,0,US Citizen,None,0
+1459,Male,White,49,678,70955.5,0.2231,5,25756.32,10001,Single,6.6,Bachelor's,0,0,0,US Citizen,None,1
+1460,Female,Hispanic,42,596,32277.75,0.3482,12,16453.75,30003,Divorced,3.88,High School,1,0,0,Permanent Resident,Physical,1
+1461,Male,White,31,705,66654.94,0.1917,5,33253.87,10004,Married,6.81,Bachelor's,0,0,1,US Citizen,Physical,0
+1462,Female,White,46,787,42694.05,0.6538,11,17134.27,10005,Married,5.18,Bachelor's,2,0,0,US Citizen,None,1
+1463,Male,White,32,675,48388.91,0.329,8,20045.64,10003,Single,6.93,Bachelor's,1,1,0,US Citizen,None,1
+1464,Female,Asian,38,721,26196.66,0.2279,14,14529.28,40002,Divorced,6.4,Master's,3,1,0,US Citizen,None,1
+1465,Female,Hispanic,23,617,25000.0,0.4837,1,32615.72,30002,Single,7.79,High School,1,0,1,US Citizen,None,0
+1466,Male,Black,22,621,46665.44,0.4723,1,19800.98,20005,Married,3.82,High School,1,1,2,US Citizen,None,0
+1467,Female,Black,32,534,25000.0,0.3875,7,68510.96,20004,Divorced,4.88,High School,4,0,0,US Citizen,Physical,0
+1468,Male,Black,34,624,31154.31,0.4809,8,48247.3,20005,Married,6.9,High School,0,0,2,US Citizen,None,0
+1469,Female,Asian,34,698,54564.47,0.231,5,34582.52,40001,Married,5.61,High School,2,0,0,US Citizen,None,0
+1470,Female,White,28,749,41645.9,0.2708,6,20780.29,10005,Single,6.75,Bachelor's,3,0,0,US Citizen,None,1
+1471,Female,White,37,732,86880.55,0.0888,11,47399.37,10001,Married,6.85,Bachelor's,0,0,0,US Citizen,None,0
+1472,Female,White,44,654,90108.45,0.1711,16,58893.77,10002,Single,5.49,High School,2,0,0,US Citizen,None,1
+1473,Female,Hispanic,34,730,33391.16,0.5969,6,40130.1,30004,Divorced,5.11,Master's,1,1,1,US Citizen,None,0
+1474,Male,Black,37,654,64074.56,0.577,8,111590.51,20004,Single,6.25,High School,3,0,0,US Citizen,None,0
+1475,Male,White,34,730,74029.24,0.3079,7,50098.49,10004,Divorced,8.51,Bachelor's,2,0,2,US Citizen,None,1
+1476,Female,White,54,719,61637.82,0.5296,9,68838.95,10004,Divorced,8.92,Bachelor's,1,0,0,US Citizen,None,1
+1477,Female,Hispanic,24,626,25000.0,0.3608,1,39874.64,30001,Single,4.55,Bachelor's,3,1,2,Permanent Resident,None,0
+1478,Female,White,47,731,64815.52,0.3008,12,58277.14,10001,Divorced,6.14,PhD,0,0,0,US Citizen,None,1
+1479,Female,Black,47,673,52657.31,0.4168,19,20790.54,20001,Divorced,7.88,High School,3,0,0,US Citizen,None,0
+1480,Male,Asian,42,605,63613.53,0.285,10,26347.3,40001,Divorced,7.28,Bachelor's,3,0,0,US Citizen,Other,1
+1481,Female,White,39,690,65234.75,0.3042,7,46376.79,10002,Divorced,5.57,Master's,3,0,0,Permanent Resident,Other,0
+1482,Male,White,36,705,53369.06,0.4372,6,46141.57,10001,Married,10.0,Bachelor's,3,0,1,US Citizen,None,1
+1483,Male,Black,46,657,45475.54,0.398,13,51809.47,20003,Married,4.37,High School,1,0,0,US Citizen,None,1
+1484,Male,Hispanic,22,737,45623.74,0.4355,1,78454.57,30002,Married,1.08,Bachelor's,5,0,0,US Citizen,None,1
+1485,Male,Black,26,585,52905.05,0.5038,6,13393.44,20003,Divorced,6.68,Bachelor's,1,0,0,US Citizen,Other,1
+1486,Male,Asian,34,680,45140.33,0.3466,11,18359.15,40003,Married,4.0,Master's,2,0,0,US Citizen,None,1
+1487,Male,White,55,691,96031.36,0.1836,28,42646.52,10002,Single,7.85,High School,0,0,1,Visa Holder,None,1
+1488,Female,Black,39,583,25000.0,0.2477,15,21871.63,20001,Single,5.76,High School,5,0,1,US Citizen,None,0
+1489,Male,Black,26,615,38443.8,0.3979,2,386326.35,40001,Single,5.52,Bachelor's,2,0,1,US Citizen,None,0
+1490,Male,Hispanic,32,710,47937.37,0.3294,4,52104.35,30004,Married,7.83,High School,3,0,0,US Citizen,None,0
+1491,Male,White,35,662,54166.64,0.3105,5,34377.87,10002,Married,8.72,High School,0,1,2,US Citizen,None,0
+1492,Male,Hispanic,28,687,40203.59,0.3481,6,25315.48,30003,Married,8.28,High School,3,0,1,US Citizen,None,1
+1493,Male,Black,45,520,90039.62,0.69,12,25948.95,20001,Married,4.36,High School,3,0,0,US Citizen,None,0
+1494,Male,White,26,689,42666.74,0.1404,2,37089.84,10005,Married,7.0,High School,2,0,0,US Citizen,None,1
+1495,Female,White,59,701,111218.33,0.0912,20,39276.72,10004,Divorced,7.08,PhD,1,1,2,US Citizen,None,1
+1496,Female,Hispanic,42,768,58406.9,0.4199,12,26378.66,30003,Single,7.56,High School,1,1,1,US Citizen,None,0
+1497,Female,White,53,704,71180.83,0.2848,21,29995.22,10003,Divorced,6.73,High School,0,0,1,US Citizen,None,1
+1498,Male,White,36,598,71773.61,0.3379,10,93059.95,10001,Married,8.52,High School,1,0,0,US Citizen,None,0
+1499,Male,White,40,610,106258.92,0.3701,8,95717.22,10001,Single,6.47,PhD,0,0,0,US Citizen,Physical,1
+1500,Female,Hispanic,22,662,25000.0,0.5341,1,43322.34,30004,Single,4.24,Master's,1,0,1,Permanent Resident,None,0

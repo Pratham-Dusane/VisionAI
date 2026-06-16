@@ -12,3 +12,7 @@ uiuxplan.md
 **/serviceAccountKey.json
 backend/temp_uploads/
 *.joblib
+
+# Allow tracking test datasets and models
+!data to test/*.csv
+!data to test/*.joblib
