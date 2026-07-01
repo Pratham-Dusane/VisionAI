@@ -154,6 +154,61 @@ async def list_sentinels(orgId: str):
     docs = db.collection("sentinel_configs").where("org_id", "==", orgId).stream()
     return [doc.to_dict() for doc in docs]
 
+async def _get_simulated_status_internal(sentinel_id: str) -> dict:
+    """Internal helper: returns simulated status without HTTP roundtrip."""
+    db = firestore.client()
+    doc = db.collection("sentinel_configs").document(sentinel_id).get()
+    if not doc.exists:
+        return {"error": "Sentinel config not found"}
+    config_data = doc.to_dict()
+    config = config_data.get("config", {})
+    
+    breaker_doc = db.collection("sentinel_breaker_states").document(sentinel_id).get()
+    if breaker_doc.exists:
+        breaker_state_data = breaker_doc.to_dict()
+    else:
+        breaker_state_data = {
+            "state": "CLOSED",
+            "tripped_at": None,
+            "trip_reason": None,
+            "decisions_intercepted": 0,
+            "auto_reset_scheduled_at": None,
+        }
+    
+    decisions = SIMULATED_WINDOWS.get(sentinel_id, [])
+    
+    di_metrics = {}
+    protected_attributes = config.get("protected_attributes", [])
+    privileged_group_values = config.get("privileged_group_values", {})
+    for attr in protected_attributes:
+        priv_val = privileged_group_values.get(attr)
+        if priv_val is not None:
+            di_metrics[attr] = compute_simulated_di(decisions, attr, priv_val)
+            
+    recent_decisions = list(reversed(decisions))[:20]
+    
+    return {
+        "sentinel_id": sentinel_id,
+        "model_name": config.get("model_name"),
+        "breaker_state": breaker_state_data,
+        "window_size": len(decisions),
+        "live_di_metrics": di_metrics,
+        "recent_decisions": recent_decisions,
+    }
+
+async def _reset_simulated_breaker_internal(sentinel_id: str, reset_by: str = "api") -> dict:
+    """Internal helper: resets simulated breaker without HTTP roundtrip."""
+    db = firestore.client()
+    reset_data = {
+        "state": "CLOSED",
+        "reset_at": datetime.now(timezone.utc).isoformat(),
+        "reset_by": reset_by,
+        "trip_reason": None,
+        "tripped_at": None,
+    }
+    db.collection("sentinel_breaker_states").document(sentinel_id).update(reset_data)
+    return {"result": "BREAKER_RESET", "reset_by": reset_by}
+
 @router.get("/{sentinel_id}/status")
 async def get_sentinel_status(sentinel_id: str):
     """Fetches live status from the Sentinel proxy."""
@@ -163,14 +218,20 @@ async def get_sentinel_status(sentinel_id: str):
         raise HTTPException(status_code=404, detail="Sentinel not found")
     
     config = doc.to_dict()
-    sentinel_url = config.get("sentinel_url")
+    sentinel_url = config.get("sentinel_url", "")
     
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        try:
-            resp = await client.get(f"{sentinel_url}/_sentinel/status")
-            live_status = resp.json()
-        except Exception as e:
-            live_status = {"error": f"Sentinel unreachable at {sentinel_url}: {str(e)}"}
+    # For simulated sentinels, call internal status function directly
+    # instead of making an outbound HTTP request (which fails on cloud
+    # because sentinel_url is hardcoded to localhost from provisioning).
+    if "/sentinel-mock/" in sentinel_url:
+        live_status = await _get_simulated_status_internal(sentinel_id)
+    else:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            try:
+                resp = await client.get(f"{sentinel_url}/_sentinel/status")
+                live_status = resp.json()
+            except Exception as e:
+                live_status = {"error": f"Sentinel unreachable at {sentinel_url}: {str(e)}"}
     
     return {**config, "live_status": live_status}
 
@@ -211,11 +272,15 @@ async def reset_breaker(sentinel_id: str, reset_by: str):
     if not doc.exists:
         raise HTTPException(status_code=404, detail="Sentinel not found")
     config = doc.to_dict()
-    sentinel_url = config.get("sentinel_url")
+    sentinel_url = config.get("sentinel_url", "")
     
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.post(f"{sentinel_url}/_sentinel/reset?reset_by={reset_by}")
-        return resp.json()
+    # For simulated sentinels, call internal reset directly
+    if "/sentinel-mock/" in sentinel_url:
+        return await _reset_simulated_breaker_internal(sentinel_id, reset_by)
+    else:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.post(f"{sentinel_url}/_sentinel/reset?reset_by={reset_by}")
+            return resp.json()
 
 @router.delete("/{sentinel_id}")
 async def delete_sentinel(sentinel_id: str):
