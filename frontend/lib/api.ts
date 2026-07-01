@@ -514,6 +514,24 @@ export async function runShadowTest(auditId: string, page: number = 1, pageSize:
 }
 
 /**
+ * Fetch cached generative shadow testing results on a model-backed audit.
+ */
+export async function getShadowTestCached(auditId: string, page: number = 1, pageSize: number = 10) {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  const res = await fetch(`${API_BASE}/api/audits/${auditId}/shadow-test?${params}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(err.detail || `Failed to fetch cached shadow test (${res.status})`);
+  }
+
+  return res.json();
+}
+
+/**
  * Fetch (or generate on-demand) a narrative for a specific stakeholder type.
  * Narratives are lazy-loaded — generated only when the user opens the AI Narratives tab.
  */

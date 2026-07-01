@@ -39,14 +39,14 @@ export default function DashboardPage() {
   useEffect(() => {
     const handler = () => setTourForce(true);
     window.addEventListener('start-tour', handler);
-    
+
     // Auto-start check
     const hasCompleted = localStorage.getItem('vai-tour-completed');
     if (!hasCompleted) {
       // Delay slightly to let page load
       setTimeout(() => setTourForce(true), 1500);
     }
-    
+
     return () => window.removeEventListener('start-tour', handler);
   }, []);
   const [manifestoAnimate, setManifestoAnimate] = useState(false);
@@ -230,27 +230,27 @@ export default function DashboardPage() {
         {/* Top Section: Health Indicators & Secondary Stats */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div data-tour="fairness-score" className="h-full">
-          <HealthIndicatorCard
-            title="System Fairness"
-            value={avgScore}
-            suffix="/100"
-            status={fairnessStatus}
-            trend={fairnessTrend}
-            icon={ActivitySquare}
-            emphasizeCritical
-            className={`${softGateArrival ? 'dashboard-softgate-card dashboard-softgate-card-a' : ''}`}
-          />
+            <HealthIndicatorCard
+              title="System Fairness"
+              value={avgScore}
+              suffix="/100"
+              status={fairnessStatus}
+              trend={fairnessTrend}
+              icon={ActivitySquare}
+              emphasizeCritical
+              className={`${softGateArrival ? 'dashboard-softgate-card dashboard-softgate-card-a' : ''}`}
+            />
           </div>
 
           <div data-tour="proxy-alerts" className="h-full">
-          <HealthIndicatorCard
-            title="Active Proxy Alerts"
-            value={alertCount}
-            status={proxyStatus}
-            trend={proxyTrend}
-            icon={ShieldAlert}
-            className={`${softGateArrival ? 'dashboard-softgate-card dashboard-softgate-card-b' : ''}`}
-          />
+            <HealthIndicatorCard
+              title="Active Proxy Alerts"
+              value={alertCount}
+              status={proxyStatus}
+              trend={proxyTrend}
+              icon={ShieldAlert}
+              className={`${softGateArrival ? 'dashboard-softgate-card dashboard-softgate-card-b' : ''}`}
+            />
           </div>
 
           <div className="grid grid-rows-2 gap-4 h-full">
@@ -329,9 +329,8 @@ export default function DashboardPage() {
             </button>
 
             <div
-              className={`transition-all duration-500 ease-in-out overflow-hidden ${
-                compareOpen ? 'opacity-100 max-h-[800px] border-t p-5' : 'opacity-0 max-h-0 pointer-events-none'
-              }`}
+              className={`transition-all duration-500 ease-in-out overflow-hidden ${compareOpen ? 'opacity-100 max-h-[800px] border-t p-5' : 'opacity-0 max-h-0 pointer-events-none'
+                }`}
               style={{ borderColor: 'var(--border)' }}
             >
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
@@ -696,16 +695,16 @@ function HealthIndicatorCard({ title, value, suffix, status, trend, icon: Icon, 
         )}
 
         <div className="flex items-baseline gap-1 relative z-10">
-        <span
-          className="dashboard-number text-[42px] leading-none font-black tracking-tight"
-          style={{
-            color: fg,
-            textShadow: criticalFocus ? '0 0 8px color-mix(in srgb, var(--danger) 30%, transparent)' : 'none',
-          }}
-        >
-          {value}
-        </span>
-        {suffix && <span className="dashboard-number text-lg font-bold opacity-80" style={{ color: fg }}>{suffix}</span>}
+          <span
+            className="dashboard-number text-[42px] leading-none font-black tracking-tight"
+            style={{
+              color: fg,
+              textShadow: criticalFocus ? '0 0 8px color-mix(in srgb, var(--danger) 30%, transparent)' : 'none',
+            }}
+          >
+            {value}
+          </span>
+          {suffix && <span className="dashboard-number text-lg font-bold opacity-80" style={{ color: fg }}>{suffix}</span>}
         </div>
       </div>
 

@@ -29,7 +29,7 @@ def _get_causal_gemini_model():
         try:
             logger.info("[CAUSAL] Configuring google-generativeai with API key...")
             genai.configure(api_key=api_key)
-            return genai.GenerativeModel("gemini-2.5-flash")
+            return genai.GenerativeModel("gemini-2.0-flash")
         except Exception as e:
             logger.error(f"[CAUSAL] Failed configuring with API key: {e}")
             
@@ -76,16 +76,19 @@ async def get_causal_fairness(audit_id: str, force: bool = False):
 
     audit = doc.to_dict()
     
-    # Check Firestore cache
+    # Check Firestore cache in subcollection
     if not force:
-        cached = audit.get("causalFairness")
-        if cached:
-            try:
-                parsed = json.loads(cached) if isinstance(cached, str) else cached
-                if isinstance(parsed, dict) and "per_attribute" in parsed:
-                    return parsed
-            except Exception:
-                pass
+        try:
+            cache_doc = db.collection("audits").document(audit_id).collection("causal_cache").document("results").get()
+            if cache_doc.exists:
+                cached_data = cache_doc.to_dict()
+                cached = cached_data.get("results")
+                if cached:
+                    parsed = json.loads(cached) if isinstance(cached, str) else cached
+                    if isinstance(parsed, dict) and "per_attribute" in parsed:
+                        return parsed
+        except Exception as e:
+            logger.warning(f"Error reading causal cache: {e}")
 
     # Check that audit is completed
     if audit.get("status") != "COMPLETE":
@@ -116,10 +119,18 @@ async def get_causal_fairness(audit_id: str, force: bool = False):
             gemini_model=gemini,
         )
         
-        # Save cache back to Firestore (stored as JSON string to match schema fields pattern)
-        db.collection("audits").document(audit_id).update({
-            "causalFairness": json.dumps(causal_res)
-        })
+        # Save cache back to Firestore subcollection
+        try:
+            db.collection("audits").document(audit_id).collection("causal_cache").document("results").set({
+                "results": json.dumps(causal_res)
+            })
+            # Clean up the field on the main audit doc if present
+            from google.cloud.firestore_v1 import DELETE_FIELD
+            db.collection("audits").document(audit_id).update({
+                "causalFairness": DELETE_FIELD
+            })
+        except Exception as e:
+            logger.warning(f"Error saving causal cache: {e}")
         
         return causal_res
 

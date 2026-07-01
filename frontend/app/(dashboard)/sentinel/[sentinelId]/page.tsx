@@ -114,15 +114,15 @@ function DiGauge({ label, diValue, threshold, privilegedRate, unprivilegedRate, 
 
   return (
     <div className="card flex flex-col items-center justify-between text-center min-h-[300px]">
-      <div className="w-full flex justify-between items-start mb-2 border-b border-gray-800 pb-2">
-        <span className="text-sm font-semibold text-gray-300 capitalize">{label}</span>
-        <span className="text-xs text-gray-500 font-mono">threshold: {threshold}</span>
+      <div className="w-full flex justify-between items-start mb-2 pb-2" style={{ borderBottom: '1px solid var(--border)' }}>
+        <span className="text-sm font-semibold capitalize" style={{ color: 'var(--fg)' }}>{label}</span>
+        <span className="text-xs font-mono" style={{ color: 'var(--placeholder)' }}>threshold: {threshold}</span>
       </div>
 
       {insufficient ? (
         <div className="flex-1 flex flex-col items-center justify-center p-4">
-          <HelpCircle size={32} className="text-gray-600 mb-2" />
-          <div className="text-xs text-gray-400 max-w-[180px] leading-relaxed">
+          <HelpCircle size={32} style={{ color: 'var(--placeholder)' }} className="mb-2" />
+          <div className="text-xs max-w-[180px] leading-relaxed" style={{ color: 'var(--muted)' }}>
             {reason || 'Awaiting decisions to compute Disparate Impact...'}
           </div>
         </div>
@@ -133,7 +133,7 @@ function DiGauge({ label, diValue, threshold, privilegedRate, unprivilegedRate, 
             <path
               d="M 10,70 A 50,50 0 0,1 110,70"
               fill="none"
-              stroke="#1e293b"
+              stroke="var(--surface-3)"
               strokeWidth="12"
               strokeLinecap="round"
             />
@@ -141,22 +141,23 @@ function DiGauge({ label, diValue, threshold, privilegedRate, unprivilegedRate, 
             <path
               d="M 10,70 A 50,50 0 0,1 110,70"
               fill="none"
-              stroke="#10b981"
+              stroke="var(--success)"
               strokeWidth="12"
               strokeLinecap="round"
               strokeDasharray="157"
               strokeDashoffset={157 * (1 - percent)}
               className="transition-all duration-500 ease-out"
+              opacity="0.7"
             />
             {/* Red (Danger) threshold arc overlay */}
             <path
               d={`M 10,70 A 50,50 0 0,1 ${tx},${ty}`}
               fill="none"
-              stroke="#ef4444"
+              stroke="var(--danger)"
               strokeWidth="12"
               strokeLinecap="round"
               strokeDasharray="157"
-              className="opacity-80"
+              opacity="0.7"
             />
             {/* Threshold Line Mark */}
             <line
@@ -164,38 +165,38 @@ function DiGauge({ label, diValue, threshold, privilegedRate, unprivilegedRate, 
               y1="70"
               x2={tx}
               y2={ty}
-              stroke="#ffffff"
+              stroke="var(--fg)"
               strokeWidth="1.5"
               strokeDasharray="2,2"
             />
             {/* Needle */}
             <g transform={`rotate(${angle} 60 70)`} className="transition-all duration-500 ease-out">
               <polygon points="58,70 60,20 62,70" fill="var(--primary)" />
-              <circle cx="60" cy="70" r="5" fill="var(--primary-dark)" stroke="#ffffff" strokeWidth="1" />
+              <circle cx="60" cy="70" r="5" fill="var(--primary)" stroke="var(--fg)" strokeWidth="1" />
             </g>
           </svg>
           <div className="absolute bottom-1 flex flex-col items-center justify-center">
             <span className="text-2xl font-bold font-mono tracking-tight" style={{ color: diValue < threshold ? 'var(--danger)' : 'var(--success)' }}>
               {diValue.toFixed(3)}
             </span>
-            <span className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Live DI Ratio</span>
+            <span className="text-[10px] uppercase tracking-widest mt-0.5" style={{ color: 'var(--placeholder)' }}>Live DI Ratio</span>
           </div>
         </div>
       )}
 
       {!insufficient && (
-        <div className="w-full grid grid-cols-2 gap-2 text-left bg-gray-900/50 p-2.5 rounded border border-gray-800 text-[11px] mt-4">
-          <div className="space-y-1 border-r border-gray-800 pr-2">
-            <div className="text-gray-500 font-medium">Privileged group</div>
-            <div className="font-mono font-semibold text-emerald-400">{(privilegedRate * 100).toFixed(1)}%</div>
-            <div className="text-[9px] text-gray-600 font-mono">{privCount} decisions</div>
+        <div className="w-full grid grid-cols-2 gap-2 text-left p-2.5 rounded text-[11px] mt-4" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+          <div className="space-y-1 pr-2" style={{ borderRight: '1px solid var(--border)' }}>
+            <div className="font-medium" style={{ color: 'var(--muted)' }}>Privileged group</div>
+            <div className="font-mono font-semibold" style={{ color: 'var(--success)' }}>{(privilegedRate * 100).toFixed(1)}%</div>
+            <div className="text-[9px] font-mono" style={{ color: 'var(--placeholder)' }}>{privCount} decisions</div>
           </div>
           <div className="space-y-1 pl-2">
-            <div className="text-gray-500 font-medium">Unprivileged group</div>
+            <div className="font-medium" style={{ color: 'var(--muted)' }}>Unprivileged group</div>
             <div className="font-mono font-semibold" style={{ color: diValue < threshold ? 'var(--danger)' : 'var(--success)' }}>
               {(unprivilegedRate * 100).toFixed(1)}%
             </div>
-            <div className="text-[9px] text-gray-600 font-mono">{unprivCount} decisions</div>
+            <div className="text-[9px] font-mono" style={{ color: 'var(--placeholder)' }}>{unprivCount} decisions</div>
           </div>
         </div>
       )}
@@ -325,7 +326,7 @@ export default function SentinelLiveMonitor() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-gray-400 min-h-[500px]">
+      <div className="flex flex-col items-center justify-center p-12 min-h-[500px]" style={{ color: 'var(--muted)' }}>
         <Loader2 className="animate-spin mr-2" size={24} />
         Connecting to Sentinel Proxy...
       </div>
@@ -338,7 +339,7 @@ export default function SentinelLiveMonitor() {
         <button onClick={() => router.push('/sentinel')} className="btn btn-secondary inline-flex items-center gap-1">
           <ArrowLeft size={16} /> Back to List
         </button>
-        <div className="card border-rose-500/30 bg-rose-500/10 text-rose-400 p-4">
+        <div className="card p-4" style={{ borderColor: 'color-mix(in srgb, var(--danger) 30%, var(--border))', background: 'var(--danger-dim)', color: 'var(--danger)' }}>
           <h3 className="font-bold mb-1">Connection Error</h3>
           <p className="text-sm">{error}</p>
         </div>
@@ -363,23 +364,24 @@ export default function SentinelLiveMonitor() {
 
       <div className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         {/* Header Block */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-800 pb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => router.push('/sentinel')}
-                className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 transition"
+                className="p-1.5 rounded-lg transition"
+                style={{ background: 'var(--surface-2)', color: 'var(--muted)' }}
               >
                 <ArrowLeft size={16} />
               </button>
-              <h1 className="text-xl font-bold text-gray-100">{sentinel?.model_name} Monitor</h1>
+              <h1 className="text-xl font-bold" style={{ color: 'var(--fg)' }}>{sentinel?.model_name} Monitor</h1>
             </div>
-            <p className="text-xs text-gray-500 font-mono pl-8">{sentinel?.sentinel_id} • Gateway: {sentinel?.sentinel_url}</p>
+            <p className="text-xs font-mono pl-8" style={{ color: 'var(--placeholder)' }}>{sentinel?.sentinel_id} • Gateway: {sentinel?.sentinel_url}</p>
           </div>
 
-          <div className="flex items-center gap-3 self-end sm:self-auto text-xs text-gray-400">
+          <div className="flex items-center gap-3 self-end sm:self-auto text-xs" style={{ color: 'var(--muted)' }}>
             <span className="flex items-center gap-1.5 font-mono">
-              <RefreshCw size={12} className="animate-spin text-primary" /> Auto-refreshing in {refreshCountdown}s
+              <RefreshCw size={12} className="animate-spin" style={{ color: 'var(--primary)' }} /> Auto-refreshing in {refreshCountdown}s
             </span>
             <button
               onClick={() => fetchSentinelData(true)}
@@ -410,37 +412,37 @@ export default function SentinelLiveMonitor() {
           {/* Column 1: Breaker Status Card */}
           <div className="space-y-6">
             <div className="card space-y-4">
-              <h3 className="card-title text-sm text-gray-400">Circuit Breaker State</h3>
+              <h3 className="card-title text-sm" style={{ color: 'var(--muted)' }}>Circuit Breaker State</h3>
 
-              <div className="flex flex-col items-center justify-center p-6 bg-gray-950/40 rounded border border-gray-850 text-center space-y-3">
+              <div className="flex flex-col items-center justify-center p-6 rounded text-center space-y-3" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                 {liveState === 'CLOSED' ? (
                   <>
-                    <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--success-dim)', border: '1px solid color-mix(in srgb, var(--success) 30%, transparent)', color: 'var(--success)', boxShadow: '0 0 15px color-mix(in srgb, var(--success) 10%, transparent)' }}>
                       <ShieldCheck size={36} />
                     </div>
                     <div>
-                      <div className="text-lg font-bold text-emerald-400">Breaker CLOSED</div>
-                      <div className="text-[10px] text-gray-500 uppercase tracking-wider mt-0.5">Operating Normally</div>
+                      <div className="text-lg font-bold" style={{ color: 'var(--success)' }}>Breaker CLOSED</div>
+                      <div className="text-[10px] uppercase tracking-wider mt-0.5" style={{ color: 'var(--placeholder)' }}>Operating Normally</div>
                     </div>
                   </>
                 ) : liveState === 'HALF_OPEN' ? (
                   <>
-                    <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 animate-pulse">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center animate-pulse" style={{ background: 'var(--warning-dim)', border: '1px solid color-mix(in srgb, var(--warning) 30%, transparent)', color: 'var(--warning)' }}>
                       <Clock size={36} />
                     </div>
                     <div>
-                      <div className="text-lg font-bold text-amber-400">Breaker HALF-OPEN</div>
-                      <div className="text-[10px] text-gray-500 uppercase tracking-wider mt-0.5">Cooldown Period</div>
+                      <div className="text-lg font-bold" style={{ color: 'var(--warning)' }}>Breaker HALF-OPEN</div>
+                      <div className="text-[10px] uppercase tracking-wider mt-0.5" style={{ color: 'var(--placeholder)' }}>Cooldown Period</div>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 animate-bounce shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center animate-bounce" style={{ background: 'var(--danger-dim)', border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)', color: 'var(--danger)', boxShadow: '0 0 20px color-mix(in srgb, var(--danger) 20%, transparent)' }}>
                       <ShieldAlert size={36} />
                     </div>
                     <div>
-                      <div className="text-lg font-bold text-rose-400">Breaker TRIPPED</div>
-                      <div className="text-[10px] text-gray-500 uppercase tracking-wider mt-0.5">Bias Interception Active</div>
+                      <div className="text-lg font-bold" style={{ color: 'var(--danger)' }}>Breaker TRIPPED</div>
+                      <div className="text-[10px] uppercase tracking-wider mt-0.5" style={{ color: 'var(--placeholder)' }}>Bias Interception Active</div>
                     </div>
                   </>
                 )}
@@ -448,18 +450,18 @@ export default function SentinelLiveMonitor() {
 
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Decisions Intercepted:</span>
-                  <span className="font-mono font-bold text-rose-400">{interceptedCount}</span>
+                  <span className="font-medium" style={{ color: 'var(--muted)' }}>Decisions Intercepted:</span>
+                  <span className="font-mono font-bold" style={{ color: 'var(--danger)' }}>{interceptedCount}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Window Cache Size:</span>
-                  <span className="font-mono font-bold text-gray-300">
+                  <span className="font-medium" style={{ color: 'var(--muted)' }}>Window Cache Size:</span>
+                  <span className="font-mono font-bold" style={{ color: 'var(--fg)' }}>
                     {sentinel?.live_status?.window_size || 0} / {sentinel?.config.rolling_window_size}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Breaker Mode:</span>
-                  <span className="capitalize font-semibold text-primary">{sentinel?.config.breaker_mode}</span>
+                  <span className="font-medium" style={{ color: 'var(--muted)' }}>Breaker Mode:</span>
+                  <span className="capitalize font-semibold" style={{ color: 'var(--primary)' }}>{sentinel?.config.breaker_mode}</span>
                 </div>
               </div>
 
@@ -476,27 +478,27 @@ export default function SentinelLiveMonitor() {
 
             {/* Trip Details Card */}
             {liveState === 'OPEN' && tripReason && (
-              <div className="card border-rose-500/20 bg-rose-500/5 space-y-3 animate-fade-in">
-                <div className="flex items-center gap-1.5 text-rose-400 text-xs font-bold uppercase tracking-wider">
+              <div className="card space-y-3 animate-fade-in" style={{ borderColor: 'color-mix(in srgb, var(--danger) 20%, var(--border))', background: 'var(--danger-dim)' }}>
+                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--danger)' }}>
                   <AlertCircle size={14} /> Trip Analysis
                 </div>
                 <div className="space-y-1.5 text-xs">
-                  <div className="text-gray-400">
+                  <div style={{ color: 'var(--muted)' }}>
                     Flagged Attribute:{' '}
-                    <span className="font-mono text-gray-200 capitalize">{tripReason.protected_attribute}</span>
+                    <span className="font-mono capitalize" style={{ color: 'var(--fg)' }}>{tripReason.protected_attribute}</span>
                   </div>
-                  <div className="text-gray-400">
+                  <div style={{ color: 'var(--muted)' }}>
                     Live DI Ratio at Trip:{' '}
-                    <span className="font-mono font-bold text-rose-400">{(tripReason.live_di_ratio ?? 0).toFixed(3)}</span>
+                    <span className="font-mono font-bold" style={{ color: 'var(--danger)' }}>{(tripReason.live_di_ratio ?? 0).toFixed(3)}</span>
                   </div>
-                  <div className="text-gray-400">
+                  <div style={{ color: 'var(--muted)' }}>
                     Trip Timestamp:{' '}
-                    <span className="font-mono text-gray-300">
+                    <span className="font-mono" style={{ color: 'var(--fg)' }}>
                       {sentinel?.live_status?.breaker_state?.tripped_at ? new Date(sentinel.live_status.breaker_state.tripped_at).toLocaleString() : 'N/A'}
                     </span>
                   </div>
                 </div>
-                <div className="p-2.5 bg-gray-950/60 rounded border border-gray-850 text-[11px] text-gray-300 leading-relaxed font-sans mt-2 whitespace-pre-wrap">
+                <div className="p-2.5 rounded text-[11px] leading-relaxed font-sans mt-2 whitespace-pre-wrap" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--fg)' }}>
                   {tripReason.message}
                 </div>
               </div>
@@ -526,27 +528,30 @@ export default function SentinelLiveMonitor() {
 
           {/* Column 3: Live Decision Feed */}
           <div className="card flex flex-col min-h-[350px]">
-            <h3 className="card-title text-sm text-gray-400 mb-3 border-b border-gray-800 pb-2">Rolling Decision Feed</h3>
+            <h3 className="card-title text-sm mb-3 pb-2" style={{ color: 'var(--muted)', borderBottom: '1px solid var(--border)' }}>Rolling Decision Feed</h3>
 
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[360px]">
               {decisions.length === 0 ? (
-                <div className="text-xs text-gray-500 text-center py-12">No decisions processed yet.</div>
+                <div className="text-xs text-center py-12" style={{ color: 'var(--placeholder)' }}>No decisions processed yet.</div>
               ) : (
                 decisions.map((d, index) => {
                   const dateStr = new Date(d.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                   return (
                     <div
                       key={d.request_id + index}
-                      className={`p-2.5 rounded border text-[11px] flex flex-col justify-between gap-1 transition ${
-                        d.was_intercepted
-                          ? 'bg-rose-500/10 border-rose-500/20 text-rose-200'
-                          : 'bg-gray-900/30 border-gray-850 hover:border-gray-700 text-gray-300'
-                      }`}
+                      className="p-2.5 rounded text-[11px] flex flex-col justify-between gap-1 transition"
+                      style={{
+                        background: d.was_intercepted ? 'var(--danger-dim)' : 'var(--surface-2)',
+                        border: d.was_intercepted
+                          ? '1px solid color-mix(in srgb, var(--danger) 20%, var(--border))'
+                          : '1px solid var(--border)',
+                        color: d.was_intercepted ? 'var(--danger)' : 'var(--fg)',
+                      }}
                     >
                       <div className="flex justify-between items-start">
-                        <span className="font-mono text-gray-500">{dateStr}</span>
+                        <span className="font-mono" style={{ color: 'var(--placeholder)' }}>{dateStr}</span>
                         {d.was_intercepted && (
-                          <span className="px-1.5 py-0.5 rounded bg-rose-500/25 border border-rose-500/40 text-[9px] font-bold text-rose-300 uppercase tracking-widest">
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest" style={{ background: 'color-mix(in srgb, var(--danger) 25%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 40%, transparent)', color: 'var(--danger)' }}>
                             🛑 Intercepted
                           </span>
                         )}
@@ -555,14 +560,14 @@ export default function SentinelLiveMonitor() {
                       <div className="grid grid-cols-2 gap-1 my-1">
                         {Object.entries(d.protected_attribute_values).map(([k, v]) => (
                           <div key={k} className="text-[10px]">
-                            <span className="text-gray-500 capitalize">{k}:</span> <span className="font-medium text-gray-300">{v}</span>
+                            <span className="capitalize" style={{ color: 'var(--muted)' }}>{k}:</span> <span className="font-medium" style={{ color: 'var(--fg)' }}>{v}</span>
                           </div>
                         ))}
                       </div>
 
-                      <div className="flex justify-between items-center text-[10px] border-t border-gray-800/40 pt-1 mt-0.5">
-                        <span className="text-gray-500">Output Prediction:</span>
-                        <span className={`font-semibold font-mono ${d.is_positive ? 'text-emerald-400' : 'text-gray-400'}`}>
+                      <div className="flex justify-between items-center text-[10px] pt-1 mt-0.5" style={{ borderTop: '1px solid color-mix(in srgb, var(--border) 50%, transparent)' }}>
+                        <span style={{ color: 'var(--muted)' }}>Output Prediction:</span>
+                        <span className="font-semibold font-mono" style={{ color: d.is_positive ? 'var(--success)' : 'var(--muted)' }}>
                           {d.raw_prediction}
                         </span>
                       </div>
@@ -574,40 +579,50 @@ export default function SentinelLiveMonitor() {
           </div>
         </div>
 
-        {/* Bottom Section: Manual Review Queue */}
+        {/* Bottom Section: Manual Review Queue - Scrollable */}
         <div className="card space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-800 pb-3">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
             <div>
               <h3 className="card-title">Sentinel Manual Review Queue</h3>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
                 Intercepted negative applications waiting for manual reviewer override.
               </p>
             </div>
 
-            <div className="flex gap-1.5 bg-gray-950 p-1 rounded border border-gray-850 text-xs">
+            <div className="flex gap-1.5 p-1 rounded text-xs" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
               <button
                 onClick={() => setActiveReviewTab('PENDING')}
-                className={`px-3 py-1 rounded transition font-medium ${activeReviewTab === 'PENDING' ? 'bg-gray-850 text-gray-100' : 'text-gray-400 hover:text-gray-200'}`}
+                className="px-3 py-1 rounded transition font-medium"
+                style={{
+                  background: activeReviewTab === 'PENDING' ? 'var(--surface)' : 'transparent',
+                  color: activeReviewTab === 'PENDING' ? 'var(--fg)' : 'var(--muted)',
+                  border: activeReviewTab === 'PENDING' ? '1px solid var(--border)' : '1px solid transparent',
+                }}
               >
                 Pending Overrides
               </button>
               <button
                 onClick={() => setActiveReviewTab('REVIEWED')}
-                className={`px-3 py-1 rounded transition font-medium ${activeReviewTab === 'REVIEWED' ? 'bg-gray-850 text-gray-100' : 'text-gray-400 hover:text-gray-200'}`}
+                className="px-3 py-1 rounded transition font-medium"
+                style={{
+                  background: activeReviewTab === 'REVIEWED' ? 'var(--surface)' : 'transparent',
+                  color: activeReviewTab === 'REVIEWED' ? 'var(--fg)' : 'var(--muted)',
+                  border: activeReviewTab === 'REVIEWED' ? '1px solid var(--border)' : '1px solid transparent',
+                }}
               >
                 Completed Reviews
               </button>
             </div>
           </div>
 
-          <div className="table-wrap">
+          <div className="table-wrap" style={{ maxHeight: '420px', overflowY: 'auto' }}>
             {reviews.length === 0 ? (
-              <div className="text-xs text-gray-500 text-center py-12">
+              <div className="text-xs text-center py-12" style={{ color: 'var(--placeholder)' }}>
                 No cases found in this section.
               </div>
             ) : (
               <table className="text-xs">
-                <thead>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                   <tr>
                     <th>Enqueued Time</th>
                     <th>Demographics</th>
@@ -624,14 +639,14 @@ export default function SentinelLiveMonitor() {
                   {reviews.map((item) => {
                     const timeStr = new Date(item.enqueued_at).toLocaleString();
                     return (
-                      <tr key={item.review_id} className="hover:bg-gray-900/10">
-                        <td className="font-mono text-gray-400 max-w-[130px]">{timeStr}</td>
+                      <tr key={item.review_id}>
+                        <td className="font-mono max-w-[130px]" style={{ color: 'var(--muted)' }}>{timeStr}</td>
                         <td>
                           <div className="flex flex-col gap-0.5">
                             {Object.entries(item.protected_attribute_values).map(([k, v]) => (
                               <span key={k}>
-                                <span className="text-gray-500 capitalize">{k}:</span>{' '}
-                                <span className="font-medium text-gray-200">{v}</span>
+                                <span className="capitalize" style={{ color: 'var(--muted)' }}>{k}:</span>{' '}
+                                <span className="font-medium" style={{ color: 'var(--fg)' }}>{v}</span>
                               </span>
                             ))}
                           </div>
@@ -639,12 +654,12 @@ export default function SentinelLiveMonitor() {
                         <td>
                           <div className="space-y-0.5">
                             <div>
-                              <span className="text-gray-500">Prediction:</span>{' '}
-                              <span className="font-mono font-semibold text-rose-400">
+                              <span style={{ color: 'var(--muted)' }}>Prediction:</span>{' '}
+                              <span className="font-mono font-semibold" style={{ color: 'var(--danger)' }}>
                                 {item.model_raw_response?.[sentinel?.config.prediction_field || 'prediction'] || 'rejected'}
                               </span>
                             </div>
-                            <div className="text-[10px] text-gray-500 font-mono scale-95 origin-left">
+                            <div className="text-[10px] font-mono scale-95 origin-left" style={{ color: 'var(--placeholder)' }}>
                               ID: {item.review_id.slice(0, 8)}...
                             </div>
                           </div>
@@ -664,7 +679,7 @@ export default function SentinelLiveMonitor() {
                               }
                             />
                           ) : (
-                            <div className="text-gray-400 italic font-sans max-w-[200px] break-words">
+                            <div className="italic font-sans max-w-[200px] break-words" style={{ color: 'var(--muted)' }}>
                               {item.reviewer_notes || '—'}
                             </div>
                           )}
@@ -675,7 +690,8 @@ export default function SentinelLiveMonitor() {
                               <button
                                 onClick={() => handleResolveReview(item.review_id, 'APPROVED')}
                                 disabled={resolvingId !== null}
-                                className="btn btn-sm bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/20 inline-flex items-center gap-1"
+                                className="btn btn-sm inline-flex items-center gap-1"
+                                style={{ background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid color-mix(in srgb, var(--success) 20%, transparent)' }}
                               >
                                 {resolvingId === item.review_id ? (
                                   <Loader2 size={12} className="animate-spin" />
@@ -687,7 +703,8 @@ export default function SentinelLiveMonitor() {
                               <button
                                 onClick={() => handleResolveReview(item.review_id, 'REJECTED')}
                                 disabled={resolvingId !== null}
-                                className="btn btn-sm bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/20 inline-flex items-center gap-1"
+                                className="btn btn-sm inline-flex items-center gap-1"
+                                style={{ background: 'var(--danger-dim)', color: 'var(--danger)', border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)' }}
                               >
                                 {resolvingId === item.review_id ? (
                                   <Loader2 size={12} className="animate-spin" />
@@ -704,14 +721,13 @@ export default function SentinelLiveMonitor() {
                               <div>
                                 Decision:{' '}
                                 <span
-                                  className={`font-semibold ${
-                                    item.final_decision === 'APPROVED' ? 'text-emerald-400' : 'text-rose-400'
-                                  }`}
+                                  className="font-semibold"
+                                  style={{ color: item.final_decision === 'APPROVED' ? 'var(--success)' : 'var(--danger)' }}
                                 >
                                   {item.final_decision}
                                 </span>
                               </div>
-                              <div className="text-[10px] text-gray-500">
+                              <div className="text-[10px]" style={{ color: 'var(--placeholder)' }}>
                                 By {item.reviewed_by} on{' '}
                                 {item.reviewed_at ? new Date(item.reviewed_at).toLocaleDateString() : '—'}
                               </div>

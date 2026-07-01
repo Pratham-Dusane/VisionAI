@@ -168,7 +168,7 @@ CRITICAL INSTRUCTION: You MUST complete your entire response in under 300 words.
             import google.generativeai as genai
             print(f"[NARRATIVE] Trying GEMINI_API_KEY for {stakeholder_type}...")
             genai.configure(api_key=main_key)
-            model = genai.GenerativeModel("gemini-2.5-flash")
+            model = genai.GenerativeModel("gemini-2.0-flash")
             response = await model.generate_content_async(
                 [prompt],
                 generation_config=genai.types.GenerationConfig(
@@ -186,7 +186,7 @@ CRITICAL INSTRUCTION: You MUST complete your entire response in under 300 words.
             import google.generativeai as genai
             print(f"[NARRATIVE] Trying GEMINI_BIAS_API_KEY for {stakeholder_type}...")
             genai.configure(api_key=bias_key)
-            model = genai.GenerativeModel("gemini-2.5-flash")
+            model = genai.GenerativeModel("gemini-2.0-flash")
             response = await model.generate_content_async(
                 [prompt],
                 generation_config=genai.types.GenerationConfig(

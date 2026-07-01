@@ -317,11 +317,27 @@ textarea:focus-visible,
   overflow-x: auto;
 }
 
-.code-block-pro .kw { color: var(--code-kw); font-weight: 600; }
-.code-block-pro .fn { color: var(--code-fn); }
-.code-block-pro .str { color: var(--code-str); }
-.code-block-pro .cmt { color: var(--code-cmt); font-style: italic; }
-.code-block-pro .op { color: var(--code-op); }
+.code-block-pro .kw {
+  color: var(--code-kw);
+  font-weight: 600;
+}
+
+.code-block-pro .fn {
+  color: var(--code-fn);
+}
+
+.code-block-pro .str {
+  color: var(--code-str);
+}
+
+.code-block-pro .cmt {
+  color: var(--code-cmt);
+  font-style: italic;
+}
+
+.code-block-pro .op {
+  color: var(--code-op);
+}
 
 /* ---- What-If Ghost Bars ---- */
 .whatif-contrib-ghost {
@@ -1227,7 +1243,7 @@ input[type="range"]::-webkit-slider-thumb {
 .model-compare-hero-text {
   margin: 0;
   /* Tighten letter spacing for a modern, structural look */
-  letter-spacing: -0.02em; 
+  letter-spacing: -0.02em;
   /* Slate-800 to Blue-600 */
   background: linear-gradient(135deg, #1e293b 0%, #2563eb 100%);
   -webkit-background-clip: text;
@@ -2164,18 +2180,37 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 @keyframes login-aurora {
-  from { transform: rotate(0deg) scale(1); }
-  to { transform: rotate(12deg) scale(1.08); }
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+
+  to {
+    transform: rotate(12deg) scale(1.08);
+  }
 }
 
 @keyframes login-scan {
-  0%, 100% { transform: translateX(-70%); opacity: 0; }
-  35%, 70% { opacity: 1; }
-  100% { transform: translateX(70%); }
+
+  0%,
+  100% {
+    transform: translateX(-70%);
+    opacity: 0;
+  }
+
+  35%,
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(70%);
+  }
 }
 
 @keyframes login-radar-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 980px) {
@@ -4151,8 +4186,8 @@ input[type="range"]::-webkit-slider-thumb {
   transform: translateX(-120%);
   opacity: 0;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.25s ease,
-              width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity 0.25s ease,
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-aside.sidebar-mobile-open {
@@ -4191,18 +4226,21 @@ input[type="range"]::-webkit-slider-thumb {
 /* ---- Main content area ---- */
 .dashboard-main {
   grid-column: 2;
-  min-width: 0; /* prevent blowout */
+  min-width: 0;
+  /* prevent blowout */
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   transition: none;
   position: relative;
-  z-index: 41; /* above left sidebar (z:40) so tooltips in content paint on top */
+  z-index: 41;
+  /* above left sidebar (z:40) so tooltips in content paint on top */
 }
 
 @media (max-width: 1023px) {
   .dashboard-main {
-    grid-column: 1 / -1; /* Take full width on mobile since sidebar is fixed */
+    grid-column: 1 / -1;
+    /* Take full width on mobile since sidebar is fixed */
   }
 }
 
@@ -4246,7 +4284,7 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--surface);
   border-left: 1px solid var(--border);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
@@ -4691,7 +4729,9 @@ input[type="range"]::-webkit-slider-thumb {
 /* ========== Quantization Profiler ========== */
 
 @keyframes animate-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-spin {
@@ -4872,11 +4912,25 @@ input[type="range"]::-webkit-slider-thumb {
   flex-shrink: 0;
 }
 
-.severity-dot.critical { background-color: var(--danger); }
-.severity-dot.high { background-color: var(--accent); }
-.severity-dot.medium { background-color: var(--accent); }
-.severity-dot.low { background-color: var(--primary); }
-.severity-dot.pass { background-color: var(--success); }
+.severity-dot.critical {
+  background-color: var(--danger);
+}
+
+.severity-dot.high {
+  background-color: var(--accent);
+}
+
+.severity-dot.medium {
+  background-color: var(--accent);
+}
+
+.severity-dot.low {
+  background-color: var(--primary);
+}
+
+.severity-dot.pass {
+  background-color: var(--success);
+}
 
 .detail-pane {
   background: var(--surface);
@@ -4975,6 +5029,7 @@ input[type="range"]::-webkit-slider-thumb {
   color: #8b0000 !important;
   border: 1px solid rgba(139, 0, 0, 0.3) !important;
 }
+
 [data-theme="dark"] .badge-amplified {
   background-color: rgba(255, 65, 108, 0.15) !important;
   color: #ff6b8b !important;
@@ -4986,6 +5041,7 @@ input[type="range"]::-webkit-slider-thumb {
   color: var(--success) !important;
   border: 1px solid color-mix(in srgb, var(--success) 30%, transparent) !important;
 }
+
 /* Light polish pass: calmer auth + grey soft gate */
 .login-container {
   align-items: center;

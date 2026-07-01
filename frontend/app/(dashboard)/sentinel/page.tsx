@@ -175,20 +175,20 @@ export default function SentinelListPage() {
     switch (status) {
       case 'ACTIVE':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{ background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid color-mix(in srgb, var(--success) 20%, transparent)' }}>
             <ShieldCheck size={12} /> Active
           </span>
         );
       case 'PROVISIONING':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold animate-pulse" style={{ background: 'var(--warning-dim)', color: 'var(--warning)', border: '1px solid color-mix(in srgb, var(--warning) 20%, transparent)' }}>
             <Loader2 size={12} className="animate-spin" /> Provisioning
           </span>
         );
       case 'FAILED':
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{ background: 'var(--danger-dim)', color: 'var(--danger)', border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)' }}>
             <ShieldAlert size={12} /> Failed
           </span>
         );
@@ -208,7 +208,7 @@ export default function SentinelListPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">VisionAI Sentinel Proxy</h1>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm" style={{ color: 'var(--muted)' }}>
               Inference-time active intervention and agentic circuit breakers for production model endpoints.
             </p>
           </div>
@@ -227,15 +227,15 @@ export default function SentinelListPage() {
         )}
 
         {loading ? (
-          <div className="card flex items-center justify-center p-12 text-gray-400">
+          <div className="card flex items-center justify-center p-12" style={{ color: 'var(--muted)' }}>
             <Loader2 className="animate-spin mr-2" size={24} />
             Loading Sentinel deployments...
           </div>
         ) : sentinels.length === 0 ? (
-          <div className="card p-12 text-center flex flex-col items-center justify-center border-dashed border-gray-700">
-            <Shield size={48} className="text-gray-500 mb-4" />
+          <div className="card p-12 text-center flex flex-col items-center justify-center" style={{ borderStyle: 'dashed', borderColor: 'var(--border)' }}>
+            <Shield size={48} className="mb-4" style={{ color: 'var(--muted)' }} />
             <h3 className="text-lg font-medium mb-1">No Sentinel Proxies Deployed</h3>
-            <p className="text-sm text-gray-400 max-w-md mb-6">
+            <p className="text-sm max-w-md mb-6" style={{ color: 'var(--muted)' }}>
               Sentinel intercepts your production model API calls, evaluates real-time fairness metrics using a sliding window, and intervenes if bias threshold is breached.
             </p>
             <button
@@ -248,51 +248,52 @@ export default function SentinelListPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sentinels.map((sentinel) => (
-              <div key={sentinel.sentinel_id} className="card flex flex-col justify-between hover:border-gray-600 transition-all">
+              <div key={sentinel.sentinel_id} className="card flex flex-col justify-between transition-all">
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="font-bold text-lg text-gray-100">{sentinel.model_name}</h3>
-                      <p className="text-xs text-gray-500 font-mono mt-0.5">{sentinel.sentinel_id}</p>
+                      <h3 className="font-bold text-lg" style={{ color: 'var(--fg)' }}>{sentinel.model_name}</h3>
+                      <p className="text-xs font-mono mt-0.5" style={{ color: 'var(--placeholder)' }}>{sentinel.sentinel_id}</p>
                     </div>
                     {getStatusBadge(sentinel.status)}
                   </div>
 
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Target Endpoint:</span>
-                      <span className="text-gray-300 font-mono" title={sentinel.target_endpoint}>
+                      <span style={{ color: 'var(--muted)' }}>Target Endpoint:</span>
+                      <span className="font-mono" style={{ color: 'var(--fg)' }} title={sentinel.target_endpoint}>
                         {maskUrl(sentinel.target_endpoint)}
                       </span>
                     </div>
                     {sentinel.sentinel_url && (
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Proxy Gateway:</span>
-                        <span className="text-primary font-mono select-all flex items-center gap-1">
+                        <span style={{ color: 'var(--muted)' }}>Proxy Gateway:</span>
+                        <span className="font-mono select-all flex items-center gap-1" style={{ color: 'var(--primary)' }}>
                           {maskUrl(sentinel.sentinel_url)}
                         </span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Protected Attributes:</span>
-                      <span className="text-gray-300 font-medium">
+                      <span style={{ color: 'var(--muted)' }}>Protected Attributes:</span>
+                      <span className="font-medium" style={{ color: 'var(--fg)' }}>
                         {sentinel.config.protected_attributes.join(', ')}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">DI Threshold / Mode:</span>
-                      <span className="text-gray-300 font-medium">
+                      <span style={{ color: 'var(--muted)' }}>DI Threshold / Mode:</span>
+                      <span className="font-medium" style={{ color: 'var(--fg)' }}>
                         {sentinel.config.di_threshold} ({sentinel.config.breaker_mode})
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-gray-800 flex justify-end gap-2">
+                <div className="mt-6 pt-4 flex justify-end gap-2" style={{ borderTop: '1px solid var(--border)' }}>
                   <button
                     onClick={() => handleDelete(sentinel.sentinel_id)}
                     disabled={deletingId === sentinel.sentinel_id}
-                    className="btn btn-sm bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 inline-flex items-center gap-1.5 disabled:opacity-50"
+                    className="btn btn-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                    style={{ background: 'var(--danger-dim)', color: 'var(--danger)', border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)' }}
                   >
                     {deletingId === sentinel.sentinel_id ? (
                       <Loader2 size={12} className="animate-spin" />
@@ -314,7 +315,7 @@ export default function SentinelListPage() {
                       href={`${sentinel.sentinel_url}/_sentinel/health`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn btn-sm bg-gray-800 hover:bg-gray-700 text-gray-300 inline-flex items-center gap-1"
+                      className="btn btn-sm btn-outline inline-flex items-center gap-1"
                     >
                       Health <ExternalLink size={12} />
                     </a>
@@ -328,13 +329,13 @@ export default function SentinelListPage() {
         {/* Create Drawer Backdrop */}
         {showCreateDrawer && (
           <div className="fixed inset-0 bg-black/60 z-50 flex justify-end animate-fade-in">
-            <div className="w-full max-w-2xl bg-gray-900 border-l border-gray-800 p-6 overflow-y-auto flex flex-col justify-between space-y-6">
+            <div className="w-full max-w-2xl p-6 overflow-y-auto flex flex-col justify-between space-y-6" style={{ background: 'var(--surface)', borderLeft: '1px solid var(--border)' }}>
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2">
-                    <Shield className="text-primary" /> Deploy Sentinel Proxy
+                  <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--fg)' }}>
+                    <Shield style={{ color: 'var(--primary)' }} /> Deploy Sentinel Proxy
                   </h2>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
                     Configure your live model connection details and circuit breaker parameters. A new Cloud Run service will be provisioned.
                   </p>
                 </div>
@@ -496,13 +497,13 @@ export default function SentinelListPage() {
                       />
                     </div>
                     <div className="flex items-end">
-                      <div className="text-xs text-gray-500 mb-2">
+                      <div className="text-xs mb-2" style={{ color: 'var(--placeholder)' }}>
                         Deployment will configure a VPC access connector targeting GCP Memorystore Redis.
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-800">
+                  <div className="flex justify-end gap-3 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
                     <button
                       type="button"
                       onClick={() => setShowCreateDrawer(false)}
@@ -514,7 +515,7 @@ export default function SentinelListPage() {
                     <button
                       type="button"
                       onClick={handlePrefillDemo}
-                      className="btn bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold"
+                      className="btn btn-outline font-semibold"
                       disabled={submitting}
                     >
                       Demo

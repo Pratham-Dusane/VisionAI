@@ -132,7 +132,7 @@ FORMATTING RULES:
             import google.generativeai as genai
             print("[CHATBOT] Trying GEMINI_BIAS_API_KEY...")
             genai.configure(api_key=bias_key)
-            model = genai.GenerativeModel("gemini-2.5-flash")
+            model = genai.GenerativeModel("gemini-2.0-flash")
             response = await model.generate_content_async(
                 [full_prompt],
                 generation_config=genai.types.GenerationConfig(
@@ -150,7 +150,7 @@ FORMATTING RULES:
             import google.generativeai as genai
             print("[CHATBOT] Trying GEMINI_API_KEY...")
             genai.configure(api_key=main_key)
-            model = genai.GenerativeModel("gemini-2.5-flash")
+            model = genai.GenerativeModel("gemini-2.0-flash")
             response = await model.generate_content_async(
                 [full_prompt],
                 generation_config=genai.types.GenerationConfig(

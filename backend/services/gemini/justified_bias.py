@@ -6,6 +6,7 @@ Uses Gemini to evaluate whether detected statistical bias is domain-appropriate
 Fallback chain: GEMINI_BIAS_API_KEY → GEMINI_API_KEY → GROQ_API_KEY
 """
 
+import asyncio
 import os
 import json
 import re
@@ -95,25 +96,28 @@ def _parse_llm_response(response_text: str, bias_findings: Dict[str, Any]) -> Di
 
 
 async def _try_gemini(prompt: str, api_key: str) -> str:
-    """Try Gemini API. Returns response text or raises."""
+    """Try Gemini API with timeout. Returns response text or raises."""
     import google.generativeai as genai
 
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.5-flash")
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
-    response = await model.generate_content_async(
-        [prompt],
-        generation_config=genai.types.GenerationConfig(
-            temperature=0.1,
-            max_output_tokens=1024,
-            top_p=0.8,
+    response = await asyncio.wait_for(
+        model.generate_content_async(
+            [prompt],
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.1,
+                max_output_tokens=1024,
+                top_p=0.8,
+            ),
+            safety_settings={
+                genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+            }
         ),
-        safety_settings={
-            genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH: genai.types.HarmBlockThreshold.BLOCK_NONE,
-            genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
-            genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: genai.types.HarmBlockThreshold.BLOCK_NONE,
-            genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
-        }
+        timeout=15.0,
     )
     return response.text
 
@@ -122,12 +126,15 @@ async def _try_groq(prompt: str, api_key: str) -> str:
     """Try Groq API as last-resort fallback. Returns response text or raises."""
     from groq import AsyncGroq
 
-    client = AsyncGroq(api_key=api_key)
-    response = await client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.1,
-        max_completion_tokens=1024,
+    client = AsyncGroq(api_key=api_key, timeout=15.0)
+    response = await asyncio.wait_for(
+        client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_completion_tokens=1024,
+        ),
+        timeout=15.0,
     )
     return response.choices[0].message.content
 
@@ -221,20 +228,104 @@ def _fallback_classify(
     return result
 
 
+def _try_gemini_sync(prompt: str, api_key: str) -> str:
+    """Try Gemini API synchronously. Returns response text or raises."""
+    import google.generativeai as genai
+
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel("gemini-2.0-flash")
+
+    response = model.generate_content(
+        [prompt],
+        generation_config=genai.types.GenerationConfig(
+            temperature=0.1,
+            max_output_tokens=1024,
+            top_p=0.8,
+        ),
+        safety_settings={
+            genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH: genai.types.HarmBlockThreshold.BLOCK_NONE,
+            genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+            genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+            genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+        }
+    )
+    return response.text
+
+
+def _try_groq_sync(prompt: str, api_key: str) -> str:
+    """Try Groq API synchronously using requests (thread-safe, no httpx)."""
+    import requests as req
+    import time
+
+    print(f"[GROQ_DEBUG] Starting requests.post at {time.time():.2f}")
+    try:
+        resp = req.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+                "max_completion_tokens": 1024,
+            },
+            timeout=30,
+        )
+        print(f"[GROQ_DEBUG] Got response: status={resp.status_code} at {time.time():.2f}")
+        resp.raise_for_status()
+        result = resp.json()["choices"][0]["message"]["content"]
+        print(f"[GROQ_DEBUG] Parsed content, len={len(result)}")
+        return result
+    except Exception as e:
+        print(f"[GROQ_DEBUG] Exception in requests.post: {type(e).__name__}: {e}")
+        raise
+
+
 def classify_bias_findings_sync(
     bias_findings: Dict[str, Any],
     domain: str,
 ) -> Dict[str, Dict[str, Any]]:
-    """Synchronous wrapper for classify_bias_findings."""
-    import asyncio
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            raise RuntimeError("closed")
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    """Evaluate each data bias finding synchronously using sync LLM clients."""
+    if not bias_findings:
+        return {}
 
-    return loop.run_until_complete(
-        classify_bias_findings(bias_findings, domain)
+    findings_list = _build_findings_list(bias_findings)
+    prompt = _CLASSIFICATION_PROMPT.format(
+        domain=domain,
+        findings_json=json.dumps(findings_list, indent=2),
     )
+
+    # --- Attempt 1: Groq FIRST (fastest, Gemini quota often exhausted) ---
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key:
+        try:
+            print("[JUSTIFIED_BIAS] Trying GROQ_API_KEY (primary, sync)...")
+            text = _try_groq_sync(prompt, groq_key)
+            print(f"[JUSTIFIED_BIAS] GROQ success, response len={len(text)}")
+            return _parse_llm_response(text, bias_findings)
+        except Exception as e:
+            print(f"[JUSTIFIED_BIAS] GROQ_API_KEY failed: {e}")
+            traceback.print_exc()
+
+    # --- Attempt 2: Gemini with dedicated bias key ---
+    bias_key = os.getenv("GEMINI_BIAS_API_KEY")
+    if bias_key:
+        try:
+            print("[JUSTIFIED_BIAS] Trying GEMINI_BIAS_API_KEY (sync)...")
+            text = _try_gemini_sync(prompt, bias_key)
+            return _parse_llm_response(text, bias_findings)
+        except Exception as e:
+            print(f"[JUSTIFIED_BIAS] GEMINI_BIAS_API_KEY failed: {e}")
+
+    # --- Attempt 3: Gemini with main key ---
+    main_key = os.getenv("GEMINI_API_KEY")
+    if main_key and main_key != bias_key:
+        try:
+            print("[JUSTIFIED_BIAS] Trying GEMINI_API_KEY (sync)...")
+            text = _try_gemini_sync(prompt, main_key)
+            return _parse_llm_response(text, bias_findings)
+        except Exception as e:
+            print(f"[JUSTIFIED_BIAS] GEMINI_API_KEY failed: {e}")
+
+    # --- All failed ---
+    print("[JUSTIFIED_BIAS] All providers exhausted. Using heuristic fallback.")
+    return _fallback_classify(bias_findings, domain)

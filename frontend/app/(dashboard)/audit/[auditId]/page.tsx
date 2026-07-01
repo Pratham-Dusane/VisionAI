@@ -13,6 +13,7 @@ import {
   findMinimumFlip,
   getOrgSettings,
   runShadowTest,
+  getShadowTestCached,
   fetchNarrative,
   fetchFeatureLaundering,
   remediateBias,
@@ -452,58 +453,291 @@ export default function AuditResultsPage({ params }: { params: Promise<{ auditId
   if (loading || (audit && audit.status === 'PROCESSING')) {
     const pipeline = audit?.pipeline || {};
     const steps = Object.entries(pipeline);
+    const stepOrder = [
+      'download',
+      'schema_parsing',
+      'auto_binning',
+      'proxy_detection',
+      'data_profiling',
+      'data_bias_scan',
+      'justified_bias',
+      'model_evaluation',
+      'explainability',
+      'intersectional_audit',
+      'blind_spot_detection',
+      'historical_harm',
+      'regulation_mapping',
+      'severity_scoring'
+    ];
+
+    const stepDetails = [
+      { key: 'download', title: 'Data Ingestion', desc: 'Download dataset' },
+      { key: 'schema_parsing', title: 'Schema Parse', desc: 'Parse variables' },
+      { key: 'auto_binning', title: 'Auto Binning', desc: 'Bin continuous fields' },
+      { key: 'proxy_detection', title: 'Proxy Scan', desc: 'Detect correlations' },
+      { key: 'data_profiling', title: 'Cohort Profiling', desc: 'Demographic rates' },
+      { key: 'data_bias_scan', title: 'Data Bias Scan', desc: 'Check raw data bias' },
+      { key: 'justified_bias', title: 'Harm Classifier', desc: 'Classify bias findings' },
+      { key: 'model_evaluation', title: 'Model Eval', desc: 'Fairness metrics' },
+      { key: 'explainability', title: 'SHAP Explain', desc: 'SHAP attributions' },
+      { key: 'intersectional_audit', title: 'Intersectional', desc: 'Composite bias scan' },
+      { key: 'blind_spot_detection', title: 'Blind Spots', desc: 'Uncover latent bias' },
+      { key: 'historical_harm', title: 'Impact Harm', desc: 'Historical harm stats' },
+      { key: 'regulation_mapping', title: 'Compliance Map', desc: 'Map regulatory frames' },
+      { key: 'severity_scoring', title: 'Risk Score', desc: 'Compute risk grade' },
+    ];
+
+    let activeStepIdx = stepOrder.length;
+    for (let i = 0; i < stepOrder.length; i++) {
+      const s = stepOrder[i];
+      const status = pipeline[s];
+      if (status === 'running' || !status || status === 'pending') {
+        activeStepIdx = i;
+        break;
+      }
+    }
+
     return (
       <>
         <TopNav breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: audit?.name || 'Analyzing...' }]} />
-        <div className="flex-1 p-4 sm:p-6 space-y-3 animate-fade-in">
-          {/* Header skeleton */}
-          <div className="flex items-start gap-4">
-            <div className="skeleton" style={{ width: 88, height: 88, borderRadius: '50%' }} />
-            <div className="flex-1 space-y-2 pt-2">
-              <div className="skeleton" style={{ width: '40%', height: 20 }} />
-              <div className="skeleton" style={{ width: '60%', height: 14 }} />
+        <div className="flex-1 flex flex-col justify-center p-6 sm:p-10 space-y-6 animate-fade-in" style={{
+          maxHeight: 'calc(100vh - 64px)',
+          overflow: 'hidden',
+          backgroundImage: 'radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--primary) 8%, transparent) 0%, color-mix(in srgb, var(--accent) 3%, transparent) 40%, var(--bg) 100%)',
+        }}>
+          <style dangerouslySetInnerHTML={{ __html: `
+            @keyframes line-fill-run {
+              0% { transform: scaleX(0); }
+              100% { transform: scaleX(1); }
+            }
+          `}} />
+
+          {/* Stepper Progress Section */}
+          <div className="w-full max-w-5xl mx-auto space-y-6">
+            {/* Row 1 Capsule (Steps 1-7) */}
+            <div className="relative w-full rounded-[32px] p-6 flex flex-col justify-center shadow-lg border" style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border-light)',
+            }}>
+              {/* Connecting Line */}
+              <div className="absolute left-0 right-0 h-[3px]" style={{ top: '44px' }}>
+                {Array.from({ length: 6 }).map((_, i) => {
+                  const left = `${(i + 0.5) * 14.285}%`;
+                  const width = '14.285%';
+                  const segmentState = i + 1 < activeStepIdx ? 'complete' : (i + 1 === activeStepIdx ? 'running' : 'pending');
+                  return (
+                    <div key={i} className="absolute h-full transition-colors duration-500" style={{
+                      left,
+                      width,
+                      background: 'var(--border-light)'
+                    }}>
+                      {segmentState === 'complete' && (
+                        <div className="h-full w-full" style={{ background: 'var(--primary)' }} />
+                      )}
+                      {segmentState === 'running' && (
+                        <div className="h-full w-full" style={{
+                          background: 'var(--primary)',
+                          transformOrigin: 'left',
+                          animation: 'line-fill-run 2s infinite linear'
+                        }} />
+                      )}
+                    </div>
+                  );
+                })}
+                {/* Exit segment (from Step 7 [idx 6] to Step 8 [idx 7]) */}
+                <div className="absolute h-full transition-colors duration-500" style={{
+                  left: '92.85%',
+                  width: '7.15%',
+                  background: 'var(--border-light)'
+                }}>
+                  {activeStepIdx > 7 ? (
+                    <div className="h-full w-full" style={{ background: 'var(--primary)' }} />
+                  ) : activeStepIdx === 7 ? (
+                    <div className="h-full w-full" style={{
+                      background: 'var(--primary)',
+                      transformOrigin: 'left',
+                      animation: 'line-fill-run 2s infinite linear'
+                    }} />
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Steps Grid */}
+              <div className="relative z-10 grid grid-cols-7 w-full">
+                {stepDetails.slice(0, 7).map((m, index) => {
+                  const state = index < activeStepIdx ? 'complete' : (index === activeStepIdx ? 'running' : 'pending');
+                  const stepStatus = pipeline[m.key];
+                  const isSkipped = stepStatus === 'skipped';
+                  const displayState = isSkipped ? 'complete' : state;
+
+                  return (
+                    <div key={m.key} className="flex flex-col items-center">
+                      <div className="relative flex items-center justify-center" style={{ height: '40px', width: '40px' }}>
+                        {displayState === 'running' && (
+                          <div className="absolute rounded-full animate-ping opacity-25" style={{
+                            width: '44px',
+                            height: '44px',
+                            background: 'var(--primary)',
+                          }} />
+                        )}
+                        <div className="rounded-full flex items-center justify-center transition-all duration-300" style={{
+                          width: displayState === 'running' ? '32px' : displayState === 'complete' ? '24px' : '18px',
+                          height: displayState === 'running' ? '32px' : displayState === 'complete' ? '24px' : '18px',
+                          border: displayState === 'running' ? '2px solid var(--primary)' : 'none',
+                          background: displayState === 'complete' ? 'var(--primary)' : displayState === 'running' ? 'var(--surface)' : 'var(--border)',
+                        }}>
+                          {(displayState === 'complete' || displayState === 'pending') && (
+                            <div className="rounded-full" style={{
+                              width: displayState === 'complete' ? '6px' : '4px',
+                              height: displayState === 'complete' ? '6px' : '4px',
+                              background: 'var(--surface)',
+                            }} />
+                          )}
+                          {displayState === 'running' && (
+                            <div className="rounded-full" style={{
+                              width: '10px',
+                              height: '10px',
+                              background: 'var(--primary)',
+                            }} />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-center mt-3 text-center px-1">
+                        <span className="text-[11px] font-bold tracking-tight leading-tight" style={{ color: displayState === 'pending' ? 'var(--placeholder)' : 'var(--fg)', minHeight: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {m.title}
+                        </span>
+                        <span className="text-[9px] mt-0.5 leading-tight font-medium" style={{ color: 'var(--placeholder)', maxWidth: '100px' }}>
+                          {isSkipped ? 'Skipped' : m.desc}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Row 2 Capsule (Steps 8-14) */}
+            <div className="relative w-full rounded-[32px] p-6 flex flex-col justify-center shadow-lg border" style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border-light)',
+            }}>
+              {/* Connecting Line */}
+              <div className="absolute left-0 right-0 h-[3px]" style={{ top: '44px' }}>
+                {/* Entry segment from left edge to Step 8 [idx 7] */}
+                <div className="absolute h-full transition-colors duration-500" style={{
+                  left: '0%',
+                  width: '7.15%',
+                  background: 'var(--border-light)'
+                }}>
+                  {activeStepIdx > 7 ? (
+                    <div className="h-full w-full" style={{ background: 'var(--primary)' }} />
+                  ) : activeStepIdx === 7 ? (
+                    <div className="h-full w-full" style={{
+                      background: 'var(--primary)',
+                      transformOrigin: 'left',
+                      animation: 'line-fill-run 2s infinite linear'
+                    }} />
+                  ) : null}
+                </div>
+
+                {Array.from({ length: 6 }).map((_, i) => {
+                  const stepIdx = i + 7;
+                  const left = `${(i + 0.5) * 14.285}%`;
+                  const width = '14.285%';
+                  const segmentState = stepIdx + 1 < activeStepIdx ? 'complete' : (stepIdx + 1 === activeStepIdx ? 'running' : 'pending');
+                  return (
+                    <div key={i} className="absolute h-full transition-colors duration-500" style={{
+                      left,
+                      width,
+                      background: 'var(--border-light)'
+                    }}>
+                      {segmentState === 'complete' && (
+                        <div className="h-full w-full" style={{ background: 'var(--primary)' }} />
+                      )}
+                      {segmentState === 'running' && (
+                        <div className="h-full w-full" style={{
+                          background: 'var(--primary)',
+                          transformOrigin: 'left',
+                          animation: 'line-fill-run 2s infinite linear'
+                        }} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Steps Grid */}
+              <div className="relative z-10 grid grid-cols-7 w-full">
+                {stepDetails.slice(7, 14).map((m, index) => {
+                  const realIndex = index + 7;
+                  const state = realIndex < activeStepIdx ? 'complete' : (realIndex === activeStepIdx ? 'running' : 'pending');
+                  const stepStatus = pipeline[m.key];
+                  const isSkipped = stepStatus === 'skipped';
+                  const displayState = isSkipped ? 'complete' : state;
+
+                  return (
+                    <div key={m.key} className="flex flex-col items-center">
+                      <div className="relative flex items-center justify-center" style={{ height: '40px', width: '40px' }}>
+                        {displayState === 'running' && (
+                          <div className="absolute rounded-full animate-ping opacity-25" style={{
+                            width: '44px',
+                            height: '44px',
+                            background: 'var(--primary)',
+                          }} />
+                        )}
+                        <div className="rounded-full flex items-center justify-center transition-all duration-300" style={{
+                          width: displayState === 'running' ? '32px' : displayState === 'complete' ? '24px' : '18px',
+                          height: displayState === 'running' ? '32px' : displayState === 'complete' ? '24px' : '18px',
+                          border: displayState === 'running' ? '2px solid var(--primary)' : 'none',
+                          background: displayState === 'complete' ? 'var(--primary)' : displayState === 'running' ? 'var(--surface)' : 'var(--border)',
+                        }}>
+                          {(displayState === 'complete' || displayState === 'pending') && (
+                            <div className="rounded-full" style={{
+                              width: displayState === 'complete' ? '6px' : '4px',
+                              height: displayState === 'complete' ? '6px' : '4px',
+                              background: 'var(--surface)',
+                            }} />
+                          )}
+                          {displayState === 'running' && (
+                            <div className="rounded-full" style={{
+                              width: '10px',
+                              height: '10px',
+                              background: 'var(--primary)',
+                            }} />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-center mt-3 text-center px-1">
+                        <span className="text-[11px] font-bold tracking-tight leading-tight" style={{ color: displayState === 'pending' ? 'var(--placeholder)' : 'var(--fg)', minHeight: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {m.title}
+                        </span>
+                        <span className="text-[9px] mt-0.5 leading-tight font-medium" style={{ color: 'var(--placeholder)', maxWidth: '100px' }}>
+                          {isSkipped ? 'Skipped' : m.desc}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Sub-step indicator */}
+            <div className="flex flex-col items-center justify-center mt-4 text-xs font-mono" style={{ color: 'var(--muted)' }}>
+              {steps.map(([step, status]) => {
+                if (status === 'running') {
+                  return (
+                    <div key={step} className="flex items-center gap-1.5 animate-pulse" style={{ color: 'var(--primary)' }}>
+                      <Loader2 size={12} className="animate-spin" />
+                      <span>Running: {step.replace(/_/g, ' ')}...</span>
+                    </div>
+                  );
+                }
+                return null;
+              })}
             </div>
           </div>
-
-          {/* Tab bar skeleton */}
-          <div className="flex gap-2">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="skeleton" style={{ width: 90, height: 32 }} />
-            ))}
-          </div>
-
-          {/* Metric cards skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton" style={{ height: 80 }} />
-            ))}
-          </div>
-
-          {/* Pipeline progress overlay */}
-          {steps.length > 0 && (
-            <div className="card" style={{ borderColor: 'var(--primary-dim)' }}>
-              <div className="flex items-center gap-2 mb-3">
-                <Loader2 size={14} className="animate-spin" style={{ color: 'var(--primary)' }} />
-                <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>Pipeline Progress</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
-                {steps.map(([step, status]) => (
-                  <div key={step} className="flex items-center gap-1.5 text-xs">
-                    {status === 'complete' ? <CheckCircle2 size={10} style={{ color: 'var(--success)' }} /> :
-                      status === 'running' ? <Loader2 size={10} className="animate-spin" style={{ color: 'var(--primary)' }} /> :
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--border)' }} />}
-                    <span style={{ color: status === 'running' ? 'var(--primary)' : status === 'complete' ? 'var(--success)' : 'var(--placeholder)' }}>
-                      {step.replace(/_/g, ' ')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Content skeletons */}
-          <div className="skeleton" style={{ height: 120 }} />
-          <div className="skeleton" style={{ height: 200 }} />
         </div>
       </>
     );
@@ -3284,10 +3518,29 @@ function ModelTab({ audit }: { audit: any }) {
 
 function ShadowTestingCard({ auditId }: { auditId: string }) {
   const [loading, setLoading] = useState(false);
+  const [loadingCache, setLoadingCache] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 10;
+
+  // Load cached results on mount/auditId change
+  useEffect(() => {
+    async function loadCached() {
+      setLoadingCache(true);
+      setError('');
+      try {
+        const data = await getShadowTestCached(auditId, 1, pageSize);
+        setResult(data);
+        setPage(1);
+      } catch (e: any) {
+        console.log('No cached shadow test results:', e.message);
+      } finally {
+        setLoadingCache(false);
+      }
+    }
+    loadCached();
+  }, [auditId]);
 
   async function onRun(requestPage = 1) {
     setLoading(true);
@@ -3303,6 +3556,27 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
         setError('Shadow Testing is disabled. Enable it in Settings → Preferences.');
       } else {
         setError(errorMsg);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadPage(requestPage: number) {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await getShadowTestCached(auditId, requestPage, pageSize);
+      setResult(data);
+      setPage(requestPage);
+    } catch (e: any) {
+      // Fallback if cache gets lost/cleared
+      try {
+        const data = await runShadowTest(auditId, requestPage, pageSize);
+        setResult(data);
+        setPage(requestPage);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load page');
       }
     } finally {
       setLoading(false);
@@ -3476,7 +3750,7 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
                   <button
                     className="btn btn-outline btn-sm"
                     disabled={page <= 1 || loading}
-                    onClick={() => onRun(page - 1)}
+                    onClick={() => loadPage(page - 1)}
                     style={{ fontSize: 11, padding: '2px 10px' }}
                   >
                     ← Prev
@@ -3487,7 +3761,7 @@ function ShadowTestingCard({ auditId }: { auditId: string }) {
                   <button
                     className="btn btn-outline btn-sm"
                     disabled={page >= totalPages || loading}
-                    onClick={() => onRun(page + 1)}
+                    onClick={() => loadPage(page + 1)}
                     style={{ fontSize: 11, padding: '2px 10px' }}
                   >
                     Next →

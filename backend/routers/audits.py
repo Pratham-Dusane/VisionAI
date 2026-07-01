@@ -1033,14 +1033,19 @@ def list_audits(orgId: str):
         docs = query.stream()
         audits = []
         
-        json_fields = ["schema", "profiles", "dataBias", "modelBias", "explainability", 
-                       "intersectional", "featureLaundering", "historicalHarm", "regulationMap",
-                       "blindSpots", "narratives", "biasOriginTracer", "modelDecisionBias", 
-                       "justifiedBias", "benchmarking"]
+        # Omit heavy fields from the list view to prevent payload bloat and slow parsing
+        exclude_fields = {"schema", "profiles", "explainability", "paretoData", "causalFairness"}
+        
+        json_fields = ["dataBias", "modelBias", "intersectional", "featureLaundering", 
+                       "historicalHarm", "regulationMap", "blindSpots", "narratives", 
+                       "biasOriginTracer", "modelDecisionBias", "justifiedBias", "benchmarking"]
                        
         for doc in docs:
             d = doc.to_dict()
             d["id"] = doc.id
+            
+            for field in exclude_fields:
+                d.pop(field, None)
             
             for field in json_fields:
                 if field in d and isinstance(d[field], str):
@@ -1714,6 +1719,56 @@ async def explain_rejection(audit_id: str, row_index: int):
             cleanup_temp_file(local_model_path)
 
 
+@router.get("/{audit_id}/shadow-test")
+async def get_shadow_test(audit_id: str, page: int = 1, page_size: int = 10):
+    """
+    Retrieve cached Generative Shadow Testing results if they exist.
+    """
+    try:
+        db = firestore.client()
+        doc = db.collection("audits").document(audit_id).get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Audit not found")
+        
+        cache_doc = db.collection("audits").document(audit_id).collection("shadow_cache").document("results").get()
+        if not cache_doc.exists:
+            raise HTTPException(status_code=404, detail="No cached shadow test results found")
+        
+        cached_data = cache_doc.to_dict()
+        results_str = cached_data.get("results")
+        if not results_str:
+            raise HTTPException(status_code=404, detail="No cached shadow test results found")
+            
+        data = json.loads(results_str)
+        all_results = data.get("results") or []
+        summary = data.get("summary") or {}
+        existing = data.get("existingIntersections") or 0
+        missing = data.get("missingIntersections") or 0
+        
+        # --- Pagination ---
+        total_rows = len(all_results)
+        start = (page - 1) * page_size
+        end = start + page_size
+        paginated_results = all_results[start:end]
+        
+        return {
+            "auditId": audit_id,
+            "summary": summary,
+            "results": paginated_results,
+            "pagination": {
+                "page": page,
+                "pageSize": page_size,
+                "totalRows": total_rows,
+            },
+            "existingIntersections": existing,
+            "missingIntersections": missing,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve cached shadow test: {str(e)}")
+
+
 @router.post("/{audit_id}/shadow-test")
 async def run_shadow_test(audit_id: str, page: int = 1, page_size: int = 10):
     """
@@ -1853,6 +1908,21 @@ async def run_shadow_test(audit_id: str, page: int = 1, page_size: int = 10):
         start = (page - 1) * page_size
         end = start + page_size
         paginated_results = all_results[start:end]
+
+        # --- Save Cache ---
+        cache_data = {
+            "summary": summary,
+            "results": all_results,
+            "existingIntersections": len(existing),
+            "missingIntersections": len(missing_intersections),
+        }
+        try:
+            db.collection("audits").document(audit_id).collection("shadow_cache").document("results").set({
+                "results": json.dumps(cache_data)
+            })
+        except Exception as e:
+            # log warning
+            print(f"Failed to cache shadow test results: {e}")
 
         return {
             "auditId": audit_id,
