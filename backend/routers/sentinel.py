@@ -265,6 +265,7 @@ async def run_traffic_simulation_task(sentinel_id: str, sentinel_url: str):
     """Background task to generate 60 requests spaced out by 100ms."""
     import asyncio
     import random
+    is_simulated = "/sentinel-mock/" in sentinel_url
     async with httpx.AsyncClient() as client:
         for _ in range(60):
             gender = "Female" if random.random() < 0.5 else "Male"
@@ -274,8 +275,12 @@ async def run_traffic_simulation_task(sentinel_id: str, sentinel_url: str):
                 "credit_score": random.randint(580, 850)
             }
             try:
-                # Force simulated prediction endpoint or real endpoint
-                await client.post(sentinel_url, json=payload, timeout=5.0)
+                if is_simulated:
+                    # Execute internal simulation logic directly to avoid outbound network blocks on cloud
+                    await process_simulated_decision_internal(sentinel_id, payload)
+                else:
+                    # Real Cloud Run deployed Sentinel proxy URL
+                    await client.post(sentinel_url, json=payload, timeout=5.0)
             except Exception:
                 pass
             await asyncio.sleep(0.1)
@@ -403,9 +408,7 @@ async def simulated_reset(sentinel_id: str, reset_by: str = "api"):
     db.collection("sentinel_breaker_states").document(sentinel_id).update(reset_data)
     return {"result": "BREAKER_RESET", "reset_by": reset_by}
 
-@router.api_route("/sentinel-mock/{sentinel_id}/{path:path}", methods=["POST"])
-@router.api_route("/sentinel-mock/{sentinel_id}", methods=["POST"])
-async def simulated_proxy(sentinel_id: str, raw_request: Request, path: str = ""):
+async def process_simulated_decision_internal(sentinel_id: str, body: dict) -> dict:
     db = firestore.client()
     doc = db.collection("sentinel_configs").document(sentinel_id).get()
     if not doc.exists:
@@ -413,11 +416,6 @@ async def simulated_proxy(sentinel_id: str, raw_request: Request, path: str = ""
     config_data = doc.to_dict()
     config = config_data.get("config", {})
     
-    try:
-        body = await raw_request.json()
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON body")
-        
     protected_values = {}
     for attr in config.get("protected_attributes", []):
         val = extract_nested(body, attr)
@@ -582,3 +580,12 @@ async def simulated_proxy(sentinel_id: str, raw_request: Request, path: str = ""
             "latency_ms": 5.0,
         }
     }
+
+@router.api_route("/sentinel-mock/{sentinel_id}/{path:path}", methods=["POST"])
+@router.api_route("/sentinel-mock/{sentinel_id}", methods=["POST"])
+async def simulated_proxy(sentinel_id: str, raw_request: Request, path: str = ""):
+    try:
+        body = await raw_request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+    return await process_simulated_decision_internal(sentinel_id, body)
